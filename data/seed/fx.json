@@ -1,0 +1,8 @@
+{
+  "publisher": "European Central Bank",
+  "url": "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html",
+  "retrievedOn": "2026-11-04",
+  "rateDate": "2026-11-03",
+  "note": "Euro reference rates as published: units of currency per 1 euro. Reuse requires quoting the source and not modifying the statistics.",
+  "perEuro": { "USD": 1.1179, "GBP": 0.83358, "CHF": 0.9166 }
+}

@@ -1,0 +1,599 @@
+{
+  "retrievedOn": "2026-11-04",
+  "note": "Every value is taken from the page in source.url, read on retrievedOn. Missing values are null: never fill them from memory or from a commercial data site. classification is our own editorial tagging. Listings: [MIC, ticker, currency, flags]; flag P marks the display ticker, and a symbol marks the market-data symbol with stored prices. Only European listings are loaded so far.",
+  "funds": [
+    {
+      "key": "ishares-core-sp500-acc",
+      "name": "iShares Core S&P 500 UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/253743/ishares-sp-500-b-ucits-etf-acc-fund" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2010-05-18", "baseCurrency": "USD",
+      "assetClass": "equity", "style": "passive", "replication": "physical", "index": "sp-500", "benchmarkAsPublished": "S&P 500 Index",
+      "categories": ["us", "large-cap"],
+      "aum": { "amount": 156654097245, "currency": "USD", "asOf": "2026-11-03" },
+      "holdings": { "count": 503, "asOf": "2026-11-02" },
+      "sectors": { "asOf": "2026-11-02", "weights": { "Information Technology": 36.59, "Financials": 12.44, "Health Care": 10.27, "Consumer Discretionary": 9.27, "Communication": 8.43 } },
+      "shareClasses": [
+        { "isin": "IE00B5BMR087", "name": "iShares Core S&P 500 UCITS ETF USD (Acc)", "currency": "USD", "distribution": "accumulating", "hedged": false, "launchDate": "2010-05-19",
+          "fees": { "ter": 0.07 }, "aum": { "amount": 153554167379, "currency": "USD", "asOf": "2026-11-03" },
+          "listings": [["XLON","CSPX","USD","P","CSPX.LON"],["XLON","CSP1","GBP"],["XETR","SXR8","EUR"],["XAMS","CSPX","EUR"],["XMIL","CSSPX","EUR"],["XSWX","CSSPX","USD"]] }
+      ]
+    },
+    {
+      "key": "ishares-core-sp500-dist",
+      "name": "iShares Core S&P 500 UCITS ETF (Dist)",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/251900/ishares-sp-500-ucits-etf-inc-fund" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2002-03-15", "baseCurrency": "USD",
+      "assetClass": "equity", "style": "passive", "replication": "physical_full", "index": "sp-500", "benchmarkAsPublished": "S&P 500 Index",
+      "categories": ["us", "large-cap"],
+      "aum": { "amount": 22588083720, "currency": "USD", "asOf": "2026-11-03" },
+      "holdings": { "count": 504, "asOf": "2026-11-03" },
+      "sectors": { "asOf": "2026-11-03", "weights": { "Information Technology": 36.99, "Financials": 12.33, "Health Care": 10.21, "Consumer Discretionary": 9.23, "Communication": 8.48 } },
+      "shareClasses": [
+        { "isin": "IE0031442068", "name": "iShares Core S&P 500 UCITS ETF USD (Dist)", "currency": "USD", "distribution": "distributing", "frequency": "quarterly", "launchDate": null,
+          "fees": { "ter": 0.07 }, "aum": null, "yield": { "value": 0.87, "asOf": "2026-11-03" },
+          "listings": [["XLON","IUSA","GBP","P"],["XLON","IDUS","USD"],["XETR","IUSA","EUR"],["XAMS","IUSA","EUR"],["XMIL","IUSA","EUR"],["XSWX","IUSA","USD"]] }
+      ]
+    },
+    {
+      "key": "ishares-core-msci-world",
+      "name": "iShares Core MSCI World UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/251882/ishares-msci-world-ucits-etf-acc-fund" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2009-09-25", "baseCurrency": "USD",
+      "assetClass": "equity", "style": "passive", "replication": "physical_sampling", "index": "msci-world", "benchmarkAsPublished": "MSCI World Index (Net)",
+      "categories": ["global", "developed", "large-cap"],
+      "aum": { "amount": 150280013929, "currency": "USD", "asOf": "2026-11-03" },
+      "holdings": { "count": 1248, "asOf": "2026-11-03" },
+      "sectors": { "asOf": "2026-11-03", "weights": { "Information Technology": 29.29, "Financials": 16.25, "Industrials": 10.90, "Health Care": 10.09, "Consumer Discretionary": 8.86 } },
+      "shareClasses": [
+        { "isin": "IE00B4L5Y983", "name": "iShares Core MSCI World UCITS ETF USD (Acc)", "currency": "USD", "distribution": "accumulating", "hedged": false, "launchDate": "2009-09-25",
+          "fees": { "ter": 0.20 }, "aum": { "amount": 146282465362, "currency": "USD", "asOf": "2026-11-03" },
+          "listings": [["XLON","IWDA","USD","P"],["XLON","SWDA","GBP"],["XETR","EUNL","EUR"],["XAMS","IWDA","EUR"],["XMIL","SWDA","EUR"],["XSWX","SWDA","USD"]] }
+      ]
+    },
+    {
+      "key": "ishares-core-msci-em-imi",
+      "name": "iShares Core MSCI EM IMI UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/264659/ishares-msci-emerging-markets-imi-ucits-etf" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2014-05-30", "baseCurrency": "USD",
+      "assetClass": "equity", "style": "passive", "replication": "physical_full", "index": "msci-em-imi", "benchmarkAsPublished": "MSCI Emerging Markets Investable Market Index (USD) (Net)",
+      "categories": ["emerging"],
+      "aum": { "amount": 42833517891, "currency": "USD", "asOf": "2026-11-03" },
+      "holdings": { "count": 2950, "asOf": "2026-11-02" },
+      "sectors": { "asOf": "2026-11-02", "weights": { "Information Technology": 39.24, "Financials": 19.50, "Consumer Discretionary": 7.98, "Industrials": 7.34, "Materials": 6.18 } },
+      "shareClasses": [
+        { "isin": "IE00BKM4GZ66", "name": "iShares Core MSCI EM IMI UCITS ETF USD (Acc)", "currency": "USD", "distribution": "accumulating", "launchDate": "2014-05-30",
+          "fees": { "ter": 0.18 }, "aum": { "amount": 41261566731, "currency": "USD", "asOf": "2026-11-03" },
+          "listings": [["XLON","EIMI","USD","P","EIMI.LON"],["XLON","EMIM","GBP"],["XETR","IS3N","EUR"],["XAMS","EMIM","EUR"],["XMIL","EIMI","EUR"],["XSWX","EIMI","USD"]] }
+      ]
+    },
+    {
+      "key": "ishares-msci-acwi",
+      "name": "iShares MSCI All Country World UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/251850/ishares-msci-acwi-ucits-etf" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2011-10-21", "baseCurrency": "USD",
+      "assetClass": "equity", "style": "passive", "replication": "physical_sampling", "index": "msci-acwi", "benchmarkAsPublished": "MSCI All Country World Index (Net)",
+      "categories": ["global", "large-cap"],
+      "aum": { "amount": 36146346345, "currency": "USD", "asOf": "2026-11-03" },
+      "holdings": { "count": 1663, "asOf": "2026-11-03" },
+      "sectors": { "asOf": null, "weights": { "Information Technology": 30.36, "Financials": 18.43, "Industrials": 10.19, "Health Care": 9.13, "Consumer Discretionary": 8.54 } },
+      "shareClasses": [
+        { "isin": "IE00B6R52259", "name": "iShares MSCI All Country World UCITS ETF USD (Acc)", "currency": "USD", "distribution": "accumulating", "hedged": false, "launchDate": "2011-10-21",
+          "fees": { "ter": 0.20 }, "aum": { "amount": 34985980311, "currency": "USD", "asOf": "2026-11-03" },
+          "listings": [["XLON","ISAC","USD","P"],["XLON","SSAC","GBP"],["XETR","IUSQ","EUR"],["XAMS","SSAC","EUR"],["XMIL","ISAC","EUR"],["XSWX","SSAC","USD"],["XSWX","SSACCHF","CHF"]] }
+      ]
+    },
+    {
+      "key": "ishares-nasdaq-100",
+      "name": "iShares NASDAQ 100 UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/253741/ishares-nasdaq-100-ucits-etf" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2010-01-26", "baseCurrency": "USD",
+      "assetClass": "equity", "style": "passive", "replication": "physical_full", "index": "nasdaq-100", "benchmarkAsPublished": "NASDAQ 100 Index",
+      "categories": ["us", "large-cap", "technology"],
+      "aum": { "amount": 29806539882, "currency": "USD", "asOf": "2026-11-03" },
+      "holdings": { "count": 101, "asOf": "2026-11-03" },
+      "sectors": { "asOf": "2026-11-03", "weights": { "Information Technology": 56.51, "Communication": 13.80, "Consumer Discretionary": 11.36, "Consumer Staples": 6.87, "Health Care": 4.88 } },
+      "shareClasses": [
+        { "isin": "IE00B53SZB19", "name": "iShares NASDAQ 100 UCITS ETF USD (Acc)", "currency": "USD", "distribution": "accumulating", "launchDate": "2010-01-26",
+          "fees": { "ter": 0.30 }, "aum": { "amount": 27834890516, "currency": "USD", "asOf": "2026-11-03" },
+          "listings": [["XLON","CNDX","USD","P"],["XLON","CNX1","GBP"],["XETR","SXRV","EUR"],["XAMS","CNDX","EUR"],["XMIL","CSNDX","EUR"],["XSWX","CSNDX","USD"]] }
+      ]
+    },
+    {
+      "key": "ishares-physical-gold",
+      "name": "iShares Physical Gold ETC",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/258441/ishares-physical-gold-etc" },
+      "productType": "etc", "ucits": false, "legalStructure": "Exchange traded commodity issued by iShares Physical Metals plc", "domicile": "IE", "launchDate": "2011-04-08", "baseCurrency": "USD",
+      "assetClass": "commodities", "style": "passive", "replication": "physical_metal", "index": "lbma-gold", "benchmarkAsPublished": "LBMA Gold Price",
+      "categories": ["global", "gold"],
+      "aum": { "amount": 36702251595, "currency": "USD", "asOf": "2026-11-03" },
+      "shareClasses": [
+        { "isin": "IE00B4ND3602", "name": "iShares Physical Gold ETC", "currency": "USD", "distribution": "no_income", "launchDate": "2011-04-08",
+          "fees": { "ter": 0.12 }, "aum": null,
+          "listings": [["XLON","IGLN","USD","P"],["XLON","SGLN","GBP"],["XLON","EGLN","EUR"],["XETR","PPFB","EUR"],["XMIL","SGLN","EUR"]] }
+      ]
+    },
+    {
+      "key": "ishares-core-global-agg",
+      "name": "iShares Core Global Aggregate Bond UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/291773/ishares-global-aggregate-bond-ucits-etf" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2017-11-21", "baseCurrency": "USD",
+      "assetClass": "fixed_income", "style": "passive", "replication": "physical_sampling", "index": "bloomberg-global-agg", "benchmarkAsPublished": "Bloomberg Global Aggregate Bond Index",
+      "categories": ["global", "aggregate-bonds"],
+      "aum": { "amount": 14565574990, "currency": "USD", "asOf": "2026-10-30" },
+      "holdings": { "count": 19975, "asOf": "2026-10-29" },
+      "bond": { "asOf": "2026-10-29", "duration": 5.99, "maturity": 8.00, "ytm": 4.30 },
+      "shareClasses": [
+        { "isin": "IE00B3F81409", "name": "iShares Core Global Aggregate Bond UCITS ETF USD (Dist)", "currency": "USD", "distribution": "distributing", "launchDate": "2017-11-21",
+          "fees": { "ter": 0.10 }, "aum": { "amount": 2743792030, "currency": "USD", "asOf": "2026-10-30" },
+          "listings": [["XLON","AGGG","USD","P"],["XLON","SAGG","GBP"],["XETR","AGGG","EUR"],["XSWX","AGGG","USD"]] }
+      ]
+    },
+    {
+      "key": "ishares-core-eur-corp",
+      "name": "iShares Core € Corp Bond UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/251726/ishares-euro-corporate-bond-ucits-etf" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2009-03-06", "baseCurrency": "EUR",
+      "assetClass": "fixed_income", "style": "passive", "replication": "physical_sampling", "index": "bloomberg-euro-corporate", "benchmarkAsPublished": "BBG Euro Corporate Index (EUR)",
+      "categories": ["europe", "corporate-bonds", "investment-grade"],
+      "aum": { "amount": 14562034044, "currency": "EUR", "asOf": "2026-11-03" },
+      "holdings": { "count": 4238, "asOf": "2026-11-03" },
+      "bond": { "asOf": "2026-11-03", "duration": 4.37, "maturity": 5.16, "ytm": 4.21 },
+      "shareClasses": [
+        { "isin": "IE00B3F81R35", "name": "iShares Core € Corp Bond UCITS ETF EUR (Dist)", "currency": "EUR", "distribution": "distributing", "hedged": false, "launchDate": "2009-03-06",
+          "fees": { "ter": 0.09 }, "aum": { "amount": 9654409306, "currency": "EUR", "asOf": "2026-11-03" },
+          "listings": [["XLON","IEAC","EUR","P"],["XLON","IEBC","GBP"],["XETR","EUN5","EUR"],["XAMS","IEAC","EUR"],["XMIL","IEAC","EUR"],["XSWX","IEAC","CHF"]] }
+      ]
+    },
+    {
+      "key": "ishares-core-eur-govt",
+      "name": "iShares Core € Govt Bond UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/251740/ishares-euro-government-bond-ucits-etf" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2009-04-17", "baseCurrency": "EUR",
+      "assetClass": "fixed_income", "style": "passive", "replication": "physical_sampling", "index": "bloomberg-euro-treasury", "benchmarkAsPublished": "Bloomberg Euro Treasury Bond Index (LEATTREU)",
+      "categories": ["europe", "government-bonds"],
+      "aum": { "amount": 6295642858, "currency": "EUR", "asOf": "2026-11-02" },
+      "holdings": { "count": 552, "asOf": "2026-11-02" },
+      "bond": { "asOf": "2026-10-30", "duration": 6.80, "maturity": 8.58, "ytm": 3.86 },
+      "shareClasses": [
+        { "isin": "IE00B4WXJJ64", "name": "iShares Core € Govt Bond UCITS ETF EUR (Dist)", "currency": "EUR", "distribution": "distributing", "hedged": false, "launchDate": "2009-04-17",
+          "fees": { "ter": 0.07 }, "aum": { "amount": 5399423408, "currency": "EUR", "asOf": "2026-11-02" },
+          "listings": [["XAMS","IEGA","EUR","P"],["XLON","SEGA","GBP"],["XETR","EUNH","EUR"],["XMIL","SEGA","EUR"],["XSWX","IEGA","EUR"]] }
+      ]
+    },
+    {
+      "key": "ishares-eur-govt-5-7",
+      "name": "iShares € Govt Bond 5-7yr UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/251737/" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2009-04-17", "baseCurrency": "EUR",
+      "assetClass": "fixed_income", "style": "passive", "replication": "physical_sampling", "index": "bloomberg-euro-govt-5-7", "benchmarkAsPublished": "BBG Euro Government Bond 5-7 Year Term Index",
+      "categories": ["europe", "government-bonds"],
+      "aum": { "amount": 657358616, "currency": "EUR", "asOf": "2026-10-29" },
+      "holdings": { "count": 29, "asOf": "2026-10-28" },
+      "bond": { "asOf": "2026-10-28", "duration": 5.42, "maturity": 5.90, "ytm": 3.92 },
+      "shareClasses": [
+        { "isin": "IE00B4WXJG34", "name": "iShares € Govt Bond 5-7yr UCITS ETF EUR (Dist)", "currency": "EUR", "distribution": "distributing", "frequency": "semi_annual", "launchDate": null,
+          "fees": { "ter": 0.15 }, "aum": null,
+          "listings": [["XAMS","IEGY","EUR","P"],["XLON","IBGY","GBP"],["XETR","EUN9","EUR"],["XMIL","IBGY","EUR"],["XSWX","IEGY","CHF"]] }
+      ]
+    },
+    {
+      "key": "ishares-msci-world-small-cap",
+      "name": "iShares MSCI World Small Cap UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/296576/ishares-msci-world-small-cap-ucits-etf" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2018-03-27", "baseCurrency": "USD",
+      "assetClass": "equity", "style": "passive", "replication": "physical_sampling", "index": "msci-world-small-cap", "benchmarkAsPublished": "MSCI World Small Cap Index (Net)",
+      "categories": ["global", "developed", "small-cap"],
+      "aum": { "amount": 8998752597, "currency": "USD", "asOf": "2026-11-03" },
+      "holdings": { "count": 3572, "asOf": "2026-11-03" },
+      "sectors": { "asOf": "2026-11-02", "weights": { "Industrials": 19.08, "Financials": 14.54, "Information Technology": 12.15, "Health Care": 11.76, "Consumer Discretionary": 10.75 } },
+      "shareClasses": [
+        { "isin": "IE00BF4RFH31", "name": "iShares MSCI World Small Cap UCITS ETF USD (Acc)", "currency": "USD", "distribution": "accumulating", "hedged": false, "launchDate": "2018-03-27",
+          "fees": { "ter": 0.35 }, "aum": null,
+          "listings": [["XLON","WSML","USD","P"],["XLON","WLDS","GBP"],["XETR","IUSN","EUR"]] }
+      ]
+    },
+    {
+      "key": "ishares-core-msci-europe",
+      "name": "iShares Core MSCI Europe UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/251861/ishares-msci-europe-ucits-etf-acc-fund" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2009-09-25", "baseCurrency": "EUR",
+      "assetClass": "equity", "style": "passive", "replication": "physical_sampling", "index": "msci-europe", "benchmarkAsPublished": "MSCI Europe Index",
+      "categories": ["europe", "large-cap"],
+      "aum": { "amount": 16066239793, "currency": "EUR", "asOf": "2026-11-03" },
+      "holdings": { "count": 384, "asOf": "2026-11-03" },
+      "sectors": { "asOf": "2026-11-03", "weights": { "Financials": 23.92, "Industrials": 17.94, "Health Care": 14.00, "Consumer Staples": 9.03, "Information Technology": 8.80 } },
+      "shareClasses": [
+        { "isin": "IE00B4K48X80", "name": "iShares Core MSCI Europe UCITS ETF EUR (Acc)", "currency": "EUR", "distribution": "accumulating", "hedged": false, "launchDate": null,
+          "fees": { "ter": 0.12 }, "aum": null,
+          "listings": [["XAMS","IMAE","EUR","P"],["XLON","SMEA","GBP"],["XETR","EUNK","EUR"],["XMIL","SMEA","EUR"],["XSWX","IMEA","CHF"]] }
+      ]
+    },
+    {
+      "key": "ishares-global-clean-energy",
+      "name": "iShares Global Clean Energy Transition UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/251911/ishares-global-clean-energy-ucits-etf" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2007-07-06", "baseCurrency": "USD",
+      "assetClass": "equity", "style": "passive", "replication": "physical_full", "index": "sp-global-clean-energy-transition", "benchmarkAsPublished": "S&P Global Clean Energy Transition Index in USD (Net)",
+      "categories": ["global", "clean-energy"],
+      "aum": { "amount": 3116505975, "currency": "USD", "asOf": "2026-11-03" },
+      "holdings": { "count": 104, "asOf": "2026-11-02" },
+      "sectors": { "asOf": null, "weights": { "Utilities": 48.56, "Industrials": 29.80, "Information Technology": 19.58, "Energy": 1.54, "Materials": 0.30 } },
+      "shareClasses": [
+        { "isin": "IE00B1XNHC34", "name": "iShares Global Clean Energy Transition UCITS ETF USD (Dist)", "currency": "USD", "distribution": "distributing", "launchDate": "2007-07-06",
+          "fees": { "ter": 0.65 }, "aum": { "amount": 2723814236, "currency": "USD", "asOf": "2026-11-03" },
+          "listings": [["XETR","IQQH","EUR","P"],["XLON","INRG","GBP"],["XMIL","INRG","EUR"],["XSWX","INRG","USD"]] }
+      ]
+    },
+    {
+      "key": "ishares-msci-world-min-vol",
+      "name": "iShares Edge MSCI World Minimum Volatility UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/251382/" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2012-11-30", "baseCurrency": "USD",
+      "assetClass": "equity", "style": "systematic", "replication": "physical_sampling", "index": "msci-world-min-vol", "benchmarkAsPublished": "MSCI WORLD MINIMUM VOLATILITY (USD)",
+      "categories": ["global", "developed", "min-vol"],
+      "aum": { "amount": 2941509765, "currency": "USD", "asOf": "2026-09-11" },
+      "holdings": { "count": 296, "asOf": "2026-09-10" },
+      "sectors": { "asOf": null, "weights": { "Information Technology": 24.49, "Health Care": 14.19, "Financials": 14.05, "Communication": 10.30, "Consumer Staples": 9.73 } },
+      "shareClasses": [
+        { "isin": "IE00B8FHGS14", "name": "iShares Edge MSCI World Minimum Volatility UCITS ETF USD (Acc)", "currency": "USD", "distribution": "accumulating", "hedged": false, "launchDate": "2012-11-30",
+          "fees": { "ter": 0.30 }, "aum": { "amount": 2602971506, "currency": "USD", "asOf": "2026-09-11" },
+          "listings": [["XLON","MVOL","USD","P"],["XLON","MINV","GBP"],["XETR","IQQ0","EUR"],["XMIL","MVOL","EUR"],["XSWX","MVOL","CHF"]] }
+      ]
+    },
+    {
+      "key": "ishares-msci-world-quality",
+      "name": "iShares Edge MSCI World Quality Factor UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/270054/ishares-msci-world-quality-factor-ucits-etf" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2014-10-03", "baseCurrency": "USD",
+      "assetClass": "equity", "style": "systematic", "replication": "physical_sampling", "index": "msci-world-sector-neutral-quality", "benchmarkAsPublished": "MSCI World Sector Neutral Quality Index (Net)",
+      "categories": ["global", "developed", "quality"],
+      "aum": { "amount": 6599202445, "currency": "USD", "asOf": "2026-11-03" },
+      "holdings": { "count": 290, "asOf": "2026-11-02" },
+      "sectors": { "asOf": null, "weights": { "Information Technology": 28.99, "Financials": 16.95, "Industrials": 10.85, "Health Care": 9.92, "Consumer Discretionary": 9.13 } },
+      "shareClasses": [
+        { "isin": "IE00BP3QZ601", "name": "iShares Edge MSCI World Quality Factor UCITS ETF USD (Acc)", "currency": "USD", "distribution": "accumulating", "hedged": false, "launchDate": "2014-10-03",
+          "fees": { "ter": 0.25 }, "aum": null,
+          "listings": [["XLON","IWQU","USD","P"],["XLON","IWFQ","GBP"],["XETR","IS3Q","EUR"],["XMIL","IWQU","EUR"],["XSWX","IWQU","USD"]] }
+      ]
+    },
+    {
+      "key": "ishares-msci-world-value",
+      "name": "iShares Edge MSCI World Value Factor UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/270048/ishares-msci-world-value-factor-ucits-etf" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2014-10-03", "baseCurrency": "USD",
+      "assetClass": "equity", "style": "systematic", "replication": "physical_full", "index": "msci-world-enhanced-value", "benchmarkAsPublished": "MSCI World Enhanced Value index (Net)",
+      "categories": ["global", "developed", "value"],
+      "aum": { "amount": 7512071263, "currency": "USD", "asOf": "2026-11-03" },
+      "holdings": { "count": 390, "asOf": "2026-11-03" },
+      "sectors": { "asOf": "2026-11-02", "weights": { "Information Technology": 30.39, "Financials": 15.73, "Industrials": 10.68, "Health Care": 9.45, "Consumer Discretionary": 8.80 } },
+      "shareClasses": [
+        { "isin": "IE00BP3QZB59", "name": "iShares Edge MSCI World Value Factor UCITS ETF USD (Acc)", "currency": "USD", "distribution": "accumulating", "launchDate": "2014-10-03",
+          "fees": { "ter": 0.25 }, "aum": { "amount": 7078014083, "currency": "USD", "asOf": "2026-11-03" },
+          "listings": [["XLON","IWVL","USD","P"],["XLON","IWFV","GBP"],["XETR","IS3S","EUR"],["XMIL","IWVL","EUR"],["XSWX","IWVL","USD"]] }
+      ]
+    },
+    {
+      "key": "ishares-msci-world-momentum",
+      "name": "iShares Edge MSCI World Momentum Factor UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/270051/ishares-msci-world-momentum-factor-ucits-etf" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2014-10-03", "baseCurrency": "USD",
+      "assetClass": "equity", "style": "systematic", "replication": "physical_sampling", "index": "msci-world-momentum", "benchmarkAsPublished": "MSCI World Momentum index (Net)",
+      "categories": ["global", "developed", "momentum"],
+      "aum": { "amount": 5863539267, "currency": "USD", "asOf": "2026-11-02" },
+      "holdings": { "count": 349, "asOf": "2026-11-02" },
+      "sectors": { "asOf": null, "weights": { "Information Technology": 34.30, "Financials": 16.89, "Energy": 12.37, "Industrials": 11.35, "Health Care": 9.52 } },
+      "shareClasses": [
+        { "isin": "IE00BP3QZ825", "name": "iShares Edge MSCI World Momentum Factor UCITS ETF USD (Acc)", "currency": "USD", "distribution": "accumulating", "hedged": false, "launchDate": null,
+          "fees": { "ter": 0.25 }, "aum": null,
+          "listings": [["XLON","IWMO","USD","P"],["XLON","IWFM","GBP"],["XETR","IS3R","EUR"],["XMIL","IWMO","EUR"],["XSWX","IWMO","USD"]] }
+      ]
+    },
+    {
+      "key": "ishares-core-dax",
+      "name": "iShares Core DAX UCITS ETF (DE)",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/251464/ishares-dax-ucits-etf-de-fund" },
+      "productType": "etf", "ucits": true, "domicile": "DE", "launchDate": "2000-12-27", "baseCurrency": "EUR",
+      "assetClass": "equity", "style": "passive", "replication": "physical_full", "index": "dax", "benchmarkAsPublished": "DAX (Performance index) NET (EUR)",
+      "categories": ["germany", "europe", "large-cap"],
+      "aum": { "amount": 8804798317, "currency": "EUR", "asOf": "2026-11-02" },
+      "holdings": { "count": 40, "asOf": "2026-10-30" },
+      "sectors": { "asOf": null, "weights": { "Industrials": 33.01, "Financials": 21.95, "Information Technology": 15.72, "Health Care": 6.91, "Consumer Discretionary": 6.01 } },
+      "shareClasses": [
+        { "isin": "DE0005933931", "name": "iShares Core DAX UCITS ETF (DE) EUR (Acc)", "currency": "EUR", "distribution": "accumulating", "launchDate": "2000-12-27",
+          "fees": { "ter": 0.16 }, "aum": { "amount": 8728841159, "currency": "EUR", "asOf": "2026-11-02" },
+          "listings": [["XETR","DAXEX","EUR","P"],["XAMS","EXS1","EUR"],["XMIL","EXS1","EUR"],["XSWX","DAXEX","CHF"]] }
+      ]
+    },
+    {
+      "key": "ishares-euro-dividend",
+      "name": "iShares Euro Dividend UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/251787/" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2005-10-28", "baseCurrency": "EUR",
+      "assetClass": "equity", "style": "systematic", "replication": "physical_full", "index": "stoxx-eurozone-select-div-30", "benchmarkAsPublished": "STOXX Eurozone Select Div 30 (EUR)",
+      "categories": ["europe", "high-dividend"],
+      "aum": { "amount": 1613806811, "currency": "EUR", "asOf": "2026-11-03" },
+      "holdings": { "count": 30, "asOf": "2026-11-03" },
+      "sectors": { "asOf": null, "weights": { "Financials": 51.62, "Industrials": 13.19, "Utilities": 8.36, "Consumer Discretionary": 7.13, "Communication": 5.84 } },
+      "shareClasses": [
+        { "isin": "IE00B0M62S72", "name": "iShares Euro Dividend UCITS ETF EUR (Dist)", "currency": "EUR", "distribution": "distributing", "frequency": "quarterly", "launchDate": "2005-10-28",
+          "fees": { "ter": 0.40 }, "aum": { "amount": 1606514817, "currency": "EUR", "asOf": "2026-11-03" },
+          "listings": [["XAMS","IDVY","EUR","P"],["XLON","IDVY","GBP"],["XETR","IQQA","EUR"],["XMIL","IDVY","EUR"],["XSWX","IDVY","CHF"]] }
+      ]
+    },
+    {
+      "key": "ishares-automation-robotics",
+      "name": "iShares Automation & Robotics UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/284219/ishares-automation-robotics-ucits-etf" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2016-09-08", "baseCurrency": "USD",
+      "assetClass": "equity", "style": "passive", "replication": "physical", "index": "stoxx-global-automation-robotics", "benchmarkAsPublished": "Stoxx Global Automation & Robotics Net USD Index",
+      "categories": ["global", "robotics", "technology"],
+      "aum": { "amount": 5489003365, "currency": "USD", "asOf": "2026-11-02" },
+      "holdings": { "count": 159, "asOf": "2026-11-02" },
+      "sectors": { "asOf": null, "weights": { "Information Technology": 70.94, "Industrials": 22.82, "Health Care": 3.01, "Consumer Discretionary": 2.81, "Cash and/or Derivatives": 0.34 } },
+      "shareClasses": [
+        { "isin": "IE00BYZK4552", "name": "iShares Automation & Robotics UCITS ETF USD (Acc)", "currency": "USD", "distribution": "accumulating", "hedged": false, "launchDate": "2016-09-08",
+          "fees": { "ter": 0.40 }, "aum": { "amount": 5150719934, "currency": "USD", "asOf": "2026-11-02" },
+          "listings": [["XLON","RBOT","USD","P"],["XLON","RBTX","GBP"],["XETR","2B76","EUR"],["XAMS","RBOE","EUR"],["XMIL","RBOT","EUR"],["XSWX","RBOT","USD"]] }
+      ]
+    },
+    {
+      "key": "ishares-sp500-health-care",
+      "name": "iShares S&P 500 Health Care Sector UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/280507/" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2015-11-20", "baseCurrency": "USD",
+      "assetClass": "equity", "style": "passive", "replication": "physical_full", "index": "sp-500-health-care-capped", "benchmarkAsPublished": "S&P 500 Capped 35/20 Health Care Index NTR (USD)",
+      "categories": ["us", "healthcare"],
+      "aum": { "amount": 3718771190, "currency": "USD", "asOf": "2026-11-03" },
+      "holdings": { "count": 61, "asOf": "2026-11-03" },
+      "sectors": { "asOf": null, "weights": { "Pharmaceuticals": 37.14, "Biotechnology": 19.99, "Health Care Equipment": 14.45, "Life Sciences Tools & Services": 10.00, "Managed Health Care": 8.03 } },
+      "shareClasses": [
+        { "isin": "IE00B43HR379", "name": "iShares S&P 500 Health Care Sector UCITS ETF USD (Acc)", "currency": "USD", "distribution": "accumulating", "hedged": false, "launchDate": "2015-11-20",
+          "fees": { "ter": 0.15 }, "aum": { "amount": 3569426475, "currency": "USD", "asOf": "2026-11-03" },
+          "listings": [["XLON","IUHC","USD","P"],["XLON","IHCU","GBP"],["XETR","QDVG","EUR"],["XSWX","IUHC","USD"]] }
+      ]
+    },
+    {
+      "key": "ishares-core-ftse-100",
+      "name": "iShares Core FTSE 100 UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://www.ishares.com/uk/individual/en/products/251795/" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2000-04-27", "baseCurrency": "GBP",
+      "assetClass": "equity", "style": "passive", "replication": "physical_full", "index": "ftse-100", "benchmarkAsPublished": "FTSE 100 Index",
+      "categories": ["uk", "europe", "large-cap"],
+      "aum": { "amount": 16177067448, "currency": "GBP", "asOf": "2026-10-02" },
+      "holdings": { "count": 101, "asOf": "2026-10-01" },
+      "shareClasses": [
+        { "isin": "IE0005042456", "name": "iShares Core FTSE 100 UCITS ETF GBP (Dist)", "currency": "GBP", "distribution": "distributing", "frequency": "quarterly", "launchDate": "2000-04-27",
+          "fees": { "ter": 0.07 }, "aum": { "amount": 15951145016, "currency": "GBP", "asOf": "2026-10-02" },
+          "listings": [["XLON","ISF","GBP","P"],["XLON","ISFU","USD"],["XETR","IUSZ","EUR"],["XAMS","ISFA","EUR"],["XMIL","ISF","EUR"],["XSWX","ISF","CHF"]] }
+      ]
+    },
+    {
+      "key": "ishares-msci-world-islamic",
+      "name": "iShares MSCI World Islamic UCITS ETF",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_website", "url": "https://blackrock.com/ch/individual/en/products/251394/ishares-msci-world-islamic-ucits-etf" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2007-12-07", "baseCurrency": "USD",
+      "assetClass": "equity", "style": "systematic", "replication": "physical_full", "index": "msci-world-islamic", "benchmarkAsPublished": "MSCI Developed World Islamic Index (NET) (USD)",
+      "categories": ["global", "developed", "shariah"],
+      "aum": { "amount": 1705365531.61, "currency": "USD", "asOf": "2026-11-03" },
+      "holdings": { "count": 388, "asOf": "2026-11-03" },
+      "shareClasses": [
+        { "isin": "IE00B27YCN58", "name": "iShares MSCI World Islamic UCITS ETF USD (Dist)", "currency": "USD", "distribution": "distributing", "frequency": "semi_annual", "launchDate": "2007-12-07",
+          "fees": { "ter": 0.30 }, "aum": { "amount": 1705365532, "currency": "USD", "asOf": "2026-11-03" }, "yield": { "value": 0.96, "asOf": null },
+          "listings": [["XLON","ISDW","USD","P"],["XLON","ISWD","GBP"],["XETR","IUSD","EUR"],["XSWX","ISWD","USD"]] }
+      ]
+    },
+    {
+      "key": "ishares-smi-ch",
+      "name": "iShares SMI ETF (CH)",
+      "issuer": "ishares",
+      "source": { "kind": "issuer_factsheet", "url": "https://ishares.com/ch/individual/en/literature/fact-sheet/cssmi-ishares-smi-etf-(ch)-fund-fact-sheet-en-ch.pdf" },
+      "productType": "etf", "ucits": null, "domicile": "CH", "launchDate": "1999-10-06", "baseCurrency": "CHF",
+      "assetClass": "equity", "style": "passive", "replication": "physical_full", "index": "smi", "benchmarkAsPublished": "Swiss Market Index (SMI)",
+      "categories": ["switzerland", "europe", "large-cap"],
+      "aum": { "amount": 2066680000, "currency": "CHF", "asOf": "2024-05-31" },
+      "holdings": { "count": 20, "asOf": "2024-05-31" },
+      "feesAsOf": "2024-05-31",
+      "shareClasses": [
+        { "isin": "CH0008899764", "name": "iShares SMI ETF (CH) CHF (Dist)", "currency": "CHF", "distribution": "distributing", "frequency": "ad_hoc", "launchDate": "1999-10-06",
+          "fees": { "ter": 0.35 }, "aum": null,
+          "listings": [["XSWX","CSSMI","CHF","P"]] }
+      ]
+    },
+    {
+      "key": "vanguard-ftse-all-world",
+      "name": "Vanguard FTSE All-World UCITS ETF",
+      "issuer": "vanguard",
+      "source": { "kind": "issuer_website", "url": "https://www.nl.vanguard/professional/product/etf/equity/9679/IE00BK5BQT80" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": null, "baseCurrency": "USD",
+      "assetClass": "equity", "style": "passive", "replication": "physical", "index": "ftse-all-world", "benchmarkAsPublished": "FTSE All-World Index",
+      "categories": ["global", "large-cap"],
+      "aum": { "amount": 88840000000, "currency": "USD", "asOf": null },
+      "holdings": { "count": 3821, "asOf": "2026-09-30" },
+      "countries": { "asOf": null, "weights": { "United States": 62.24, "Japan": 6.06, "Taiwan": 3.54, "United Kingdom": 3.12, "Canada": 2.91 } },
+      "shareClasses": [
+        { "isin": "IE00BK5BQT80", "name": "Vanguard FTSE All-World UCITS ETF USD Accumulating", "currency": "USD", "distribution": "accumulating", "launchDate": "2019-07-23",
+          "fees": { "ocf": 0.14 }, "aum": { "amount": 62190000000, "currency": "USD", "asOf": null },
+          "listings": [["XETR","VWCE","EUR","P"],["XLON","VWRA","USD","","VWRA.LON"],["XLON","VWRP","GBP"],["XAMS","VWCE","EUR"],["XMIL","VWCE","EUR"],["XSWX","VWRA","CHF"]] },
+        { "isin": "IE00B3RBWM25", "name": "Vanguard FTSE All-World UCITS ETF USD Distributing", "currency": "USD", "distribution": "distributing", "frequency": "quarterly", "launchDate": "2012-05-22",
+          "source": { "kind": "issuer_website", "url": "https://www.nl.vanguard/professional/product/etf/equity/9505/IE00B3RBWM25" },
+          "fees": { "ocf": 0.14 }, "aum": { "amount": 26660000000, "currency": "USD", "asOf": null },
+          "listings": [["XAMS","VWRL","EUR","P"],["XLON","VWRL","GBP"],["XLON","VWRD","USD"],["XETR","VGWL","EUR"],["XMIL","VWRL","EUR"],["XSWX","VWRL","CHF"]] }
+      ]
+    },
+    {
+      "key": "vanguard-sp500",
+      "name": "Vanguard S&P 500 UCITS ETF",
+      "issuer": "vanguard",
+      "source": { "kind": "issuer_website", "url": "https://www.nl.vanguard/professional/product/etf/equity/9503/IE00B3XXRP09" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": null, "baseCurrency": "USD",
+      "assetClass": "equity", "style": "passive", "replication": "physical", "index": "sp-500", "benchmarkAsPublished": "S&P 500 Net Total Return",
+      "categories": ["us", "large-cap"],
+      "aum": { "amount": 89400000000, "currency": "USD", "asOf": null },
+      "holdings": { "count": 504, "asOf": "2026-09-30" },
+      "countries": { "asOf": null, "weights": { "United States": 100.00 } },
+      "shareClasses": [
+        { "isin": "IE00B3XXRP09", "name": "Vanguard S&P 500 UCITS ETF USD Distributing", "currency": "USD", "distribution": "distributing", "frequency": "quarterly", "launchDate": "2012-05-22",
+          "fees": { "ocf": 0.07 }, "aum": { "amount": 52410000000, "currency": "USD", "asOf": null },
+          "listings": [["XAMS","VUSA","EUR","P"],["XLON","VUSA","GBP"],["XLON","VUSD","USD"],["XETR","VUSA","EUR"],["XMIL","VUSA","EUR"],["XSWX","VUSA","CHF"]] },
+        { "isin": "IE00BFMXXD54", "name": "Vanguard S&P 500 UCITS ETF USD Accumulating", "currency": "USD", "distribution": "accumulating", "launchDate": "2019-05-14",
+          "source": { "kind": "issuer_website", "url": "https://www.de.vanguard/professionell/anlageprodukte/etf/aktien/9694/sp-500-ucits-etf-usd-accumulating" },
+          "fees": { "ocf": 0.07 }, "aum": { "amount": 37000000000, "currency": "USD", "asOf": null },
+          "listings": [["XETR","VUAA","EUR","P"],["XLON","VUAA","USD"],["XLON","VUAG","GBP"],["XMIL","VUAA","EUR"]] }
+      ]
+    },
+    {
+      "key": "vanguard-ftse-em",
+      "name": "Vanguard FTSE Emerging Markets UCITS ETF",
+      "issuer": "vanguard",
+      "source": { "kind": "issuer_website", "url": "https://www.nl.vanguard/professional/product/etf/equity/9507/IE00B3VVMM84" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": null, "baseCurrency": "USD",
+      "assetClass": "equity", "style": "passive", "replication": "physical", "index": "ftse-emerging", "benchmarkAsPublished": "FTSE Emerging Index",
+      "categories": ["emerging"],
+      "aum": { "amount": 5850000000, "currency": "USD", "asOf": null },
+      "holdings": { "count": 2321, "asOf": "2026-09-30" },
+      "countries": { "asOf": null, "weights": { "Taiwan": 35.36, "China": 26.66, "India": 15.07, "Brazil": 4.48, "South Africa": 3.66 } },
+      "shareClasses": [
+        { "isin": "IE00B3VVMM84", "name": "Vanguard FTSE Emerging Markets UCITS ETF USD Distributing", "currency": "USD", "distribution": "distributing", "frequency": "quarterly", "launchDate": "2012-05-22",
+          "fees": { "ocf": 0.17 }, "aum": { "amount": 3410000000, "currency": "USD", "asOf": null },
+          "listings": [["XAMS","VFEM","EUR","P"],["XLON","VFEM","GBP"],["XLON","VDEM","USD"],["XETR","VFEM","EUR"],["XMIL","VFEM","EUR"],["XSWX","VFEM","CHF"]] }
+      ]
+    },
+    {
+      "key": "vanguard-ftse-dev-europe",
+      "name": "Vanguard FTSE Developed Europe UCITS ETF",
+      "issuer": "vanguard",
+      "source": { "kind": "issuer_website", "url": "https://www.nl.vanguard/professional/product/etf/equity/9520/IE00B945VV12" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": null, "baseCurrency": "EUR",
+      "assetClass": "equity", "style": "passive", "replication": "physical", "index": "ftse-developed-europe", "benchmarkAsPublished": "FTSE Developed Europe Index",
+      "categories": ["europe", "large-cap"],
+      "aum": { "amount": 8080000000, "currency": "EUR", "asOf": null },
+      "holdings": { "count": 509, "asOf": "2026-09-30" },
+      "countries": { "asOf": null, "weights": { "United Kingdom": 22.84, "France": 14.09, "Switzerland": 14.05, "Germany": 13.29, "Netherlands": 8.75 } },
+      "shareClasses": [
+        { "isin": "IE00B945VV12", "name": "Vanguard FTSE Developed Europe UCITS ETF EUR Distributing", "currency": "EUR", "distribution": "distributing", "frequency": "quarterly", "launchDate": "2013-05-21",
+          "fees": { "ocf": 0.10 }, "aum": { "amount": 4840000000, "currency": "EUR", "asOf": null },
+          "listings": [["XAMS","VEUR","EUR","P"],["XLON","VEUR","GBP"],["XLON","VEUD","USD"],["XETR","VGEU","EUR"],["XMIL","VEUR","EUR"],["XSWX","VEUR","CHF"]] }
+      ]
+    },
+    {
+      "key": "vanguard-ftse-dev-world",
+      "name": "Vanguard FTSE Developed World UCITS ETF",
+      "issuer": "vanguard",
+      "source": { "kind": "issuer_website", "url": "https://www.nl.vanguard/professional/product/etf/equity/9675/IE00BK5BQV03" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": null, "baseCurrency": "USD",
+      "assetClass": "equity", "style": "passive", "replication": "physical", "index": "ftse-developed", "benchmarkAsPublished": "FTSE Developed Index",
+      "categories": ["global", "developed", "large-cap"],
+      "aum": { "amount": 11530000000, "currency": "USD", "asOf": null },
+      "holdings": { "count": 1910, "asOf": "2026-09-30" },
+      "countries": { "asOf": null, "weights": { "United States": 69.16, "Japan": 6.73, "United Kingdom": 3.45, "Canada": 3.23, "South Korea": 2.89 } },
+      "shareClasses": [
+        { "isin": "IE00BK5BQV03", "name": "Vanguard FTSE Developed World UCITS ETF USD Accumulating", "currency": "USD", "distribution": "accumulating", "launchDate": "2019-09-24",
+          "fees": { "ocf": 0.12 }, "aum": { "amount": 6850000000, "currency": "USD", "asOf": null },
+          "listings": [["XETR","VGVF","EUR","P"],["XLON","VHVE","USD"],["XLON","VHVG","GBP"],["XMIL","VHVE","EUR"]] }
+      ]
+    },
+    {
+      "key": "vaneck-semiconductor",
+      "name": "VanEck Semiconductor UCITS ETF",
+      "issuer": "vaneck",
+      "source": { "kind": "issuer_website", "url": "https://www.vaneck.com/ch/fr/investments/exchange-traded-funds/equity/uctsmh-vaneck-semiconductor-ucits-etf/fact-sheet" },
+      "productType": "etf", "ucits": true, "domicile": "IE", "launchDate": "2020-12-01", "baseCurrency": "USD",
+      "assetClass": "equity", "style": "passive", "replication": "physical_full", "index": "mvis-us-listed-semiconductor", "benchmarkAsPublished": "MarketVector US Listed Semiconductor 10% Capped Screened Index (MVSMCTR)",
+      "categories": ["us", "semiconductors", "technology"],
+      "aum": { "amount": 9589700000, "currency": "USD", "asOf": "2026-09-30" },
+      "holdings": { "count": 25, "asOf": null },
+      "shareClasses": [
+        { "isin": "IE00BMC38736", "name": "VanEck Semiconductor UCITS ETF", "currency": "USD", "distribution": "accumulating", "launchDate": "2020-12-01",
+          "fees": { "ter": 0.35 }, "aum": null,
+          "listings": [["XLON","SMH","USD","P"],["XLON","SMGB","GBP"],["XETR","VVSM","EUR"],["XMIL","SMH","EUR"],["XPAR","SMH","EUR"],["XSWX","SMHV","CHF"]] }
+      ]
+    },
+    {
+      "key": "amundi-msci-world-swap",
+      "name": "Amundi MSCI World Swap UCITS ETF",
+      "issuer": "amundi",
+      "source": { "kind": "issuer_factsheet", "url": "https://www.amundietf.de/pdfDocuments/monthly-factsheet/LU1681043599/DEU/DEU/INSTITUTIONNEL/ETF/20260930" },
+      "productType": "etf", "ucits": true, "domicile": null, "launchDate": "2009-06-16", "baseCurrency": null,
+      "assetClass": "equity", "style": "passive", "replication": "synthetic_swap", "index": "msci-world", "benchmarkAsPublished": "100% MSCI WORLD",
+      "categories": ["global", "developed", "large-cap"],
+      "aum": { "amount": 7199850000, "currency": "EUR", "asOf": "2026-09-30" },
+      "feesAsOf": "2026-09-30",
+      "shareClasses": [
+        { "isin": "LU1681043599", "name": "Amundi MSCI World Swap UCITS ETF EUR Acc", "currency": "EUR", "distribution": "accumulating", "launchDate": "2018-04-18",
+          "fees": { "ter": 0.38 }, "aum": null,
+          "listings": [["XPAR","CW8",null,"P"],["XETR","AMEW",null],["XETR","AMEX","USD"],["XMIL","CW8",null],["XSWX","CW8E",null]] }
+      ]
+    },
+    {
+      "key": "amundi-cac-40",
+      "name": "Amundi CAC 40 UCITS ETF",
+      "issuer": "amundi",
+      "source": { "kind": "issuer_factsheet", "url": "https://www.amundietf.de/pdfDocuments/monthly-factsheet/FR0007052782/DEU/DEU/INSTITUTIONNEL/ETF/20260930" },
+      "productType": "etf", "ucits": true, "domicile": "FR", "launchDate": "2000-12-13", "baseCurrency": "EUR",
+      "assetClass": "equity", "style": "passive", "replication": "physical", "index": "cac-40", "benchmarkAsPublished": "100% CAC 40 Gross Total Return Index (EUR)",
+      "categories": ["france", "europe", "large-cap"],
+      "aum": { "amount": 4179470000, "currency": "EUR", "asOf": "2026-09-30" },
+      "holdings": { "count": 40, "asOf": "2026-09-30" },
+      "feesAsOf": "2026-09-30",
+      "shareClasses": [
+        { "isin": "FR0007052782", "name": "Amundi CAC 40 UCITS ETF Dist", "currency": "EUR", "distribution": "distributing", "launchDate": "2019-09-05",
+          "fees": { "ter": 0.25 }, "aum": null,
+          "listings": [["XPAR","CAC","EUR","P"],["XLON","CACX","GBP"]] }
+      ]
+    },
+    {
+      "key": "invesco-msci-world",
+      "name": "Invesco MSCI World UCITS ETF",
+      "issuer": "invesco",
+      "source": { "kind": "issuer_website", "url": "https://www.invesco.com/uk/en/financial-products/etfs/invesco-msci-world-ucits-etf-acc.html" },
+      "productType": "etf", "ucits": true, "domicile": null, "launchDate": null, "baseCurrency": null,
+      "assetClass": "equity", "style": "passive", "replication": "synthetic_swap", "index": "msci-world", "benchmarkAsPublished": null,
+      "categories": ["global", "developed", "large-cap"],
+      "aum": null,
+      "shareClasses": [
+        { "isin": "IE00B60SX394", "name": "Invesco MSCI World UCITS ETF Acc", "currency": null, "distribution": "accumulating", "launchDate": "2009-04-02",
+          "fees": {}, "aum": null,
+          "listings": [["XLON","MXWS",null,"P"]] }
+      ]
+    },
+    {
+      "key": "invesco-sp500",
+      "name": "Invesco S&P 500 UCITS ETF",
+      "issuer": "invesco",
+      "source": { "kind": "issuer_website", "url": "https://www.invesco.com/uk/en/financial-products/etfs/invesco-sp-500-ucits-etf-acc.html" },
+      "productType": "etf", "ucits": true, "domicile": null, "launchDate": null, "baseCurrency": null,
+      "assetClass": "equity", "style": "passive", "replication": "synthetic_swap", "index": "sp-500", "benchmarkAsPublished": null,
+      "categories": ["us", "large-cap"],
+      "aum": null,
+      "shareClasses": [
+        { "isin": "IE00B3YCGJ38", "name": "Invesco S&P 500 UCITS ETF Acc", "currency": null, "distribution": "accumulating", "launchDate": "2010-05-20",
+          "fees": {}, "aum": null,
+          "listings": [["XLON","SPXS",null,"P"]] }
+      ]
+    }
+  ]
+}
