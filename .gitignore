@@ -1,0 +1,11 @@
+node_modules
+.next
+.env
+.env.local
+*.tsbuildinfo
+next-env.d.ts
+test-results
+# Free-tier vendor data: personal use only, must not be published (docs/DATA_SOURCES.md).
+data/seed/prices/
+supabase/seed.sql
+playwright-report
