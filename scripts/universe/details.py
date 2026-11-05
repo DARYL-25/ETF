@@ -76,6 +76,16 @@ def amundi():
         found += 1
     return {"wanted": len(wanted), "tried": min(limit, len(wanted)), "found": found, "no_factsheet": missing}
 
+sample = os.environ.get("SAMPLE_ISINS")
+if sample:
+    import pdfplumber
+    for isin in sample.split(","):
+        blob = get(f"https://www.amundietf.de/pdfDocuments/monthly-factsheet/{isin}/DEU/DEU/INSTITUTIONNEL/ETF/20260930")
+        with pdfplumber.open(io.BytesIO(blob)) as p:
+            (OUT / "details" / f"sample_{isin}.txt").write_text("\n".join((pg.extract_text() or "") for pg in p.pages[:3]))
+        time.sleep(1)
+    raise SystemExit(0)
+
 for name, fn in {"ssga_us": ssga_us, "amundi": amundi}.items():
     try:
         report[name] = {"ok": True, "result": fn()}
