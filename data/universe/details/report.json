@@ -1,8 +1,18 @@
 {
  "ssga_us": {
-  "ok": true
+  "ok": true,
+  "result": 160
  },
  "amundi": {
-  "ok": true
- }
+  "ok": true,
+  "result": {
+   "wanted": 1132,
+   "tried": 25,
+   "found": 17,
+   "no_factsheet": 8
+  }
+ },
+ "fees": 161,
+ "fund_size": 177,
+ "on": "2026-11-05"
 }
