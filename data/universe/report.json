@@ -19,13 +19,14 @@
  },
  "japan": {
   "ok": false,
-  "error": "RuntimeError: Could not read JPX table, page starts: <!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head prefix=\"og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# article: http://ogp.me/ns/article#\">\r\n\r\n<meta charset=\"UTF-8\">\r\n<meta name=\"viewport\" content=\"width=dev",
-  "trace": "er/work/ETF/ETF/scripts/universe/fetch.py\", line 84, in japan\n    if not rows: raise RuntimeError(f\"Could not read JPX table, page starts: {html[:200]}\")\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Could not read JPX table, page starts: <!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head prefix=\"og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# article: http://ogp.me/ns/article#\">\r\n\r\n<meta charset=\"UTF-8\">\r\n<meta name=\"viewport\" content=\"width=dev\n"
+  "error": "XLRDError: Excel xlsx file; not supported",
+  "trace": "e 198, in main\n    rows = fn()\n           ^^^^\n  File \"/home/runner/work/ETF/ETF/scripts/universe/fetch.py\", line 85, in japan\n    sheet = xlrd.open_workbook(file_contents=blob).sheet_by_index(0)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/xlrd/__init__.py\", line 170, in open_workbook\n    raise XLRDError(FILE_FORMAT_DESCRIPTIONS[file_format]+'; not supported')\nxlrd.biffh.XLRDError: Excel xlsx file; not supported\n"
  },
  "hongkong": {
-  "ok": false,
-  "error": "RuntimeError: categories=['Equity']",
-  "trace": "Traceback (most recent call last):\n  File \"/home/runner/work/ETF/ETF/scripts/universe/fetch.py\", line 180, in main\n    rows = fn()\n           ^^^^\n  File \"/home/runner/work/ETF/ETF/scripts/universe/fetch.py\", line 100, in hongkong\n    if not rows: raise RuntimeError(f\"categories={sorted(seen)[:15]}\")\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: categories=['Equity']\n"
+  "ok": true,
+  "rows": 450,
+  "distinct_isin": 281,
+  "on": "2026-11-05"
  },
  "india": {
   "ok": true,
@@ -54,7 +55,7 @@
  "china_sz": {
   "ok": false,
   "error": "URLError: <urlopen error [Errno 104] Connection reset by peer>",
-  "trace": " 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/urllib/request.py\", line 1405, in https_open\n    return self.do_open(http.client.HTTPSConnection, req,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/urllib/request.py\", line 1360, in do_open\n    raise URLError(err)\nurllib.error.URLError: <urlopen error [Errno 104] Connection reset by peer>\n"
+  "trace": " 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/urllib/request.py\", line 1405, in https_open\n    return self.do_open(http.client.HTTPSConnection, req,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/urllib/request.py\", line 1360, in do_open\n    raise URLError(err)\nurllib.error.URLError: <urlopen error [Errno 104] Connection reset by peer>\n"
  },
  "korea": {
   "ok": true,
@@ -71,11 +72,15 @@
  "australia": {
   "ok": false,
   "error": "HTTPError: HTTP Error 404: Not Found",
-  "trace": "b/python3.12/urllib/request.py\", line 559, in error\n    return self._call_chain(*args)\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/urllib/request.py\", line 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/urllib/request.py\", line 639, in http_error_default\n    raise HTTPError(req.full_url, code, msg, hdrs, fp)\nurllib.error.HTTPError: HTTP Error 404: Not Found\n"
+  "trace": "b/python3.12/urllib/request.py\", line 559, in error\n    return self._call_chain(*args)\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/urllib/request.py\", line 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/urllib/request.py\", line 639, in http_error_default\n    raise HTTPError(req.full_url, code, msg, hdrs, fp)\nurllib.error.HTTPError: HTTP Error 404: Not Found\n"
  },
  "gleif": {
   "ok": true,
   "rows": 6889,
   "wanted": 6889
+ },
+ "ishares_details": {
+  "ok": false,
+  "error": "HTTPError: HTTP Error 404: Not Found"
  }
 }
