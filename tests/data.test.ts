@@ -140,6 +140,13 @@ describe("database", () => {
     expect(rows[0]).toEqual({ ter_pct: null, ocf_pct: 0.14, headline_fee_type: "ocf" });
   });
 
+  it("prefers official NAV returns and keeps top holdings", async () => {
+    const { rows } = await db.query<{ return_1y: number; nav: number }>("select return_1y, nav from public.etf_overview where isin = 'IE00B5BMR087'");
+    expect(rows[0]).toEqual({ return_1y: 15.47, nav: 816.9 });
+    const top = await db.query("select * from public.fund_top_holdings");
+    expect(top.rows.length).toBeGreaterThanOrEqual(35);
+  });
+
   it("keeps missing facts missing", async () => {
     const { rows } = await db.query<{ headline_fee_pct: number | null; fund_aum: number | null }>(
       "select headline_fee_pct, fund_aum from public.etf_overview where isin = 'IE00B60SX394'",

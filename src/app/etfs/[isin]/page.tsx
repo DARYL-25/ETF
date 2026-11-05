@@ -5,7 +5,7 @@ import { CompareToggle } from "@/components/compare-tray";
 import { AsOf, Change, EtfName, Fee } from "@/components/etf-bits";
 import { FeeRuler } from "@/components/fee-ruler";
 import { PriceChart } from "@/components/price-chart";
-import { getBondMetrics, getEtf, getExposures, getFeePoints, getListings, getPriceSeries, getSimilarEtfs } from "@/lib/etfs/queries";
+import { getBondMetrics, getEtf, getExposures, getFeePoints, getListings, getPriceSeries, getSimilarEtfs, getTopHoldings } from "@/lib/etfs/queries";
 import { MISSING, assetClassLabel, countryName, distributionLabel, formatDate, formatMoney, formatPct, frequencyLabel, productLabel, replicationLabel, styleLabel, yesNoUnknown } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -59,8 +59,8 @@ export default async function EtfPage({ params }: Props) {
   const row = await getEtf((await params).isin);
   if (!row) notFound();
 
-  const [listings, exposures, bond, series, similar, feePoints] = await Promise.all([
-    getListings(row.isin), getExposures(row.fund_key), getBondMetrics(row.fund_key), getPriceSeries(row.isin), getSimilarEtfs(row), getFeePoints(),
+  const [listings, exposures, bond, series, similar, feePoints, topHoldings] = await Promise.all([
+    getListings(row.isin), getExposures(row.fund_key), getBondMetrics(row.fund_key), getPriceSeries(row.isin), getSimilarEtfs(row), getFeePoints(), getTopHoldings(row.fund_key),
   ]);
   const sectors = exposures.filter((x) => x.dimension === "sector");
   const countries = exposures.filter((x) => x.dimension === "country");
@@ -118,6 +118,21 @@ export default async function EtfPage({ params }: Props) {
       </Section>
 
       <Section id="performance" title="Historical performance">
+        {row.nav_return_1y !== null ? (
+          <div className="mb-5">
+            <Facts items={[
+              ["1 year", <Change key="1" value={row.nav_return_1y} />],
+              ["3 years, per year", <Change key="3" value={row.nav_return_3y} />],
+              ["5 years, per year", <Change key="5" value={row.nav_return_5y} />],
+              ["Since launch, per year", <Change key="s" value={row.nav_return_si} />],
+              ["Latest NAV", row.nav !== null ? `${row.nav.toFixed(2)} ${row.nav_currency} on ${formatDate(row.nav_as_of)}` : MISSING],
+            ]} />
+            <p className="mt-2 max-w-[72ch] text-[0.85rem] text-muted">
+              Official NAV returns in {row.currency}, income reinvested, to {formatDate(row.nav_return_as_of)}.{" "}
+              <a className="prose-link" href={row.nav_return_source_url ?? "#"} target="_blank" rel="noreferrer">Issuer factsheet</a>. Past performance does not predict future returns.
+            </p>
+          </div>
+        ) : null}
         {row.market_return_1y !== null ? (
           <>
             <Facts items={[
@@ -129,7 +144,7 @@ export default async function EtfPage({ params }: Props) {
               Change in market price between monthly closes, to {formatDate(row.market_return_as_of)}, in the trading currency above. This fund reinvests income, so price captures dividends after fund costs, but this is not an official NAV total return. Past performance does not predict future returns.
             </p>
           </>
-        ) : <Note>No performance figures yet, because they are calculated from price history.</Note>}
+        ) : row.nav_return_1y === null ? <Note>No performance figures loaded for this ETF yet.</Note> : null}
       </Section>
 
       <Section id="risk" title="Risk metrics">
@@ -155,6 +170,13 @@ export default async function EtfPage({ params }: Props) {
           ...(metric("yield_to_maturity") ? [["Yield to maturity", formatPct(metric("yield_to_maturity")!.value)] as [string, string]] : []),
         ]} />
         <p className="mt-2"><AsOf date={row.holdings_as_of} retrieved={retrieved} /></p>
+        {topHoldings.length ? (
+          <div className="mt-4 max-w-xl">
+            <h3 className="mb-1 text-[1.1rem]">Largest holdings</h3>
+            <Bars rows={topHoldings.map((h) => ({ label: h.name, weight_pct: h.weight_pct }))} />
+            <p className="mt-1"><AsOf date={topHoldings[0].as_of} /></p>
+          </div>
+        ) : null}
         <p className="mt-2 max-w-[68ch] text-muted">Full holdings lists are not loaded yet.</p>
       </Section>
 

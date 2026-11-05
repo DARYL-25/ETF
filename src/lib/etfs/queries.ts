@@ -48,6 +48,17 @@ export type EtfRow = {
   market_return_3y: number | null;
   market_return_5y: number | null;
   market_return_as_of: string | null;
+  nav_return_1y: number | null;
+  nav_return_3y: number | null;
+  nav_return_5y: number | null;
+  nav_return_si: number | null;
+  nav_return_as_of: string | null;
+  nav_return_source_url: string | null;
+  nav: number | null;
+  nav_currency: string | null;
+  nav_as_of: string | null;
+  return_1y: number | null;
+  return_3y: number | null;
   category_slugs: string[];
   category_labels: string[];
   source_url: string;
@@ -285,4 +296,14 @@ export const getFeePoints = () =>
 export const getDataSources = () =>
   query<{ kind: string; publisher: string; url: string; retrieved_on: string; licence_note: string | null }>(
     "select kind, publisher, url, retrieved_on::text, licence_note from public.data_sources order by publisher, url",
+  );
+
+export type TopHolding = { name: string; weight_pct: number; as_of: string | null };
+
+export const getTopHoldings = (fundKey: string) =>
+  query<TopHolding>(
+    `select h.name, h.weight_pct, h.as_of::text from public.fund_top_holdings h join public.funds f on f.id = h.fund_id
+     where f.key = $1 and h.observed_on = (select max(y.observed_on) from public.fund_top_holdings y where y.fund_id = f.id)
+     order by h.weight_pct desc`,
+    [fundKey],
   );

@@ -18,6 +18,20 @@ The database is the business, so this is the main risk. **Nothing below is legal
 | Monthly prices for 3 ETFs | Alpha Vantage free tier | **Not in this repository.** [Terms](https://www.alphavantage.co/terms_of_service/) limit it to personal, non-commercial use, and allowing others to access the data counts as commercial |
 | Index names and descriptions | Our own wording | Names are trademarks of their owners. Index levels and constituents are not loaded |
 
+## The free data plan
+
+Decided 5 Nov 2026: build without paying for data.
+
+| Need | Free source | State |
+|---|---|---|
+| Fund facts, fees | Issuer pages and factsheets | Working |
+| Official NAV returns, top holdings | Issuer factsheets | Working, 5 ETFs loaded so far. Better than price-derived returns |
+| Latest NAV | Issuer product pages | Working for iShares, 1 ETF loaded |
+| Daily market prices, charts | Yahoo Finance via `scripts/ingest-yahoo.ts` and a nightly GitHub Action | Written, **never run against Yahoo**, because this build environment cannot reach it. Yahoo's robots rules also blocked the assistant's own reader |
+| Live exchange quotes | Euronext and LSE pages show no values without running their scripts; SIX did not load | Not working, not built |
+
+Risk accepted knowingly: [yfinance's README](https://github.com/ranaroussi/yfinance) says the Yahoo API is intended for personal use only, and it can change or block without notice. Fine for building and private testing. If the site charges money, replace Yahoo first: only `src/lib/etfs/yahoo.ts` and the script need changing. Prices live in the database, not in this public repository.
+
 ## Limits to plan around
 
 - **justETF, Morningstar and similar sites.** Useful for finding which funds exist, but copying their tables risks the EU database right, even though single facts are free. No data was taken from them.

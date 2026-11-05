@@ -189,6 +189,30 @@ export function buildSeedSql(root: string): string {
     }
   }
 
+  // Official NAV figures and top holdings from issuer factsheets.
+  const sheets = JSON.parse(readFileSync(join(root, "data/seed/factsheets.json"), "utf8"));
+  for (const r of sheets.records) {
+    const owner = funds.funds.find((f) => f.shareClasses.some((sc) => sc.isin === r.isin));
+    if (!owner) throw new Error(`Factsheet for unknown ISIN ${r.isin}`);
+    const addSheetSource = (url: string, kind: string) => {
+      if (seenSources.has(url)) return;
+      seenSources.add(url);
+      out.push(`insert into public.data_sources (kind, publisher, url, retrieved_on) values (${q(kind)}, ${q(publisher.get(owner.issuer))}, ${q(url)}, ${q(sheets.retrievedOn)});`);
+    };
+    addSheetSource(r.url, "issuer_factsheet");
+    const src = sourceId(r.url);
+    const insertMetric = (metric: string, value: number, unit: string, asOf: string, srcSql: string) =>
+      out.push(`insert into public.metric_observations (fund_id, share_class_id, metric, value, unit, as_of, observed_on, source_id, verification) values (${fundId(owner.key)}, ${classId(r.isin)}, ${q(metric)}, ${q(value)}, ${q(unit)}, ${q(asOf)}, ${q(sheets.retrievedOn)}, ${srcSql}, ${verified});`);
+    for (const [period, value] of Object.entries(r.returns)) insertMetric(`nav_return_${period}`, value as number, "percent", r.asOf, src);
+    if (r.nav) {
+      addSheetSource(r.nav.url, "issuer_website");
+      insertMetric("nav", r.nav.value, r.nav.currency, r.nav.asOf, sourceId(r.nav.url));
+    }
+    for (const [name, weight] of Object.entries(r.top)) {
+      out.push(`insert into public.fund_top_holdings (fund_id, name, weight_pct, as_of, observed_on, source_id) values (${fundId(owner.key)}, ${q(name)}, ${q(weight)}, ${q(r.asOf)}, ${q(sheets.retrievedOn)}, ${src});`);
+    }
+  }
+
   out.push("commit;");
   return out.join("\n") + "\n";
 }

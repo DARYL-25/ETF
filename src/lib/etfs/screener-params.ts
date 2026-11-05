@@ -11,8 +11,8 @@ export const SORT_COLUMNS = {
   replication: "replication",
   fee: "headline_fee_pct",
   aum: "fund_aum_eur",
-  return1y: "market_return_1y",
-  return3y: "market_return_3y",
+  return1y: "return_1y",
+  return3y: "return_3y",
   yield: "trailing_yield_pct",
   currency: "currency",
 } as const;
@@ -25,8 +25,8 @@ export const OPTIONAL_COLUMNS = [
   { key: "index", label: "Index" },
   { key: "domicile", label: "Domicile" },
   { key: "replication", label: "Replication" },
-  { key: "return1y", label: "1Y price" },
-  { key: "return3y", label: "3Y price p.a." },
+  { key: "return1y", label: "1Y return" },
+  { key: "return3y", label: "3Y return p.a." },
   { key: "yield", label: "Yield" },
   { key: "currency", label: "Currency" },
 ] as const;

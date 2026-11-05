@@ -36,6 +36,13 @@ const groups: { title: string; rows: Row[] }[] = [
     { label: "OCF", render: (r) => formatPct(r.ocf_pct) },
     { label: "Transaction costs", render: () => MISSING },
   ] },
+  { title: "Official NAV return", rows: [
+    { label: "1 year", render: (r) => <Change value={r.nav_return_1y} /> },
+    { label: "3 years, per year", render: (r) => <Change value={r.nav_return_3y} /> },
+    { label: "5 years, per year", render: (r) => <Change value={r.nav_return_5y} /> },
+    { label: "Since launch, per year", render: (r) => <Change value={r.nav_return_si} /> },
+    { label: "Calculated to", render: (r) => formatDate(r.nav_return_as_of) },
+  ] },
   { title: "Market price change", rows: [
     { label: "1 year", render: (r) => <Change value={r.market_return_1y} /> },
     { label: "3 years, per year", render: (r) => <Change value={r.market_return_3y} /> },

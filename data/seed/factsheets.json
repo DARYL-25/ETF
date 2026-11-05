@@ -1,0 +1,22 @@
+{
+  "note": "Official figures read from issuer factsheets and product pages. NAV returns are annualised, in the share class currency, with income reinvested.",
+  "retrievedOn": "2026-11-05",
+  "records": [
+    { "isin": "IE00B5BMR087", "url": "https://www.ishares.com/uk/individual/en/literature/fact-sheet/cspx-ishares-core-s-p-500-ucits-etf-fund-fact-sheet-en-gb.pdf", "asOf": "2026-09-30",
+      "returns": { "1y": 15.47, "3y": 22.57, "5y": 13.48, "si": 14.16 },
+      "nav": { "value": 816.90, "currency": "USD", "asOf": "2026-11-03", "url": "https://www.ishares.com/uk/individual/en/products/253743/" },
+      "top": { "NVIDIA": 8.37, "Apple": 7.36, "Microsoft": 5.77, "Amazon.com": 3.70, "Alphabet Class A": 3.06, "Broadcom": 2.53, "Alphabet Class C": 2.45, "Meta Platforms Class A": 2.42, "Micron Technology": 1.82, "Tesla": 1.51 } },
+    { "isin": "IE00B4L5Y983", "url": "https://www.ishares.com/uk/individual/en/literature/fact-sheet/swda-ishares-core-msci-world-ucits-etf-fund-fact-sheet-en-gb.pdf", "asOf": "2026-09-30",
+      "returns": { "1y": 15.25, "3y": 21.43, "5y": 11.95, "si": 11.03 },
+      "top": { "NVIDIA": 5.79, "Apple": 5.39, "Microsoft": 3.99, "Amazon.com Inc": 2.66, "Alphabet Class A": 2.23 } },
+    { "isin": "IE00BKM4GZ66", "url": "https://www.ishares.com/uk/individual/en/literature/fact-sheet/eimi-ishares-core-msci-em-imi-ucits-etf-fund-fact-sheet-en-gb.pdf", "asOf": "2026-09-30",
+      "returns": { "1y": 27.19, "3y": 22.95, "5y": 8.80, "si": 6.65 },
+      "top": { "Taiwan Semiconductor Manufacturing": 13.68, "Samsung Electronics": 6.61, "SK Hynix": 5.16, "Tencent Holdings": 2.40, "Alibaba Group Holding": 1.62 } },
+    { "isin": "IE00BK5BQT80", "url": "https://fund-docs.vanguard.com/FTSE_All-World_UCITS_ETF_USD_Accumulating_9679_NETH_INT_EN.pdf", "asOf": "2026-09-30",
+      "returns": { "1y": 16.71, "3y": 21.65, "5y": 11.56, "si": 12.93 },
+      "top": { "NVIDIA Corp.": 5.0, "Apple Inc.": 4.5, "Microsoft Corp.": 3.6, "Alphabet Inc.": 3.4, "Amazon.com Inc.": 2.3 } },
+    { "isin": "IE00BFMXXD54", "url": "https://fund-docs.vanguard.com/SandP_500_UCITS_ETF_USD_Accumulating_9694_NETH_INT_EN.pdf", "asOf": "2026-09-30",
+      "returns": { "1y": 15.46, "3y": 22.57, "5y": 13.48, "si": 15.84 },
+      "top": { "NVIDIA Corp.": 8.4, "Apple Inc.": 7.4, "Microsoft Corp.": 5.8, "Alphabet Inc.": 5.5, "Amazon.com Inc.": 3.7, "Broadcom Inc.": 2.5, "Meta Platforms Inc.": 2.4, "Micron Technology Inc.": 1.8, "Tesla Inc.": 1.5, "Advanced Micro Devices Inc.": 1.5 } }
+  ]
+}

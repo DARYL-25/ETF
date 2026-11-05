@@ -148,8 +148,8 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
                     {show("replication") ? <SortHeader params={params} sort="replication" label="Replication" /> : null}
                     <SortHeader params={params} sort="fee" label="Yearly fee" numeric />
                     <SortHeader params={params} sort="aum" label="Fund size" numeric />
-                    {show("return1y") ? <SortHeader params={params} sort="return1y" label="1Y price" numeric className={phoneHide} /> : null}
-                    {show("return3y") ? <SortHeader params={params} sort="return3y" label="3Y price p.a." numeric className={phoneHide} /> : null}
+                    {show("return1y") ? <SortHeader params={params} sort="return1y" label="1Y return" numeric className={phoneHide} /> : null}
+                    {show("return3y") ? <SortHeader params={params} sort="return3y" label="3Y return p.a." numeric className={phoneHide} /> : null}
                     {show("yield") ? <SortHeader params={params} sort="yield" label="Yield" numeric /> : null}
                     {show("currency") ? <SortHeader params={params} sort="currency" label="Currency" /> : null}
                   </tr>
@@ -169,8 +169,8 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
                       {show("replication") ? <td className="whitespace-nowrap">{replicationLabel(row.replication)}</td> : null}
                       <td className="num"><Fee row={row} /></td>
                       <td className="num whitespace-nowrap">{formatMoney(row.fund_aum, row.fund_aum_currency)}</td>
-                      {show("return1y") ? <td className={`num ${phoneHide}`}><Change value={row.market_return_1y} /></td> : null}
-                      {show("return3y") ? <td className={`num ${phoneHide}`}><Change value={row.market_return_3y} /></td> : null}
+                      {show("return1y") ? <td className={`num ${phoneHide}`}><Change value={row.return_1y} /></td> : null}
+                      {show("return3y") ? <td className={`num ${phoneHide}`}><Change value={row.return_3y} /></td> : null}
                       {show("yield") ? <td className="num">{formatPct(row.trailing_yield_pct)}</td> : null}
                       {show("currency") ? <td>{row.currency ?? "—"}</td> : null}
                     </tr>
@@ -187,7 +187,7 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
             </nav>
           ) : null}
           <p className="mt-4 max-w-[72ch] text-[0.85rem] text-muted">
-            A dash means we have no verified figure yet. Fund size is the whole fund, shown in the issuer&apos;s currency. 1Y and 3Y are changes in market price from monthly closes, shown only where price history is loaded, and they are not total returns.
+            A dash means we have no verified figure yet. Fund size is the whole fund, shown in the issuer&apos;s currency. 1Y and 3Y are official NAV returns from the issuer factsheet where we hold one, otherwise the change in market price. Each ETF page shows which.
           </p>
         </section>
       </div>

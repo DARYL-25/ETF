@@ -128,7 +128,7 @@ create table public.metric_observations (
   id              bigint generated always as identity primary key,
   fund_id         bigint not null references public.funds (id) on delete cascade,
   share_class_id  bigint references public.share_classes (id) on delete cascade,
-  metric          text not null check (metric in ('aum', 'holdings_count', 'effective_duration', 'weighted_avg_maturity', 'yield_to_maturity', 'trailing_yield', 'market_return_1y', 'market_return_3y', 'market_return_5y')),
+  metric          text not null check (metric in ('aum', 'holdings_count', 'effective_duration', 'weighted_avg_maturity', 'yield_to_maturity', 'trailing_yield', 'market_return_1y', 'market_return_3y', 'market_return_5y', 'nav', 'nav_return_1y', 'nav_return_3y', 'nav_return_5y', 'nav_return_si')),
   value           double precision not null,
   unit            text not null,
   as_of           date,
@@ -160,6 +160,16 @@ create table public.fund_prices (
   close       double precision not null check (close > 0),
   source_id   bigint not null references public.data_sources (id),
   primary key (listing_id, price_date, frequency, price_type)
+);
+
+create table public.fund_top_holdings (
+  fund_id      bigint not null references public.funds (id) on delete cascade,
+  name         text not null,
+  weight_pct   double precision not null,
+  as_of        date,
+  observed_on  date not null,
+  source_id    bigint not null references public.data_sources (id),
+  primary key (fund_id, name, observed_on)
 );
 
 create table public.fx_rates (
@@ -228,6 +238,17 @@ select
   ret3.value as market_return_3y,
   ret5.value as market_return_5y,
   ret1.as_of::text as market_return_as_of,
+  nav1.value as nav_return_1y,
+  nav3.value as nav_return_3y,
+  nav5.value as nav_return_5y,
+  navsi.value as nav_return_si,
+  nav1.as_of::text as nav_return_as_of,
+  nav1.url as nav_return_source_url,
+  navnow.value as nav,
+  navnow.unit as nav_currency,
+  navnow.as_of::text as nav_as_of,
+  coalesce(nav1.value, ret1.value) as return_1y,
+  coalesce(nav3.value, ret3.value) as return_3y,
   coalesce(cats.slugs, '{}') as category_slugs,
   coalesce(cats.labels, '{}') as category_labels,
   src.url as source_url,
@@ -282,6 +303,26 @@ left join lateral (
   where m.share_class_id = sc.id and m.metric = 'market_return_5y' order by observed_on desc limit 1
 ) ret5 on true
 left join lateral (
+  select m.value, m.as_of, d.url from public.metric_observations m join public.data_sources d on d.id = m.source_id
+  where m.share_class_id = sc.id and m.metric = 'nav_return_1y' order by observed_on desc limit 1
+) nav1 on true
+left join lateral (
+  select value from public.metric_observations m
+  where m.share_class_id = sc.id and m.metric = 'nav_return_3y' order by observed_on desc limit 1
+) nav3 on true
+left join lateral (
+  select value from public.metric_observations m
+  where m.share_class_id = sc.id and m.metric = 'nav_return_5y' order by observed_on desc limit 1
+) nav5 on true
+left join lateral (
+  select value from public.metric_observations m
+  where m.share_class_id = sc.id and m.metric = 'nav_return_si' order by observed_on desc limit 1
+) navsi on true
+left join lateral (
+  select value, unit, as_of from public.metric_observations m
+  where m.share_class_id = sc.id and m.metric = 'nav' order by observed_on desc limit 1
+) navnow on true
+left join lateral (
   select array_agg(c.slug order by c.slug) as slugs, array_agg(c.label order by c.label) as labels
   from public.fund_categories fc join public.categories c on c.id = fc.category_id
   where fc.fund_id = f.id
@@ -294,7 +335,7 @@ begin
   foreach t in array array[
     'data_sources', 'issuers', 'exchanges', 'indices', 'categories', 'funds',
     'fund_index_relationships', 'fund_categories', 'share_classes', 'listings',
-    'share_class_fees', 'metric_observations', 'fund_exposures', 'fund_prices', 'fx_rates'
+    'share_class_fees', 'metric_observations', 'fund_exposures', 'fund_top_holdings', 'fund_prices', 'fx_rates'
   ] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('create policy "public read" on public.%I for select to anon, authenticated using (true)', t);

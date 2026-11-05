@@ -16,7 +16,7 @@ Added early because they were cheap and valuable: index pages, comparison, chang
 
 ## Next steps, in order
 
-1. **Choose a commercial data provider.** It unlocks charts, returns and risk metrics, and it decides the business case (see costs).
+1. **Run the free data pipeline.** Create a free Supabase project, add `INGEST_DATABASE_URL` as a GitHub secret and run the Ingest prices action. Extend factsheet returns to all ETFs. A commercial feed is only needed once the site charges money.
 2. **Have a person review the 37 records** against the source links, then mark them `reviewed`.
 3. **Create the Supabase project** and test sign-in end to end.
 4. **Grow coverage**: Xtrackers, SPDR, Amundi, UBS, HSBC, and complete the two partial Invesco records.
