@@ -51,11 +51,25 @@ for path in sorted(glob.glob(f"{OUT}/*.csv.gz")):
 prefixes = {}
 for m in merged.values():
     if m["isin"].startswith("US"): prefixes.setdefault(norm(m["name"])[:22], []).append(m)
+# Registers cut names at 30 characters, so a register name can be the start of the exchange name.
+stems = {}
+for m in merged.values():
+    if m["isin"].startswith("US"):
+        stem = re.sub(r"ETF$", "", norm(m["name"]))
+        if len(stem) >= 14: stems.setdefault(stem, []).append(m)
+def loose(name):
+    full = norm(name)
+    for size in range(len(full), 13, -1):
+        hits = stems.get(full[:size])
+        if hits: return hits[0] if len(hits) == 1 and not hits[0]["ticker"] else None
+    return None
 matched = 0
 for r in read(f"{OUT}/us.csv.gz"):
     name = clean(r["name"]); candidates = prefixes.get(norm(name)[:22], [])
     if len(candidates) == 1 and len(norm(name)) >= 12:
         m = candidates[0]; m["ticker"], m["mic"], m["name"], m["currency"], m["source"] = r["ticker"], r["mic"], name, "USD", "us"; m["venues"].add(r["mic"]); matched += 1
+    elif loose(name):
+        m = loose(name); m["ticker"], m["mic"], m["name"], m["currency"], m["source"] = r["ticker"], r["mic"], name, "USD", "us"; m["venues"].add(r["mic"]); matched += 1
     else:
         key = f'{r["mic"]}-{r["ticker"]}'
         merged[key] = {"etf_key": key, "isin": "", "ticker": r["ticker"], "mic": r["mic"], "name": name, "currency": "USD", "issuer_lei": "", "source": "us", "venues": {r["mic"]}}
