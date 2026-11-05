@@ -1,0 +1,23 @@
+name: Update SEC data
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: sec
+jobs:
+  sec:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/universe/sec.py
+        env:
+          SEC_CONTACT_EMAIL: ${{ secrets.SEC_CONTACT_EMAIL }}
+      - run: |
+          git config user.name "etf-universe-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/universe/details
+          git diff --cached --quiet || git commit -m "Update SEC data"
+          git pull --rebase -X theirs origin "$GITHUB_REF_NAME"
+          git push
