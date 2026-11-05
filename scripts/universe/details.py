@@ -87,13 +87,57 @@ if sample:
         time.sleep(1)
     raise SystemExit(0)
 
-for name, fn in {"ssga_us": ssga_us, "amundi": amundi}.items():
+def ishares():
+    """iShares' public product list, the same data its own product page loads."""
+    by_isin = {r["isin"]: r for r in universe if r["isin"]}
+    by_ticker = {r["ticker"]: r for r in universe if r["source"] == "us" and r["ticker"]}
+    val = lambda x: x["r"] if isinstance(x, dict) and isinstance(x.get("r"), (int, float)) else ""
+    day = lambda x: (lambda d: f"{str(d)[:4]}-{str(d)[4:6]}-{str(d)[6:8]}" if d else "")(val(x))
+    result = {}
+    done = set()
+    for label, query, site in (("uk", "country=gb&language=en&siteName=ishares-uk&userType=individual", "https://www.ishares.com"), ("us", "country=us&language=en&siteName=ishares&userType=individual", "https://www.ishares.com")):
+        try:
+            time.sleep(2)
+            data = json.loads(get(f"{site}/varnish-api/blk-product-screener-server/api/v1/product-screener/product-data?{query}"))
+        except Exception as e:
+            result[label] = f"{type(e).__name__}: {e}"[:150]
+            continue
+        funds = [f for f in data.values() if "etf" in (f.get("productView") or [])]
+        unmatched = []
+        for f in funds:
+            u = by_isin.get(f.get("isin")) or by_ticker.get(f.get("localExchangeTicker"))
+            if not u:
+                unmatched.append(f.get("isin"))
+                continue
+            if u["etf_key"] in done: continue
+            done.add(u["etf_key"])
+            fee, kind = val(f.get("ter")), "ter"
+            size = val(f.get("totalFundSizeInMillions"))
+            policy = {"Accumulating": "accumulating", "Distributing": "distributing"}.get(f.get("useOfProfits"), "")
+            rows.append({"etf_key": u["etf_key"], "fee_pct": fee, "fee_type": kind if fee != "" else "", "aum": size * 1e6 if size != "" else "", "aum_currency": f.get("seriesBaseCurrencyCode", "") if size != "" else "", "aum_as_of": day(f.get("totalFundSizeInMillionsAsOf")),
+                "nav": val(f.get("navAmount")), "nav_currency": f.get("seriesBaseCurrencyCode", ""), "nav_as_of": day(f.get("navAmountAsOf")), "ret_1y": val(f.get("navOneYearAnnualized")), "ret_3y": val(f.get("navThreeYearAnnualized")), "ret_5y": val(f.get("navFiveYearAnnualized")), "ret_si": val(f.get("navSinceInceptionAnnualized")), "ret_as_of": day(f.get("navAnnualisedAsOf")),
+                "volatility_3y": "", "tracking_error_3y": "", "distribution": policy, "source": "iShares", "source_url": site + f.get("productPageUrl", "")})
+        result[label] = {"etfs": len(funds), "unmatched": len(unmatched), "unmatched_sample": unmatched[:8]}
+    if not done: raise RuntimeError(str(result))
+    return result
+
+SOURCE_FUNCS = {"ssga_us": ssga_us, "amundi": amundi, "ishares": ishares}
+chosen = os.environ.get("SOURCES", "").split(",") if os.environ.get("SOURCES") else list(SOURCE_FUNCS)
+LABEL = {"ssga_us": "State Street", "amundi": "Amundi factsheet", "ishares": "iShares"}
+old_report = OUT / "details" / "report.json"
+if old_report.exists():
+    report.update({k: v for k, v in json.loads(old_report.read_text()).items() if k in SOURCE_FUNCS})
+# Keep other sources' rows when only some sources are refreshed.
+if (OUT / "details.csv.gz").exists():
+    refreshed = {LABEL[c] for c in chosen}
+    rows.extend(r for r in csv.DictReader(gzip.open(OUT / "details.csv.gz", "rt", encoding="utf-8")) if r["source"] not in refreshed)
+for name, fn in {k: SOURCE_FUNCS[k] for k in chosen}.items():
     try:
         report[name] = {"ok": True, "result": fn()}
     except Exception as e:
         report[name] = {"ok": False, "error": f"{type(e).__name__}: {e}"[:300]}
     print(name, report[name], flush=True)
 with gzip.open(OUT / "details.csv.gz", "wt", newline="", encoding="utf-8") as fh:
-    w = csv.DictWriter(fh, FIELDS); w.writeheader(); w.writerows(rows)
+    w = csv.DictWriter(fh, FIELDS, extrasaction="ignore"); w.writeheader(); w.writerows(rows)
 report["fees"] = sum(1 for r in rows if r["fee_pct"] != ""); report["fund_size"] = sum(1 for r in rows if r["aum"] != ""); report["on"] = dt.date.today().isoformat()
 (OUT / "details" / "report.json").write_text(json.dumps(report, indent=1))

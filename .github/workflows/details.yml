@@ -14,8 +14,12 @@ jobs:
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: phase-1-mvp
       - run: pip install pdfplumber
       - run: python3 scripts/universe/details.py
+        env:
+          SOURCES: ishares
       - run: |
           git config user.name "etf-universe-bot"
           git config user.email "actions@users.noreply.github.com"
