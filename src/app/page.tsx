@@ -18,7 +18,7 @@ export default async function DashboardPage() {
         </div>
         <p className="mt-4 max-w-[68ch]">
           Each dot is one ETF, placed by its yearly fee. Select a dot to open the fund.
-          The database lists {coverage.all_etfs.toLocaleString("en-GB")} ETFs from official registers and exchanges. {coverage.etfs} of them have issuer-sourced fees and fund facts so far, and those are the dots above.
+          The database lists {coverage.all_etfs.toLocaleString("en-GB")} ETFs from official registers and exchanges. {coverage.with_fee.toLocaleString("en-GB")} have a published fee so far. The dots above show the {coverage.etfs} ETFs with the fullest records.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Link className="btn btn-primary" href="/screener">Open the screener</Link>

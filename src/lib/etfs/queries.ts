@@ -275,7 +275,7 @@ export async function getDashboard() {
        ) t where group_label is not null
        order by group_label, headline_fee_pct asc, fund_aum_eur desc nulls last`,
     ),
-    query<{ etfs: number; funds: number; issuers: number; indices: number; listings: number; priced: number; latest: string; all_etfs: number; venues: number }>(
+    query<{ etfs: number; funds: number; issuers: number; indices: number; listings: number; priced: number; latest: string; all_etfs: number; with_fee: number; venues: number }>(
       `select (select count(*)::int from public.share_classes) as etfs, (select count(*)::int from public.funds) as funds,
          (select count(*)::int from public.issuers) as issuers,
          (select count(distinct index_id)::int from public.fund_index_relationships) as indices,
@@ -283,6 +283,7 @@ export async function getDashboard() {
          (select count(distinct l.share_class_id)::int from public.fund_prices p join public.listings l on l.id = p.listing_id) as priced,
          (select max(retrieved_on)::text from public.data_sources) as latest,
          (select count(*)::int from public.etf_directory) as all_etfs,
+         (select count(*)::int from public.etf_directory where headline_fee_pct is not null) as with_fee,
          (select count(distinct market)::int from (select coalesce(nullif(mic, ''), source) as market from public.universe_etfs) m) as venues`,
     ),
     query<EtfRow>("select * from public.etf_overview where index_slug = 'sp-500' order by headline_fee_pct asc nulls last, fund_aum_eur desc nulls last"),
