@@ -2,7 +2,7 @@ name: Update ETF details
 on:
   push:
     branches: [phase-1-mvp]
-    paths: ["scripts/universe/details_never_on_push"]
+    paths: ["scripts/universe/details.py"]
   schedule:
     - cron: "43 5 * * 2"
   workflow_dispatch:
@@ -18,8 +18,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: phase-1-mvp
-      - run: pip install pdfplumber
+      - run: pip install pdfplumber openpyxl
       - run: python3 scripts/universe/details.py
+        env:
+          SOURCES: xtrackers,spdr_eu
       - run: |
           git config user.name "etf-universe-bot"
           git config user.email "actions@users.noreply.github.com"

@@ -126,9 +126,55 @@ def ishares():
     if not done: raise RuntimeError(str(result))
     return result
 
-SOURCE_FUNCS = {"ssga_us": ssga_us, "amundi": amundi, "ishares": ishares}
+def sheet_rows(blob):
+    """Rows of the first sheet, starting at the header row that names ISIN."""
+    import openpyxl
+    book = openpyxl.load_workbook(io.BytesIO(blob), read_only=True, data_only=True)
+    out = {}
+    for sheet in book.worksheets:
+        sheet.reset_dimensions()
+        rows = [list(r) for r in sheet.iter_rows(values_only=True)]
+        for i, r in enumerate(rows[:40]):
+            cells = [str(c or "").strip() for c in r]
+            if any(c.upper().startswith("ISIN") or c.upper() == "NAME / ISIN" for c in cells):
+                return cells, rows[i + 1:], sheet.title
+        out[sheet.title] = [[str(c)[:30] for c in r if c is not None][:8] for r in rows[:6]]
+    raise RuntimeError(f"No ISIN header: {json.dumps(out)[:700]}")
+
+def from_sheet(url, source, label):
+    head, body, title = sheet_rows(get(url))
+    (OUT / "details" / f"{label}_sample.json").write_text(json.dumps({"sheet": title, "head": head, "first": [str(c) for c in (body[0] if body else [])]}, indent=0)[:4000])
+    col = lambda pat: next((i for i, h in enumerate(head) if re.search(pat, h, re.I)), None)
+    isin_c, fee_c, aum_c, income_c, name_c = col(r"isin"), col(r"\bTER\b|expense ratio|all.in"), col(r"\bAUM\b|assets under|fund size|net assets"), col(r"distribution|use of income|income"), col(r"^name|fund name|product")
+    by_isin = {r["isin"]: r for r in universe if r["isin"]}
+    found = unmatched = 0
+    for r in body:
+        m = re.search(r"\b[A-Z]{2}[A-Z0-9]{9}\d\b", str(r[isin_c] or ""))
+        if not m: continue
+        u = by_isin.get(m.group(0))
+        if not u:
+            unmatched += 1
+            continue
+        fee = r[fee_c] if fee_c is not None else ""
+        if isinstance(fee, str):
+            f = re.search(r"\d+\.?\d*", fee); fee = float(f.group(0)) if f else ""
+        if isinstance(fee, (int, float)) and fee < 0.03: fee = fee * 100  # stored as a fraction
+        policy = str(r[income_c] or "").lower() if income_c is not None else ""
+        policy = "accumulating" if policy.startswith(("acc", "capital")) else "distributing" if policy.startswith(("dis", "inc")) else ""
+        rows.append({"etf_key": u["etf_key"], "fee_pct": fee if isinstance(fee, (int, float)) else "", "fee_type": "ter" if fee != "" else "", "distribution": policy, "source": source, "source_url": url,
+            "aum": "", "aum_currency": "", "aum_as_of": "", "nav": "", "nav_currency": "", "nav_as_of": "", "ret_1y": "", "ret_3y": "", "ret_5y": "", "ret_si": "", "ret_as_of": "", "volatility_3y": "", "tracking_error_3y": "", "name": str(r[name_c]).split("\n")[0].strip() if name_c is not None and r[name_c] else ""})
+        found += 1
+    return {"found": found, "not_in_universe": unmatched, "head": head[:25]}
+
+def xtrackers():
+    return from_sheet("https://etf.dws.com/en-gb/product-finder/downloadxls/?query=%7B%22selectedTabIndex%22%3A0%2C%22totalReturnType%22%3A0%2C%22searchTerm%22%3A%22%22%2C%22filters%22%3A%5B%5D%7D", "Xtrackers", "xtrackers")
+
+def spdr_eu():
+    return from_sheet("https://www.ssga.com/library-content/products/fund-data/etfs/emea/spdr-product-data-ie-en.xlsx", "State Street Europe", "spdr_eu")
+
+SOURCE_FUNCS = {"ssga_us": ssga_us, "amundi": amundi, "ishares": ishares, "xtrackers": xtrackers, "spdr_eu": spdr_eu}
 chosen = os.environ.get("SOURCES", "").split(",") if os.environ.get("SOURCES") else list(SOURCE_FUNCS)
-LABEL = {"ssga_us": "State Street", "amundi": "Amundi factsheet", "ishares": "iShares"}
+LABEL = {"ssga_us": "State Street", "amundi": "Amundi factsheet", "ishares": "iShares", "xtrackers": "Xtrackers", "spdr_eu": "State Street Europe"}
 old_report = OUT / "details" / "report.json"
 if old_report.exists():
     report.update({k: v for k, v in json.loads(old_report.read_text()).items() if k in SOURCE_FUNCS})
