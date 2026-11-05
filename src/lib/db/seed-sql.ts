@@ -266,6 +266,18 @@ export function buildSeedSql(root: string): string {
     }
   }
 
+  // Fully researched funds also get issuer NAV and returns from the bulk files, unless already known.
+  out.push(`insert into public.data_sources (kind, publisher, url, retrieved_on)
+    select distinct 'issuer_website', d.source, d.source_url, current_date from public.universe_details d
+    join public.universe_etfs u on u.etf_key = d.etf_key join public.share_classes sc on sc.isin = u.isin
+    where d.source_url is not null on conflict (url) do nothing;`);
+  for (const [column, metric, unit, date] of [["nav", "nav", "d.nav_currency", "d.nav_as_of"], ["ret_1y", "nav_return_1y", "'percent'", "d.ret_as_of"], ["ret_3y", "nav_return_3y", "'percent'", "d.ret_as_of"], ["ret_5y", "nav_return_5y", "'percent'", "d.ret_as_of"], ["ret_si", "nav_return_si", "'percent'", "d.ret_as_of"]]) {
+    out.push(`insert into public.metric_observations (fund_id, share_class_id, metric, value, unit, as_of, observed_on, source_id, verification)
+      select sc.fund_id, sc.id, '${metric}', d.${column}, ${unit}, nullif(${date}, '')::date, current_date, ds.id, 'extracted_unreviewed'
+      from public.universe_details d join public.universe_etfs u on u.etf_key = d.etf_key join public.share_classes sc on sc.isin = u.isin join public.data_sources ds on ds.url = d.source_url
+      where d.${column} is not null and not exists (select 1 from public.metric_observations m where m.share_class_id = sc.id and m.metric = '${metric}');`);
+  }
+
   // US fees from SEC prospectus filings, used only where no issuer figure exists.
   const secPath = join(root, "data/universe/sec_fees.csv.gz");
   if (existsSync(secPath)) {

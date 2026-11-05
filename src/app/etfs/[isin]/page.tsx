@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { IssuerLogo } from "@/components/issuer-logo";
+import { SaveToWatchlist } from "@/components/my-lists";
 import { CompareToggle } from "@/components/compare-tray";
 import { AsOf, Change, EtfName, Fee } from "@/components/etf-bits";
 import { FeeRuler } from "@/components/fee-ruler";
@@ -63,7 +64,7 @@ function BasicRecord({ row }: { row: EtfRow }) {
         <div className="mb-3"><IssuerLogo name={row.name} /></div>
         <h1 className="max-w-[30ch] text-[clamp(1.9rem,3.4vw,2.8rem)]">{row.name}</h1>
         <p className="data mt-2">{[row.ticker, row.isin].filter(Boolean).join(", ")}</p>
-        <div className="mt-4"><CompareToggle isin={row.etf_key!} wide /></div>
+        <div className="mt-4 flex flex-wrap gap-2"><CompareToggle isin={row.etf_key!} wide /><SaveToWatchlist etfKey={row.etf_key!} /></div>
       </header>
       <p className="max-w-[68ch] rounded bg-warn-bg px-3 py-2 text-warn-ink">
         {row.headline_fee_pct !== null || row.fund_aum !== null
@@ -121,7 +122,7 @@ export default async function EtfPage({ params }: Props) {
         <div className="flex items-center gap-2.5"><IssuerLogo name={row.name} /><p className="text-muted">{row.issuer_name}</p></div>
         <h1 className="mt-1 max-w-[30ch] text-[clamp(1.9rem,3.4vw,2.8rem)]">{row.name}</h1>
         <p className="data mt-2">{row.ticker ?? MISSING} on {listings.find((l) => l.is_display_ticker)?.exchange_name ?? MISSING}, ISIN {row.isin}</p>
-        <div className="mt-4 flex flex-wrap gap-2"><CompareToggle isin={isin} wide /></div>
+        <div className="mt-4 flex flex-wrap gap-2"><CompareToggle isin={isin} wide /><SaveToWatchlist etfKey={isin} /></div>
         {row.verification === "extracted_unreviewed" ? (
           <p className="mt-4 max-w-[68ch] rounded bg-warn-bg px-3 py-2 text-warn-ink">
             These figures were read automatically from the issuer&apos;s {row.source_kind === "issuer_factsheet" ? "factsheet" : "website"} and have not yet been checked by a person.{" "}

@@ -20,14 +20,14 @@ const NAV: { heading: string; items: Item[] }[] = [
   {
     heading: "Track",
     items: [
-      { href: "/portfolio", label: "Portfolio Tracker", later: true },
-      { href: "/watchlists", label: "Watchlists", later: true },
+      { href: "/portfolio", label: "Portfolio Tracker" },
+      { href: "/watchlists", label: "Watchlists" },
     ],
   },
   {
     heading: "Learn",
     items: [
-      { href: "/academy", label: "ETF Academy", later: true },
+      { href: "/academy", label: "ETF Academy" },
       { href: "/tax", label: "Tax Intelligence", later: true },
       { href: "/assistant", label: "AI Assistant", later: true },
     ],

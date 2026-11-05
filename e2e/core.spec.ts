@@ -104,3 +104,42 @@ test("API serves the same screener", async ({ request }) => {
   const missing = await request.get("/api/v1/etfs/XX0000000000");
   expect(missing.status()).toBe(404);
 });
+
+test("a lesson's quiz marks progress on the academy page", async ({ page }) => {
+  await page.goto("/academy/isin-ticker-listing");
+  await page.getByRole("button", { name: "ISIN", exact: true }).click();
+  await page.getByRole("button", { name: "No", exact: true }).click();
+  await expect(page.getByText("2 of 2 correct")).toBeVisible();
+  await page.getByRole("button", { name: "Mark lesson as done" }).click();
+  await page.goto("/academy");
+  await expect(page.getByText("1 of 4 lessons done")).toBeVisible();
+});
+
+test("the fee calculator responds to input", async ({ page }) => {
+  await page.goto("/academy/calculators");
+  await expect(page.getByText(/less\.$/).first()).toBeVisible();
+  await page.getByLabel("Years").first().fill("10");
+  await expect(page.getByText(/With 0.07%/)).toBeVisible();
+});
+
+test("an ETF can be saved to a watchlist and shows its data", async ({ page, isMobile }) => {
+  test.skip(isMobile, "Same components; the desktop run covers it.");
+  await page.goto("/etfs/IE00B4L5Y983");
+  await page.getByText("Add to watchlist").click();
+  await page.getByRole("button", { name: "Create a list with this ETF" }).click();
+  await page.goto("/watchlists");
+  await expect(page.getByRole("link", { name: /Core MSCI World/ })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "0.20%" })).toBeVisible();
+});
+
+test("a hypothetical portfolio values a position from NAV", async ({ page, isMobile }) => {
+  test.skip(isMobile, "Same components; the desktop run covers it.");
+  await page.goto("/portfolio");
+  await page.getByRole("button", { name: "Create portfolio" }).click();
+  await page.getByLabel("Find an ETF").click();
+  await page.getByLabel("Find an ETF").fill("IE00BFZXGZ5");
+  await page.getByLabel("Find an ETF").fill("IE00B4K48X80");
+  await page.getByRole("button", { name: /Core MSCI Europe/ }).first().click();
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(page.getByRole("status").first()).toContainText("Value");
+});
