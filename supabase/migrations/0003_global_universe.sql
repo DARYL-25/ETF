@@ -24,8 +24,35 @@ alter table public.universe_etfs enable row level security;
 create policy "public read" on public.universe_etfs for select to anon, authenticated using (true);
 grant select on public.universe_etfs to anon, authenticated;
 
+-- Issuer-published figures for basic records. Fee types stay distinct: 'ter', 'ger' (gross expense
+-- ratio) and 'ongoing' (PRIIPs management and operating costs).
+create table public.universe_details (
+  etf_key            text primary key references public.universe_etfs (etf_key) on delete cascade,
+  fee_pct            double precision,
+  fee_type           text,
+  aum                double precision,
+  aum_currency       text,
+  aum_as_of          text,
+  nav                double precision,
+  nav_currency       text,
+  nav_as_of          text,
+  ret_1y             double precision,
+  ret_3y             double precision,
+  ret_5y             double precision,
+  ret_si             double precision,
+  ret_as_of          text,
+  volatility_3y      double precision,
+  tracking_error_3y  double precision,
+  distribution       text,
+  source             text,
+  source_url         text
+);
+alter table public.universe_details enable row level security;
+create policy "public read" on public.universe_details for select to anon, authenticated using (true);
+grant select on public.universe_details to anon, authenticated;
+
 create view public.etf_directory with (security_invoker = true) as
-select o.*, o.isin as etf_key, null::int as venues from public.etf_overview o
+select o.*, o.isin as etf_key, null::int as venues, null::float8 as volatility_3y, null::float8 as tracking_error_3y from public.etf_overview o
 union all
 select
   nullif(u.isin, '') as isin,
@@ -45,7 +72,7 @@ select
   null::text as fund_launch_date,
   null::text as share_class_launch_date,
   nullif(u.currency, '') as currency,
-  null::text as distribution_policy,
+  d.distribution as distribution_policy,
   null::text as distribution_frequency,
   null::boolean as hedged,
   null::text as index_slug,
@@ -57,12 +84,12 @@ select
   null::text as ter_as_of,
   null::float8 as ocf_pct,
   null::text as ocf_as_of,
-  null::float8 as headline_fee_pct,
-  null::text as headline_fee_type,
-  null::float8 as fund_aum,
-  null::text as fund_aum_currency,
-  null::text as fund_aum_as_of,
-  null::float8 as fund_aum_eur,
+  d.fee_pct as headline_fee_pct,
+  d.fee_type as headline_fee_type,
+  d.aum as fund_aum,
+  d.aum_currency as fund_aum_currency,
+  d.aum_as_of as fund_aum_as_of,
+  case when d.aum_currency = 'EUR' then d.aum else d.aum / fx.rate end as fund_aum_eur,
   null::float8 as class_aum,
   null::text as class_aum_currency,
   null::text as class_aum_as_of,
@@ -74,26 +101,32 @@ select
   null::float8 as market_return_3y,
   null::float8 as market_return_5y,
   null::text as market_return_as_of,
-  null::float8 as nav_return_1y,
-  null::float8 as nav_return_3y,
-  null::float8 as nav_return_5y,
-  null::float8 as nav_return_si,
-  null::text as nav_return_as_of,
-  null::text as nav_return_source_url,
-  null::float8 as nav,
-  null::text as nav_currency,
-  null::text as nav_as_of,
-  null::float8 as return_1y,
-  null::float8 as return_3y,
+  d.ret_1y as nav_return_1y,
+  d.ret_3y as nav_return_3y,
+  d.ret_5y as nav_return_5y,
+  d.ret_si as nav_return_si,
+  d.ret_as_of as nav_return_as_of,
+  d.source_url as nav_return_source_url,
+  d.nav as nav,
+  d.nav_currency as nav_currency,
+  d.nav_as_of as nav_as_of,
+  d.ret_1y as return_1y,
+  d.ret_3y as return_3y,
   '{}'::text[] as category_slugs,
   '{}'::text[] as category_labels,
-  u.source_url as source_url,
+  coalesce(d.source_url, u.source_url) as source_url,
   'official_list' as source_kind,
   u.retrieved_on::text as source_retrieved_on,
   'basic_record' as verification,
   u.etf_key,
-  u.venues
+  u.venues,
+  d.volatility_3y,
+  d.tracking_error_3y
 from public.universe_etfs u
+left join public.universe_details d on d.etf_key = u.etf_key
+left join lateral (
+  select rate from public.fx_rates r where r.base_currency = 'EUR' and r.quote_currency = d.aum_currency order by rate_date desc limit 1
+) fx on true
 where u.isin is null or u.isin = '' or not exists (select 1 from public.share_classes s where s.isin = u.isin);
 
 grant select on public.etf_directory to anon, authenticated;

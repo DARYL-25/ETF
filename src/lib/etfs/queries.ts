@@ -34,7 +34,9 @@ export type EtfRow = {
   ocf_pct: number | null;
   ocf_as_of: string | null;
   headline_fee_pct: number | null;
-  headline_fee_type: "ter" | "ocf" | null;
+  headline_fee_type: "ter" | "ocf" | "ger" | "ongoing" | null;
+  volatility_3y?: number | null;
+  tracking_error_3y?: number | null;
   fund_aum: number | null;
   fund_aum_currency: string | null;
   fund_aum_as_of: string | null;

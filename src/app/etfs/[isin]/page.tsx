@@ -64,10 +64,23 @@ function BasicRecord({ row }: { row: EtfRow }) {
         <div className="mt-4"><CompareToggle isin={row.etf_key!} wide /></div>
       </header>
       <p className="max-w-[68ch] rounded bg-warn-bg px-3 py-2 text-warn-ink">
-        This is a basic record from an official list. It confirms that the ETF exists and where it is identified. Fees, holdings and returns are not loaded for it yet, so check the issuer&apos;s factsheet.
+        {row.headline_fee_pct !== null || row.fund_aum !== null
+          ? "Identity comes from an official list, and the figures below were read automatically from the issuer. No person has checked them, so confirm them in the issuer's factsheet."
+          : "This is a basic record from an official list. It confirms that the ETF exists and where it is identified. Fees, holdings and returns are not loaded for it yet, so check the issuer's factsheet."}
       </p>
       <Facts items={[
         ["ISIN", row.isin ?? MISSING],
+        ["Yearly fee", <Fee key="f" row={row} />],
+        ["Fund size", formatMoney(row.fund_aum, row.fund_aum_currency)],
+        ["Fund size date", formatDate(row.fund_aum_as_of)],
+        ["Income", distributionLabel(row.distribution_policy)],
+        ["NAV", row.nav !== null ? `${row.nav.toFixed(2)} ${row.nav_currency} on ${formatDate(row.nav_as_of)}` : MISSING],
+        ["NAV return, 1 year", <Change key="1" value={row.nav_return_1y} />],
+        ["NAV return, 3 years per year", <Change key="3" value={row.nav_return_3y} />],
+        ["NAV return, 5 years per year", <Change key="5" value={row.nav_return_5y} />],
+        ["Returns calculated to", formatDate(row.nav_return_as_of)],
+        ["Volatility, 3 years", row.volatility_3y ? formatPct(row.volatility_3y) : MISSING],
+        ["Tracking error, 3 years", row.tracking_error_3y ? formatPct(row.tracking_error_3y) : MISSING],
         ["Ticker", row.ticker ? `${row.ticker}${row.ticker_exchange ? ` (${row.ticker_exchange})` : ""}` : MISSING],
         ["Issuer legal entity", row.issuer_name],
         ["Issuer's registered country", countryName(row.domicile)],

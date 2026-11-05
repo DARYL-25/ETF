@@ -29,6 +29,15 @@ The database is the business, so this is the main risk. **Nothing below is legal
 - **Inferred:** asset class on basic rows comes from name keywords, and registered country is the issuer's GLEIF legal address, not a checked domicile.
 - **To check before launch:** reuse terms of each exchange list.
 
+## Bulk issuer figures
+
+`scripts/universe/details.py` adds fees, fund size, income, returns and risk figures. It uses an honest client name, goes one request at a time, and accepts refusals.
+
+- **State Street US:** the fund finder feed covers about 160 US funds, with gross expense ratio, fund size, NAV and returns.
+- **Amundi and Lyxor:** monthly factsheet PDFs by ISIN. Cumulative 3 and 5 year returns are annualised by us. A figure is kept only if the ISIN appears in that PDF.
+- **SEC prospectus data** would give fees for most US ETFs, but SEC asks clients to state a contact email. It refused an unnamed client and needs a decision from the owner.
+- **Refused:** iShares' bulk screener, London Stock Exchange's list and Yahoo's chart endpoint answered 403 or 429 from GitHub. Bypassing those refusals is out of scope.
+
 ## The free data plan
 
 Decided 5 Nov 2026: build without paying for data.

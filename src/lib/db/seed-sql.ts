@@ -244,6 +244,19 @@ export function buildSeedSql(root: string): string {
     }
   }
 
+  // Issuer figures for basic records, from scripts/universe/details.py.
+  const detailsPath = join(root, "data/universe/details.csv.gz");
+  if (existsSync(detailsPath)) {
+    const [header, ...lines] = gunzipSync(readFileSync(detailsPath)).toString("utf8").trim().split(/\r?\n/);
+    const names = header.split(",");
+    const numeric = new Set(["fee_pct", "aum", "nav", "ret_1y", "ret_3y", "ret_5y", "ret_si", "volatility_3y", "tracking_error_3y"]);
+    for (const line of lines) {
+      const cells = line.split(",");
+      const values = names.map((n, i) => (cells[i] === "" || cells[i] === undefined ? "null" : numeric.has(n) ? q(Number(cells[i])) : q(cells[i])));
+      out.push(`insert into public.universe_details (${names.join(", ")}) select ${values.join(", ")} where exists (select 1 from public.universe_etfs u where u.etf_key = ${values[0]});`);
+    }
+  }
+
   out.push("commit;");
   return out.join("\n") + "\n";
 }

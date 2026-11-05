@@ -2,13 +2,15 @@ import Link from "next/link";
 import type { EtfRow } from "@/lib/etfs/queries";
 import { MISSING, formatDate, formatPct, formatSignedPct, isStale } from "@/lib/format";
 
+const FEE_LABEL: Record<string, string> = { ter: "TER", ocf: "OCF", ger: "Gross", ongoing: "Ongoing" };
+
 /** A fee always carries its type. TER and OCF are not interchangeable. */
 export function Fee({ row }: { row: Pick<EtfRow, "headline_fee_pct" | "headline_fee_type"> }) {
   if (row.headline_fee_pct === null) return <span className="text-muted" title="No fee on file for this ETF yet">{MISSING}</span>;
   return (
     <span className="whitespace-nowrap">
       {formatPct(row.headline_fee_pct)}
-      <span className="ml-1 text-[0.75rem] text-muted">{row.headline_fee_type?.toUpperCase()}</span>
+      <span className="ml-1 text-[0.75rem] text-muted">{FEE_LABEL[row.headline_fee_type ?? ""] ?? row.headline_fee_type}</span>
     </span>
   );
 }
