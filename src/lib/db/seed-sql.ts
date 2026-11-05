@@ -257,6 +257,17 @@ export function buildSeedSql(root: string): string {
     }
   }
 
+  // US fees from SEC prospectus filings, used only where no issuer figure exists.
+  const secPath = join(root, "data/universe/sec_fees.csv.gz");
+  if (existsSync(secPath)) {
+    const secUrl = "https://www.sec.gov/dera/data/mutual-fund-prospectus-risk-return-summary-data-sets";
+    for (const line of gunzipSync(readFileSync(secPath)).toString("utf8").trim().split(/\r?\n/).slice(1)) {
+      const [key, fee, kind, filed] = line.split(",");
+      const date = `${filed.slice(0, 4)}-${filed.slice(4, 6)}-${filed.slice(6, 8)}`;
+      out.push(`insert into public.universe_details (etf_key, fee_pct, fee_type, fee_as_of, source, source_url) select ${q(key)}, ${Number(fee)}, ${q(kind)}, ${q(date)}, 'SEC prospectus data', ${q(secUrl)} where exists (select 1 from public.universe_etfs u where u.etf_key = ${q(key)}) on conflict (etf_key) do update set fee_type = coalesce(public.universe_details.fee_type, excluded.fee_type), fee_as_of = case when public.universe_details.fee_pct is null then excluded.fee_as_of else public.universe_details.fee_as_of end, fee_pct = coalesce(public.universe_details.fee_pct, excluded.fee_pct);`);
+    }
+  }
+
   out.push("commit;");
   return out.join("\n") + "\n";
 }

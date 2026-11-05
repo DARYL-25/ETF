@@ -71,6 +71,7 @@ function BasicRecord({ row }: { row: EtfRow }) {
       <Facts items={[
         ["ISIN", row.isin ?? MISSING],
         ["Yearly fee", <Fee key="f" row={row} />],
+        ["Fee date", row.ter_as_of ? `Filed ${formatDate(row.ter_as_of)}` : MISSING],
         ["Fund size", formatMoney(row.fund_aum, row.fund_aum_currency)],
         ["Fund size date", formatDate(row.fund_aum_as_of)],
         ["Income", distributionLabel(row.distribution_policy)],

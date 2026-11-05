@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { EtfRow } from "@/lib/etfs/queries";
 import { MISSING, formatDate, formatPct, formatSignedPct, isStale } from "@/lib/format";
 
-const FEE_LABEL: Record<string, string> = { ter: "TER", ocf: "OCF", ger: "Gross", ongoing: "Ongoing" };
+const FEE_LABEL: Record<string, string> = { ter: "TER", ocf: "OCF", ger: "Gross", ongoing: "Ongoing", net: "Net", gross_sec: "Gross" };
 
 /** A fee always carries its type. TER and OCF are not interchangeable. */
 export function Fee({ row }: { row: Pick<EtfRow, "headline_fee_pct" | "headline_fee_type"> }) {

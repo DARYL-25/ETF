@@ -25,11 +25,13 @@ create policy "public read" on public.universe_etfs for select to anon, authenti
 grant select on public.universe_etfs to anon, authenticated;
 
 -- Issuer-published figures for basic records. Fee types stay distinct: 'ter', 'ger' (gross expense
--- ratio) and 'ongoing' (PRIIPs management and operating costs).
+-- ratio), 'ongoing' (PRIIPs management and operating costs), and 'net' and 'gross_sec' (SEC prospectus
+-- expense ratios, including acquired fund fees where the fund reports them).
 create table public.universe_details (
   etf_key            text primary key references public.universe_etfs (etf_key) on delete cascade,
   fee_pct            double precision,
   fee_type           text,
+  fee_as_of          text,
   aum                double precision,
   aum_currency       text,
   aum_as_of          text,
@@ -81,7 +83,7 @@ select
   nullif(u.ticker, '') as ticker,
   nullif(u.mic, '') as ticker_exchange,
   null::float8 as ter_pct,
-  null::text as ter_as_of,
+  d.fee_as_of as ter_as_of,
   null::float8 as ocf_pct,
   null::text as ocf_as_of,
   d.fee_pct as headline_fee_pct,

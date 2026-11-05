@@ -35,12 +35,13 @@ The database is the business, so this is the main risk. **Nothing below is legal
 
 - **State Street US:** the fund finder feed covers about 160 US funds, with gross expense ratio, fund size, NAV and returns.
 - **Amundi and Lyxor:** monthly factsheet PDFs by ISIN. Cumulative 3 and 5 year returns are annualised by us. A figure is kept only if the ISIN appears in that PDF.
-- **SEC prospectus data** would give fees for most US ETFs, but SEC asks clients to state a contact email. It refused an unnamed client and needs a decision from the owner.
-- **Refused:** iShares' bulk screener, London Stock Exchange's list and Yahoo's chart endpoint answered 403 or 429 from GitHub. Bypassing those refusals is out of scope.
+- **SEC prospectus data:** open government data, used for US fees where no issuer figure exists. Requests state a contact from the `SEC_CONTACT_EMAIL` secret. Filings run from 2024 to 2026, so a fee can be out of date, and each shows its filing date. Figures include acquired fund fees where reported, so funds holding other funds can show high fees.
+- **iShares:** the public product list its own site loads.
+- **Refused:** iShares' older screener address, London Stock Exchange's list and Yahoo's chart endpoint answered 403 or 429 from GitHub. Bypassing those refusals is out of scope.
 
 ## The free data plan
 
-Decided 5 Nov 2026: build without paying for data.
+Decided 5 Nov 2026: build without paying for data. The site is meant to be commercial, so the main figures are issuer NAV and official returns at close. Yahoo is not used for the public product. Licensed live prices wait for revenue.
 
 | Need | Free source | State |
 |---|---|---|
