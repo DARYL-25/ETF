@@ -5,7 +5,7 @@ ISINs by name, because the US symbol file has no ISINs."""
 import csv, glob, gzip, json, os, re
 
 OUT = "data/universe"
-SOURCE_URL = {"esma": "https://registers.esma.europa.eu/publication/searchRegister?core=esma_registers_firds", "fca": "https://data.fca.org.uk/#/homepage",
+SOURCE_URL = {"issuer_identity": "https://www.ubs.com/etf", "esma": "https://registers.esma.europa.eu/publication/searchRegister?core=esma_registers_firds", "fca": "https://data.fca.org.uk/#/homepage",
   "us": "https://www.nasdaqtrader.com/trader.aspx?id=symboldirdefs", "india": "https://www.nseindia.com/market-data/exchange-traded-funds-etf",
   "canada": "https://www.tsx.com/listings/listing-with-us/listed-company-directory", "singapore": "https://www.sgx.com/securities/etf-screener",
   "china_sh": "https://etf.sse.com.cn/", "china_sz": "https://fund.szse.cn/", "taiwan": "https://www.twse.com.tw/en/products/securities/etf/products/list.html",
@@ -35,8 +35,9 @@ issuers = {r["lei"]: r for r in read(f"{OUT}/issuers.csv.gz")} if os.path.exists
 merged, by_isin = {}, {}
 for path in sorted(glob.glob(f"{OUT}/*.csv.gz")):
     source = os.path.basename(path).replace(".csv.gz", "")
-    if source in ("issuers", "universe", "us", "details"): continue
+    if source in ("issuers", "universe", "us", "details", "issuer_files", "sec_fees", "sec_series", "sec_tickers"): continue
     for r in read(path):
+        if "isin" not in r: break  # A file of figures, not a list of ETFs.
         key = r["isin"] or f'{r["mic"]}-{r["ticker"]}'
         m = merged.setdefault(key, {"etf_key": key, "isin": r["isin"], "ticker": r["ticker"], "mic": "", "name": "", "currency": "", "issuer_lei": "", "source": source, "venues": set()})
         name = clean(r["name"])

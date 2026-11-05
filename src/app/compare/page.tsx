@@ -42,6 +42,7 @@ const groups: { title: string; rows: Row[] }[] = [
     { label: "5 years, per year", render: (r) => <Change value={r.nav_return_5y} /> },
     { label: "Since launch, per year", render: (r) => <Change value={r.nav_return_si} /> },
     { label: "Calculated to", render: (r) => formatDate(r.nav_return_as_of) },
+    { label: "Return currency", render: (r) => r.nav_currency ?? r.currency ?? "—" },
   ] },
   { title: "Market price change", rows: [
     { label: "1 year", render: (r) => <Change value={r.market_return_1y} /> },

@@ -10,7 +10,7 @@ export const SORT_COLUMNS = {
   domicile: "domicile",
   replication: "replication",
   fee: "headline_fee_pct",
-  aum: "fund_aum_eur",
+  aum: "size_eur",
   return1y: "return_1y",
   return3y: "return_3y",
   yield: "trailing_yield_pct",
@@ -147,8 +147,8 @@ export function buildScreenerWhere(p: ScreenerParams): { where: string; values: 
   if (p.feeMin !== undefined) add((n) => `headline_fee_pct >= $${n}`, p.feeMin);
   if (p.feeMax !== undefined) add((n) => `headline_fee_pct <= $${n}`, p.feeMax);
   // The form takes fund size in millions of euro.
-  if (p.aumMin !== undefined) add((n) => `fund_aum_eur >= $${n}`, p.aumMin * 1e6);
-  if (p.aumMax !== undefined) add((n) => `fund_aum_eur <= $${n}`, p.aumMax * 1e6);
+  if (p.aumMin !== undefined) add((n) => `size_eur >= $${n}`, p.aumMin * 1e6);
+  if (p.aumMax !== undefined) add((n) => `size_eur <= $${n}`, p.aumMax * 1e6);
   if (p.ucits === "yes") clauses.push("ucits is true");
   if (p.ucits === "no") clauses.push("ucits is false");
 

@@ -168,7 +168,7 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
                       {show("domicile") ? <td>{countryName(row.domicile)}</td> : null}
                       {show("replication") ? <td className="whitespace-nowrap">{replicationLabel(row.replication)}</td> : null}
                       <td className="num"><Fee row={row} /></td>
-                      <td className="num whitespace-nowrap">{formatMoney(row.fund_aum, row.fund_aum_currency)}{row.aum_level === "share_class" ? <span className="block text-[0.75rem] text-muted">Share class</span> : null}</td>
+                      <td className="num whitespace-nowrap">{formatMoney(row.fund_aum ?? row.class_aum, row.fund_aum_currency ?? row.class_aum_currency)}{row.aum_level === "share_class" || row.fund_aum === null && row.class_aum !== null ? <span className="block text-[0.75rem] text-muted">Share class</span> : null}</td>
                       {show("return1y") ? <td className={`num ${phoneHide}`}><Change value={row.return_1y} /></td> : null}
                       {show("return3y") ? <td className={`num ${phoneHide}`}><Change value={row.return_3y} /></td> : null}
                       {show("yield") ? <td className="num">{formatPct(row.trailing_yield_pct)}</td> : null}

@@ -160,11 +160,25 @@ describe("database", () => {
     expect(top.rows.length).toBeGreaterThanOrEqual(35);
   });
 
-  it("keeps missing facts missing", async () => {
-    const { rows } = await db.query<{ headline_fee_pct: number | null; fund_aum: number | null }>(
-      "select headline_fee_pct, fund_aum from public.etf_overview where isin = 'IE00B60SX394'",
+  it("fills a partial record from the issuer's product file, and leaves a missing size missing", async () => {
+    const filled = await db.query<{ headline_fee_pct: number; headline_fee_type: string; class_aum: number; fund_aum: number | null }>(
+      "select headline_fee_pct, headline_fee_type, class_aum, fund_aum from public.etf_overview where isin = 'IE00B60SX394'",
     );
-    expect(rows[0]).toEqual({ headline_fee_pct: null, fund_aum: null });
+    expect(filled.rows[0]).toMatchObject({ headline_fee_pct: 0.05, headline_fee_type: "ocf", fund_aum: null });
+    expect(filled.rows[0].class_aum).toBeGreaterThan(1e9);
+  });
+
+  it("reads issuer product files correctly for funds we can check by hand", async () => {
+    const fee = async (where: string) => (await db.query<{ f: number; t: string }>(`select headline_fee_pct f, headline_fee_type t from public.etf_directory where ${where} limit 1`)).rows[0];
+    expect((await fee("isin = 'IE00BK5BQT80'")).f).toBe(0.14);
+    expect((await fee("isin = 'IE00B3YCGJ38'")).f).toBe(0.05);
+    expect((await fee("ticker = 'VOO'")).f).toBe(0.03);
+    expect((await fee("ticker = 'QQQ'")).f).toBe(0.18);
+  });
+
+  it("marks SIX listings from issuer files", async () => {
+    const { rows } = await db.query<{ six: boolean }>("select listed_on_six six from public.etf_directory where isin = 'IE00BD4TXV59'");
+    expect(rows[0].six).toBe(true);
   });
 
   it("converts fund size to euro with the stored rate", async () => {

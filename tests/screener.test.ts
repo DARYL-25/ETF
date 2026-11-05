@@ -31,7 +31,7 @@ describe("screener params", () => {
 describe("screener queries", () => {
   it("sorts by fund size by default, biggest first", async () => {
     const { rows } = await run({});
-    const sizes = rows.map((r) => r.fund_aum_eur).filter((n): n is number => n !== null);
+    const sizes = rows.map((r) => r.size_eur ?? null).filter((n): n is number => n !== null);
     expect([...sizes].sort((a, b) => b - a)).toEqual(sizes);
     expect(rows[0].fund_aum_eur).toBeGreaterThan(100_000_000_000);
   });
@@ -60,13 +60,15 @@ describe("screener queries", () => {
 
   it("filters fund size in millions of euro", async () => {
     const { rows } = await run({ aumMin: "100000" });
-    for (const r of rows) expect(r.fund_aum_eur!).toBeGreaterThanOrEqual(100_000_000_000);
+    for (const r of rows) expect(r.size_eur!).toBeGreaterThanOrEqual(100_000_000_000);
     expect(rows.length).toBeGreaterThan(0);
   });
 
   it("excludes funds with an unknown fee from fee filters", async () => {
-    const { rows } = await run({ index: "msci-world", feeMax: "1" });
-    expect(rows.map((r) => r.isin)).not.toContain("IE00B60SX394");
+    const all = await run({ pageSize: "100", sort: "fee", dir: "asc", q: "world" });
+    const unknown = all.rows.filter((r) => r.headline_fee_pct === null).map((r) => r.etf_key);
+    const filtered = await run({ pageSize: "100", feeMax: "5", q: "world" });
+    for (const key of unknown) expect(filtered.rows.map((r) => r.etf_key)).not.toContain(key);
   });
 
   it("puts missing values last in both directions", async () => {

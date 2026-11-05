@@ -88,3 +88,14 @@ Official sources to start from, to be confirmed when that work begins:
 - United Kingdom: HMRC, including its list of reporting funds
 
 Rules change, and need a dated source and a review by a qualified person. Until then the product shows structural facts only and no rates.
+
+## Issuer product files
+
+`scripts/universe/import_issuer_files.py` reads product lists the owner downloads from issuer sites (Xtrackers, Invesco, Vanguard, UBS, in Europe and the US). The raw files stay out of this repository. Only derived facts are committed: `data/universe/issuer_files.csv.gz` (figures, with source and dates) and `issuer_identity.csv.gz` (ISINs and tickers, merged into the universe).
+
+- These are the newest figures, so they replace older details, and SEC data only fills what is still missing.
+- Xtrackers size is a fund total: the same figure repeats across a fund's share classes. Invesco and UBS sizes are per share class, and are labelled so.
+- Vanguard and Xtrackers 3- and 5-year returns are annualised by us from the issuers' yearly returns to 31 October 2026, and only when every year is present.
+- Returns are shown with their date and currency, because funds report to different dates and in different currencies. Compare like with like.
+- SIX listings come only from Invesco and UBS files so far. The SIX ETF Explorer's CSV would complete them.
+- The terms these files were downloaded under have not been reviewed for commercial reuse.

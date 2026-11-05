@@ -236,12 +236,25 @@ export function buildSeedSql(root: string): string {
   if (existsSync(universePath)) {
     const universeOn = JSON.parse(readFileSync(join(root, "data/universe/report.json"), "utf8")).esma.on;
     const lines = gunzipSync(readFileSync(universePath)).toString("utf8").trim().split(/\r?\n/).slice(1);
+    // A published benchmark links a fund to its index when the name alone does not.
+    const benchmarks = new Map<string, string>();
+    const issuerFile = join(root, "data/universe/issuer_files.csv.gz");
+    if (existsSync(issuerFile)) {
+      const [head, ...rest] = gunzipSync(readFileSync(issuerFile)).toString("utf8").trim().split(/\r?\n/);
+      const cols = parseLine(head);
+      for (const row of rest) {
+        const c = parseLine(row);
+        const b = c[cols.indexOf("benchmark")];
+        if (b) benchmarks.set(c[cols.indexOf("lookup")], b);
+      }
+    }
+    const benchmarkOf = (isin: string, ticker: string) => benchmarks.get(isin) ?? benchmarks.get(`TICKER:${ticker}`) ?? "";
     for (let i = 0; i < lines.length; i += 1000) {
       const values = lines.slice(i, i + 1000).map((line) => {
         const [key, isin, ticker, mic, name, currency, lei, issuer, country, ucits, assetClass, venues, source, url] = parseLine(line);
         const pretty = prettyName(name);
         const slugs = inferCategories(pretty);
-        return `(${q(key)}, ${q(isin)}, ${q(ticker)}, ${q(mic)}, ${q(pretty)}, ${q(currency)}, ${q(lei)}, ${q(issuer)}, ${q(country)}, ${ucits === "t" ? "true" : "null"}, ${q(assetClass)}, ${Number(venues) || 0}, ${q(source)}, ${q(url)}, ${q(universeOn)}, ${q(inferIndex(pretty))}, ${slugs.length ? `array[${slugs.map(q).join(",")}]` : "'{}'::text[]"})`;
+        return `(${q(key)}, ${q(isin)}, ${q(ticker)}, ${q(mic)}, ${q(pretty)}, ${q(currency)}, ${q(lei)}, ${q(issuer)}, ${q(country)}, ${ucits === "t" ? "true" : "null"}, ${q(assetClass)}, ${Number(venues) || 0}, ${q(source)}, ${q(url)}, ${q(universeOn)}, ${q(inferIndex(pretty) ?? inferIndex(benchmarkOf(isin, ticker)))}, ${slugs.length ? `array[${slugs.map(q).join(",")}]` : "'{}'::text[]"})`;
       });
       out.push(`insert into public.universe_etfs (etf_key, isin, ticker, mic, name, currency, issuer_lei, issuer_name, issuer_country, ucits, asset_class, venues, source, source_url, retrieved_on, index_slug, category_slugs) values\n${values.join(",\n")};`);
     }
@@ -266,6 +279,29 @@ export function buildSeedSql(root: string): string {
     }
   }
 
+  // Issuer product files the owner downloaded. These are the newest figures, so they win over the details above.
+  const issuerPath = join(root, "data/universe/issuer_files.csv.gz");
+  if (existsSync(issuerPath)) {
+    const [header, ...lines] = gunzipSync(readFileSync(issuerPath)).toString("utf8").trim().split(/\r?\n/);
+    const names = parseLine(header);
+    const numeric = new Set(["fee_pct", "aum", "nav", "ret_1y", "ret_3y", "ret_5y", "ret_si"]);
+    const columns = names.filter((n) => !["lookup", "isin", "ticker"].includes(n));
+    for (const line of lines) {
+      const cells = parseLine(line);
+      const cell = (n: string) => cells[names.indexOf(n)] ?? "";
+      const value = (n: string) => {
+        const v = cell(n);
+        if (v === "") return "null";
+        if (n === "hedged" || n === "listed_on_six") return v === "t" ? "true" : "false";
+        return numeric.has(n) ? q(Number(v)) : q(v);
+      };
+      const lookup = cell("isin")
+        ? `select etf_key from public.universe_etfs where isin = ${q(cell("isin"))} order by venues desc limit 1`
+        : `select etf_key from public.universe_etfs where upper(ticker) = ${q(cell("ticker").toUpperCase())} and (isin is null or isin = '' or isin like 'US%') order by (isin is null or isin = ''), venues desc limit 1`;
+      out.push(`insert into public.universe_details (etf_key, ${columns.join(", ")}) select k.etf_key, ${columns.map(value).join(", ")} from (${lookup}) k on conflict (etf_key) do update set ${columns.map((c) => `${c} = coalesce(excluded.${c}, public.universe_details.${c})`).join(", ")};`);
+    }
+  }
+
   // Fully researched funds also get issuer NAV and returns from the bulk files, unless already known.
   out.push(`insert into public.data_sources (kind, publisher, url, retrieved_on)
     select distinct 'issuer_website', d.source, d.source_url, current_date from public.universe_details d
@@ -277,6 +313,16 @@ export function buildSeedSql(root: string): string {
       from public.universe_details d join public.universe_etfs u on u.etf_key = d.etf_key join public.share_classes sc on sc.isin = u.isin join public.data_sources ds on ds.url = d.source_url
       where d.${column} is not null and not exists (select 1 from public.metric_observations m where m.share_class_id = sc.id and m.metric = '${metric}');`);
   }
+
+  // Fees and sizes missing from researched funds, taken from the same files.
+  out.push(`insert into public.share_class_fees (share_class_id, fee_type, value_pct, as_of, observed_on, source_id, verification)
+    select sc.id, d.fee_type, d.fee_pct, nullif(d.fee_as_of, '')::date, current_date, ds.id, 'extracted_unreviewed'
+    from public.universe_details d join public.universe_etfs u on u.etf_key = d.etf_key join public.share_classes sc on sc.isin = u.isin join public.data_sources ds on ds.url = d.source_url
+    where d.fee_pct is not null and d.fee_type in ('ter', 'ocf') and not exists (select 1 from public.share_class_fees f where f.share_class_id = sc.id);`);
+  out.push(`insert into public.metric_observations (fund_id, share_class_id, metric, value, unit, as_of, observed_on, source_id, verification)
+    select sc.fund_id, case when d.aum_level = 'share_class' then sc.id end, 'aum', d.aum, d.aum_currency, nullif(d.aum_as_of, '')::date, current_date, ds.id, 'extracted_unreviewed'
+    from public.universe_details d join public.universe_etfs u on u.etf_key = d.etf_key join public.share_classes sc on sc.isin = u.isin join public.data_sources ds on ds.url = d.source_url
+    where d.aum is not null and d.aum_currency is not null and not exists (select 1 from public.metric_observations m where m.fund_id = sc.fund_id and m.metric = 'aum');`);
 
   // US fees from SEC prospectus filings, used only where no issuer figure exists.
   const secPath = join(root, "data/universe/sec_fees.csv.gz");

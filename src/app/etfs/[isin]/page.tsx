@@ -75,7 +75,7 @@ function BasicRecord({ row }: { row: EtfRow }) {
         ["ISIN", row.isin ?? MISSING],
         ["Yearly fee", <Fee key="f" row={row} />],
         ["Fee date", row.ter_as_of ? `Filed ${formatDate(row.ter_as_of)}` : MISSING],
-        [row.aum_level === "share_class" ? "Share class size" : "Fund size", formatMoney(row.fund_aum, row.fund_aum_currency)],
+        [row.aum_level === "share_class" ? "Share class size" : "Fund size", formatMoney(row.fund_aum ?? row.class_aum, row.fund_aum_currency ?? row.class_aum_currency)],
         ["Size date", formatDate(row.fund_aum_as_of)],
         ["Index, inferred from its name", row.index_slug ? <Link key="i" className="prose-link" href={`/indices/${row.index_slug}`}>{row.index_name}</Link> : MISSING],
         ["Labels, inferred from its name", row.category_slugs.length ? row.category_slugs.join(", ").replaceAll("-", " ") : MISSING],
@@ -177,7 +177,7 @@ export default async function EtfPage({ params }: Props) {
               ["Latest NAV", row.nav !== null ? `${row.nav.toFixed(2)} ${row.nav_currency} on ${formatDate(row.nav_as_of)}` : MISSING],
             ]} />
             <p className="mt-2 max-w-[72ch] text-[0.85rem] text-muted">
-              Official NAV returns in {row.currency}, income reinvested, to {formatDate(row.nav_return_as_of)}.{" "}
+              Official NAV returns in {row.nav_currency ?? row.currency ?? "the fund's currency"}, income reinvested, to {formatDate(row.nav_return_as_of)}.{" "}
               <a className="prose-link" href={row.nav_return_source_url ?? "#"} target="_blank" rel="noreferrer">Issuer factsheet</a>. Past performance does not predict future returns.
             </p>
           </div>

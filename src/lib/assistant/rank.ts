@@ -30,9 +30,10 @@ export function scoreRow(row: EtfRow, intent: Intent, onSix: boolean, feeRange: 
   } else {
     cautions.push("No fee on file");
   }
-  if (row.fund_aum_eur !== null) {
-    score += Math.min(30, Math.max(0, (Math.log10(row.fund_aum_eur) - 7) * 10)); // €10m = 0, €10bn = 30.
-    if (row.fund_aum_eur < 100e6) cautions.push("Small: below about €100m, which can raise closure risk");
+  const size = row.fund_aum_eur ?? row.size_eur ?? null;
+  if (size !== null) {
+    score += Math.min(30, Math.max(0, (Math.log10(size) - 7) * 10)); // €10m = 0, €10bn = 30.
+    if (size < 100e6) cautions.push("Small: below about €100m, which can raise closure risk");
     else reasons.push("Large enough to reduce closure risk");
   } else {
     cautions.push("No size on file");
@@ -97,15 +98,11 @@ export async function findBestEtfs(intent: Intent, limit = 10): Promise<SearchOu
     applied.push(intent.replication === "synthetic" ? "Synthetic" : "Not synthetic");
   }
 
-  const isins = rows.map((r) => r.isin).filter(Boolean);
-  const six = intent.investorCountry === "Switzerland" && isins.length
-    ? new Set((await query<{ isin: string }>(`select s.isin from public.listings l join public.share_classes s on s.id = l.share_class_id where l.exchange_mic = 'XSWX' and s.isin = any($1::text[])`, [isins])).map((r) => r.isin))
-    : new Set<string>();
   const fees = rows.map((r) => r.headline_fee_pct).filter((f): f is number => f !== null);
   const feeRange = { min: fees.length ? Math.min(...fees) : 0, max: fees.length ? Math.max(...fees) : 1 };
   const results = rows
-    .map((r) => scoreRow(r, intent, r.isin ? six.has(r.isin) : false, feeRange))
-    .sort((a, b) => b.score - a.score || (b.row.fund_aum_eur ?? 0) - (a.row.fund_aum_eur ?? 0))
+    .map((r) => scoreRow(r, intent, r.listed_on_six === true, feeRange))
+    .sort((a, b) => b.score - a.score || (b.row.fund_aum_eur ?? b.row.size_eur ?? 0) - (a.row.fund_aum_eur ?? a.row.size_eur ?? 0))
     .slice(0, limit);
 
   const notChecked = [
@@ -113,7 +110,7 @@ export async function findBestEtfs(intent: Intent, limit = 10): Promise<SearchOu
     "Bid-ask spread and your broker's costs and availability.",
   ];
   if (intent.investorCountry) notChecked.unshift(COUNTRY_TAX(intent.investorCountry));
-  if (intent.investorCountry === "Switzerland") notChecked.push("SIX listing is known only for our most complete records, so others can be listed there without us showing it.");
+  if (intent.investorCountry === "Switzerland") notChecked.push("SIX listing comes from issuer files we hold, so a fund can be listed there without us showing it. Check SIX directly before ruling a fund out.");
   if (intent.index) notChecked.push("The link to an index is inferred from the name for most funds.");
   return { intent, total: rows.length, results, applied, notChecked };
 }
