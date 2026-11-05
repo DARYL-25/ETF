@@ -1,5 +1,8 @@
 name: Update SEC data
 on:
+  push:
+    branches: [phase-1-mvp]
+    paths: ["scripts/universe/sec.py"]
   workflow_dispatch:
 permissions:
   contents: write

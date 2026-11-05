@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SEC open data for US funds: ticker to series and class map, and fees from prospectus risk/return data sets.
+"""SEC open data for US funds, first pass samples the files: ticker to series and class map, and fees from prospectus risk/return data sets.
 SEC asks clients to state a contact, read from the SEC_CONTACT_EMAIL repository secret."""
 import io, json, os, re, sys, time, urllib.request, zipfile
 from pathlib import Path
