@@ -217,6 +217,7 @@ export function buildSeedSql(root: string): string {
   // The global list. Optional, so a fresh checkout still works before the download job has run.
   const universePath = join(root, "data/universe/universe.csv.gz");
   if (existsSync(universePath)) {
+    const universeOn = JSON.parse(readFileSync(join(root, "data/universe/report.json"), "utf8")).esma.on;
     const lines = gunzipSync(readFileSync(universePath)).toString("utf8").trim().split(/\r?\n/).slice(1);
     const parseLine = (line: string) => {
       const cells: string[] = [];
@@ -237,7 +238,7 @@ export function buildSeedSql(root: string): string {
     for (let i = 0; i < lines.length; i += 1000) {
       const values = lines.slice(i, i + 1000).map((line) => {
         const [key, isin, ticker, mic, name, currency, lei, issuer, country, ucits, assetClass, venues, source, url] = parseLine(line);
-        return `(${q(key)}, ${q(isin)}, ${q(ticker)}, ${q(mic)}, ${q(name)}, ${q(currency)}, ${q(lei)}, ${q(issuer)}, ${q(country)}, ${ucits === "t" ? "true" : "null"}, ${q(assetClass)}, ${Number(venues) || 0}, ${q(source)}, ${q(url)}, ${q(on)})`;
+        return `(${q(key)}, ${q(isin)}, ${q(ticker)}, ${q(mic)}, ${q(name)}, ${q(currency)}, ${q(lei)}, ${q(issuer)}, ${q(country)}, ${ucits === "t" ? "true" : "null"}, ${q(assetClass)}, ${Number(venues) || 0}, ${q(source)}, ${q(url)}, ${q(universeOn)})`;
       });
       out.push(`insert into public.universe_etfs (etf_key, isin, ticker, mic, name, currency, issuer_lei, issuer_name, issuer_country, ucits, asset_class, venues, source, source_url, retrieved_on) values\n${values.join(",\n")};`);
     }
