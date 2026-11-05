@@ -12,7 +12,25 @@
    "no_factsheet": 638
   }
  },
- "fees": 650,
- "fund_size": 650,
+ "ishares": {
+  "ok": true,
+  "result": {
+   "uk": {
+    "etfs": 924,
+    "unmatched": 6,
+    "unmatched_sample": [
+     "IE00B4NCWG09",
+     "IE00B4LHWP62",
+     "IE00B4ND3602",
+     "IE00B4556L06",
+     "IE000Q2P3ZQ3",
+     "XS2940466316"
+    ]
+   },
+   "us": "HTTPError: HTTP Error 500: Internal Server Error"
+  }
+ },
+ "fees": 1568,
+ "fund_size": 1568,
  "on": "2026-11-05"
 }
