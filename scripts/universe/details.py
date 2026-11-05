@@ -41,7 +41,7 @@ def de(n):
 def amundi():
     import pdfplumber
     wanted = [r for r in universe if r["isin"] and re.search("AMUNDI|LYXOR", r["name"] + " " + r["issuer_name"], re.I)]
-    limit = int(os.environ.get("AMUNDI_LIMIT", "1000"))
+    limit = int(os.environ.get("AMUNDI_LIMIT", "5000"))
     found = missing = 0
     month_ends = ["20260930"]
     for u in wanted[:limit]:
@@ -60,7 +60,7 @@ def amundi():
         if u["isin"] not in text:
             missing += 1
             continue
-        fee = re.search(r"Verwaltungsgeb\S+ und sonstige Verwaltungs- oder Betriebskosten\s+(\d+,\d+)\s*%", text)
+        fee = re.search(r"Verwaltungsgeb\S+ und sonstige Verwaltungs- oder Betriebskosten\s*\*?\s*(\d+,\d+)\s*%", text)
         fee_value = de(fee.group(1)) if fee else ""
         if fee_value != "" and fee_value > 2: fee_value = ""
         income = re.search(r"Ertragsverwendung\s+(.+)", text)
@@ -68,11 +68,12 @@ def amundi():
         policy = "accumulating" if income == "Thesaurierend" else "distributing" if income in ("Ausschüttend", "Ausschuettend") else ""
         cumulative = re.search(r"Portfolio ohne\s*\n?\s*(-?\d+,\d+)%\s+(-?\d+,\d+)%\s+(-?\d+,\d+)%\s+(-?\d+,\d+)%\s+(-?\d+,\d+)%\s+(-?\d+,\d+)%\s+(-?\d+,\d+)%", text)
         annual = lambda g, y: round(((1 + de(cumulative.group(g)) / 100) ** (1 / y) - 1) * 100, 2) if cumulative else ""
-        aum = re.search(r"Fondsvolumen\s*:\s*([\d.]+,\d+)\s*\(\s*Millionen\s*([A-Z]{3})", text)
+        aum = re.search(r"Fondsvolumen\s*:?\s*([\d.]+,\d+)\s*\(\s*Millionen\s*([A-Z]{3})", text)
         vol = re.search(r"Portfolio Volatilit\S+\s+(\d+,\d+)%\s*(\d+,\d+)%", text)
         te = re.search(r"Tracking Error[^\d]{0,12}(\d+,\d+)%\s*(\d+,\d+)%", text)
+        vl = re.search(r"VL [^:\n]*:\s*([\d.]+,\d+)\s*([A-Z]{3})", text)
         rows.append({"etf_key": u["etf_key"], "fee_pct": fee_value, "fee_type": "ongoing" if fee_value != "" else "", "distribution": policy, "aum": de(aum.group(1)) * 1e6 if aum and aum.group(2) else "", "aum_currency": aum.group(2) if aum and aum.group(2) else "", "aum_as_of": "2026-09-30",
-            "nav": "", "nav_currency": "", "nav_as_of": "", "ret_1y": de(cumulative.group(4)) if cumulative else "", "ret_3y": annual(5, 3), "ret_5y": annual(6, 5), "ret_si": "", "ret_as_of": "2026-09-30" if cumulative else "", "volatility_3y": de(vol.group(2)) if vol else "", "tracking_error_3y": de(te.group(2)) if te else "", "source": "Amundi factsheet", "source_url": url})
+            "nav": de(vl.group(1)) if vl else "", "nav_currency": vl.group(2) if vl else "", "nav_as_of": "2026-09-30" if vl else "", "ret_1y": de(cumulative.group(4)) if cumulative else "", "ret_3y": annual(5, 3), "ret_5y": annual(6, 5), "ret_si": "", "ret_as_of": "2026-09-30" if cumulative else "", "volatility_3y": de(vol.group(2)) if vol else "", "tracking_error_3y": de(te.group(2)) if te else "", "source": "Amundi factsheet", "source_url": url})
         found += 1
     return {"wanted": len(wanted), "tried": min(limit, len(wanted)), "found": found, "no_factsheet": missing}
 
