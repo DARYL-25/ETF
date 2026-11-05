@@ -1,27 +1,81 @@
 #!/usr/bin/env python3
-"""Reads free issuer data under an honest client name. A refusal is recorded and accepted, not retried.
-First pass: saves samples so parsers can be written against real output."""
-import csv, gzip, io, json, urllib.request
+"""Adds issuer-published fees, fund size, NAV and returns to basic records.
+Uses an honest client name and one request at a time. A refusal is recorded and accepted, never retried.
+Writes data/universe/details.csv.gz, keyed by the etf_key in universe.csv.gz."""
+import csv, datetime as dt, gzip, io, json, os, re, time, urllib.error, urllib.request
 from pathlib import Path
-OUT = Path("data/universe/details"); OUT.mkdir(parents=True, exist_ok=True)
+
+OUT = Path("data/universe"); (OUT / "details").mkdir(parents=True, exist_ok=True)
 UA = "etf-intelligence-universe/1.0 (+https://github.com/DARYL-25/ETF)"
+FIELDS = ["etf_key", "fee_pct", "fee_type", "aum", "aum_currency", "aum_as_of", "nav", "nav_currency", "nav_as_of", "ret_1y", "ret_3y", "ret_5y", "ret_si", "ret_as_of", "volatility_3y", "tracking_error_3y", "source", "source_url"]
+
 def get(url):
     with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": UA}), timeout=90) as r:
         return r.read()
-report = {}
-try:
-    d = json.loads(get("https://www.ssga.com/bin/v1/ssmp/fund/fundfinder?country=us&language=en&role=intermediary&product=etfs&ui=fund-finder"))
-    (OUT / "ssga_us.json.gz").write_bytes(gzip.compress(json.dumps(d).encode()))
-    report["ssga_us"] = {"ok": True}
-except Exception as e:
-    report["ssga_us"] = {"ok": False, "error": str(e)[:200]}
-try:
+
+universe = list(csv.DictReader(gzip.open(OUT / "universe.csv.gz", "rt", encoding="utf-8")))
+report, rows = {}, []
+
+def num(cell):
+    return cell[1] if isinstance(cell, list) and len(cell) > 1 and isinstance(cell[1], (int, float)) and cell[1] > -1e6 and abs(cell[1]) > 1e-300 else ""
+
+def ssga_us():
+    data = json.loads(get("https://www.ssga.com/bin/v1/ssmp/fund/fundfinder?country=us&language=en&role=intermediary&product=etfs&ui=fund-finder"))
+    by_ticker = {r["ticker"]: r for r in universe if r["source"] == "us" and r["ticker"]}
+    found = 0
+    for f in data["data"]["funds"]["etfs"]["datas"]:
+        ticker = re.sub(r"[^A-Z.]", "", f.get("fundTicker", ""))
+        u = by_ticker.get(ticker)
+        if not u or f.get("domicile") != "US": continue
+        aum = num(f.get("aum"))
+        rows.append({"etf_key": u["etf_key"], "fee_pct": num(f.get("ter")), "fee_type": "ger", "aum": aum * 1e6 if aum != "" else "", "aum_currency": "USD",
+            "aum_as_of": (f.get("asOfDate") or [None, ""])[1], "nav": num(f.get("nav")), "nav_currency": "USD", "nav_as_of": (f.get("asOfDate") or [None, ""])[1],
+            "ret_1y": num(f.get("yr1")), "ret_3y": num(f.get("yr3")), "ret_5y": num(f.get("yr5")), "ret_si": num(f.get("sinceInception")), "ret_as_of": (f.get("PerfAsOf") or [None, ""])[1],
+            "volatility_3y": "", "tracking_error_3y": "", "source": "State Street", "source_url": "https://www.ssga.com" + f.get("fundUri", "")})
+        found += 1
+    return found
+
+def de(n):
+    return float(n.replace(".", "").replace(",", "."))
+
+def amundi():
     import pdfplumber
-    b = get("https://www.amundietf.de/pdfDocuments/monthly-factsheet/LU1681043599/DEU/DEU/INSTITUTIONNEL/ETF/20260930")
-    with pdfplumber.open(io.BytesIO(b)) as p:
-        (OUT / "amundi_sample.txt").write_text("\n".join((pg.extract_text() or "") for pg in p.pages[:2])[:4000])
-    report["amundi"] = {"ok": True}
-except Exception as e:
-    report["amundi"] = {"ok": False, "error": str(e)[:200]}
-(OUT / "report.json").write_text(json.dumps(report, indent=1))
-print(report)
+    wanted = [r for r in universe if r["isin"] and re.search("AMUNDI|LYXOR", r["name"] + " " + r["issuer_name"], re.I)]
+    limit = int(os.environ.get("AMUNDI_LIMIT", "1000"))
+    found = missing = 0
+    month_ends = ["20260930"]
+    for u in wanted[:limit]:
+        url = f"https://www.amundietf.de/pdfDocuments/monthly-factsheet/{u['isin']}/DEU/DEU/INSTITUTIONNEL/ETF/{month_ends[0]}"
+        time.sleep(1)
+        try:
+            blob = get(url)
+            if blob[:4] != b"%PDF": raise ValueError("not a pdf")
+            with pdfplumber.open(io.BytesIO(blob)) as p:
+                text = "\n".join((pg.extract_text() or "") for pg in p.pages[:3])
+        except Exception:
+            missing += 1
+            continue
+        if found == 0: (OUT / "details" / "amundi_sample.txt").write_text(text[:14000])
+        # The ISIN must appear in the document, or the figures are not this fund's.
+        if u["isin"] not in text:
+            missing += 1
+            continue
+        ter = re.search(r"(?:TER|Laufende Kosten|Gesamtkosten\w*)\D{0,40}(\d+,\d+)\s*%", text)
+        aum = re.search(r"Fondsverm\w+\D{0,40}([\d.]+,\d+)\s*\(?\s*(?:Millionen|Mio\.?)\s*([A-Z]{3})?", text) or re.search(r"([\d.]+,\d+)\s*\(?\s*(?:Millionen|Mio\.?)\s*([A-Z]{3})", text)
+        vol = re.search(r"Portfolio Volatilit\S+\s+(\d+,\d+)%\s*(\d+,\d+)%", text)
+        te = re.search(r"Tracking Error[^\d]{0,12}(\d+,\d+)%\s*(\d+,\d+)%", text)
+        rows.append({"etf_key": u["etf_key"], "fee_pct": de(ter.group(1)) if ter else "", "fee_type": "ter" if ter else "", "aum": de(aum.group(1)) * 1e6 if aum and aum.group(2) else "", "aum_currency": aum.group(2) if aum and aum.group(2) else "", "aum_as_of": "2026-09-30",
+            "nav": "", "nav_currency": "", "nav_as_of": "", "ret_1y": "", "ret_3y": "", "ret_5y": "", "ret_si": "", "ret_as_of": "", "volatility_3y": de(vol.group(2)) if vol else "", "tracking_error_3y": de(te.group(2)) if te else "", "source": "Amundi factsheet", "source_url": url})
+        found += 1
+    return {"wanted": len(wanted), "tried": min(limit, len(wanted)), "found": found, "no_factsheet": missing}
+
+for name, fn in {"ssga_us": ssga_us, "amundi": amundi}.items():
+    try:
+        report[name] = {"ok": True, "result": fn()}
+    except Exception as e:
+        report[name] = {"ok": False, "error": f"{type(e).__name__}: {e}"[:300]}
+    print(name, report[name], flush=True)
+with gzip.open(OUT / "details.csv.gz", "wt", newline="", encoding="utf-8") as fh:
+    w = csv.DictWriter(fh, FIELDS); w.writeheader(); w.writerows(rows)
+report["fees"] = sum(1 for r in rows if r["fee_pct"] != ""); report["fund_size"] = sum(1 for r in rows if r["aum"] != ""); report["on"] = dt.date.today().isoformat()
+(OUT / "details" / "report.json").write_text(json.dumps(report, indent=1))
