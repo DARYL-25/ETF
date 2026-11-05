@@ -13,6 +13,10 @@ npm run dev        # http://localhost:3000
 
 No accounts or keys are needed. Without `DATABASE_URL`, the app starts an embedded Postgres in memory (PGlite), built from the same migrations and data used in production. Sign-in stays off until Supabase is configured.
 
+## Try it without installing anything
+
+On GitHub, open the `phase-1-mvp` branch, choose **Code**, then **Codespaces**, then **Create codespace**. Wait a few minutes for the build. The app then opens in a browser tab.
+
 ## What works today
 
 - Dashboard with the fee ruler, largest funds and lowest fees by group
