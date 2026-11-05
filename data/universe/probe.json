@@ -1,0 +1,107 @@
+{
+"sec_mf_tickers": {
+"error": "HTTP Error 403: Forbidden"
+},
+"sec_rr_page": {
+"error": "HTTP Error 403: Forbidden"
+},
+"sec_rr_old": {
+"error": "HTTP Error 403: Forbidden"
+},
+"ishares_us": {
+"error": "HTTP Error 403: Forbidden"
+},
+"ishares_uk_a": {
+"error": "HTTP Error 404: Not Found"
+},
+"ishares_uk_b": {
+"error": "HTTP Error 404: Not Found"
+},
+"ishares_ch": {
+"error": "HTTP Error 403: Forbidden"
+},
+"ssga_ie": {
+"status": 200,
+"type": "application/json;charset=utf-8",
+"bytes": 64,
+"head": "{\"data\":{\"fundType\":[],\"funds\":{}},\"msg\":\"success\",\"status\":200}"
+},
+"ssga_us": {
+"status": 200,
+"type": "application/json;charset=utf-8",
+"bytes": 870407,
+"head": "{\"data\":{\"fundType\":[{\"key\":\"etfs\",\"name\":\"ETFs\",\"size\":187}],\"funds\":{\"etfs\":{\"viewBy\":{\"overview\":{\"name\":\"Overview\"},\"performance\":{\"name\":\"Performance\",\"children\":{\"monthEnd\":\"Month End\",\"quarterEnd\":\"Quarter End\"}},\"pricing\":{\"name\":\"Pricing\"},\"documents\":{\"name\":\"Documents\"}},\"labels\":[{\"key\":\"domicile\",\"name\":\"Domicile\",\"tab\":[\"overview\",\"documents\"]},{\"key\":\"fundName\",\"name\":\"Name\",\"tab\":[\"overview\",\"pricing\",\"documents\"]},{\"key\":\"fundNamePerf\",\"name\":\"Name\",\"tab\":[\"performance\"]},{\"key\":\"fundTicker\",\"name\":\"Ticker\",\"tab\":[\"overview\",\"pricing\",\"documents\"]},{\"key\":\"ter\",\"name\":\"Gross Expense Ratio\",\"tab\":[\"overview\",\"performance\"]},{\"key\":\"primaryExchange\",\"name\":\"Primary Exchange\",\""
+},
+"six_csv": {
+"error": "HTTP Error 400: Bad Request"
+},
+"six_sheldon": {
+"error": "HTTP Error 303: The HTTP server returned a redirect error that would lead to an infinite loop.\nThe last 30x error message was:\nSee Other"
+},
+"euronext": {
+"status": 200,
+"type": "text/html; charset=UTF-8",
+"bytes": 399978,
+"head": "<!DOCTYPE html>\n<html lang=\"en\" dir=\"ltr\">\n  <head>\n    <meta charset=\"utf-8\" />\n<noscript><style>form.antibot * :not(.antibot-message) { display: none !important; }</style>\n</noscript><meta name=\"description\" content=\"- Live Euronext stock exchange quotes, realtime prices, charts and regulated news\" />\n<link rel=\"canonical\" href=\"https://live.euronext.com/en/products/etfs/list\" />\n<meta name=\"google\" content=\"notranslate\" />\n<meta name=\"Generator\" content=\"Drupal 10 (https://www.drupal.org); Commerce 2\" />\n<meta name=\"MobileOptimized\" content=\"width\" />\n<meta name=\"HandheldFriendly\" content=\"true\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\" />\n<s"
+},
+"xetra_page": {
+"status": 200,
+"type": "text/html;charset=UTF-8",
+"bytes": 152057,
+"head": "\r\n<!DOCTYPE html>\r\n<html class=\"no-js\" lang=\"en\" dir=\"ltr\"     data-js-iconsprite=\"/resource/crblob/4152698/e73e0326ac4d709ab336d51a0ddc2662/data/icon-sprite.svg.svg\">\r\n<head >\r\n<meta charset=\"UTF-8\">\r\n<link rel=\"preload\" href=\"/resource/themes/cashmarket-refresh/css/cashmarket-refresh-4152814-42.css\" as=\"style\">\r\n<link rel=\"preload\" href=\"/resource/themes/cashmarket-refresh/js/chunkPathById-4152800-47.js\" as=\"script\">\r\n<link rel=\"preload\" href=\"/resource/themes/cashmarket-refresh/js/commons-4152802-42.js\" as=\"script\"><link rel=\"preload\" href=\"/resource/themes/cashmarket-refresh/js/cashmarket-refresh-4152796-42.js\" as=\"script\">\r\n<meta name=\"twitter:card\" content=\"summary_large_image\" />\r\n<me"
+},
+"dbg_etf": {
+"status": 200,
+"type": "text/html;charset=UTF-8",
+"bytes": 125308,
+"head": "\r\n<!DOCTYPE html>\r\n<html class=\"no-js\" lang=\"en\" dir=\"ltr\"     data-js-iconsprite=\"/resource/crblob/4152698/e73e0326ac4d709ab336d51a0ddc2662/data/icon-sprite.svg.svg\">\r\n<head >\r\n<meta charset=\"UTF-8\">\r\n<link rel=\"preload\" href=\"/resource/themes/cashmarket-refresh/css/cashmarket-refresh-4152814-42.css\" as=\"style\">\r\n<link rel=\"preload\" href=\"/resource/themes/cashmarket-refresh/js/chunkPathById-4152800-47.js\" as=\"script\">\r\n<link rel=\"preload\" href=\"/resource/themes/cashmarket-refresh/js/commons-4152802-42.js\" as=\"script\"><link rel=\"preload\" href=\"/resource/themes/cashmarket-refresh/js/cashmarket-refresh-4152796-42.js\" as=\"script\">\r\n<meta name=\"twitter:card\" content=\"summary_large_image\" />\r\n<me"
+},
+"lse_etf": {
+"error": "HTTP Error 403: Forbidden"
+},
+"tmx_list": {
+"status": 200,
+"type": "application/json; charset=utf-8",
+"bytes": 329094,
+"head": "{\"last_updated\":1793786122,\"length\":2342,\"results\":[{\"symbol\":\"IGBT.UN\",\"name\":\"2028 Investment Grade Bond Trust\",\"instruments\":[{\"symbol\":\"IGBT.UN\",\"name\":\"2028 InvGrd Bnd F Un\"}]},{\"symbol\":\"BTCQ\",\"name\":\"3iQ Bitcoin ETF\",\"instruments\":[{\"symbol\":\"BTCQ\",\"name\":\"3iQ Bitcoin ETF Un\"},{\"symbol\":\"BTCQ.U\",\"name\":\"3iQ Bitcoin USF\"}]},{\"symbol\":\"ETHQ\",\"name\":\"3iQ Ether Staking ETF\",\"instruments\":[{\"symbol\":\"ETHQ\",\"name\":\"3iQ Ether Staking Un\"},{\"symbol\":\"ETHQ.U\",\"name\":\"3iQ Ether Staking US\"}]},{\"symbol\":\"SOLQ\",\"name\":\"3iQ Solana Staking ETF\",\"instruments\":[{\"symbol\":\"SOLQ\",\"name\":\"3iQ Solana Stakg ETF\"},{\"symbol\":\"SOLQ.U\",\"name\":\"3iQ Sola Stak ETF US\"}]},{\"symbol\":\"XRPQ\",\"name\":\"3iQ XRP ETF\",\"in"
+},
+"dws_list": {
+"status": 200,
+"type": "application/json; charset=utf-8",
+"bytes": 29,
+"head": "{\"culture\":\"en-GB\",\"main\":{}}"
+},
+"dws_sheet": {
+"status": 200,
+"type": "text/html;charset=utf-8",
+"bytes": 2560,
+"head": "<!DOCTYPE html><html><head><meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<link rel=\"stylesheet\" href=\"/_passive-nuxt/entry.D4Kbrw1q.css\" crossorigin>\n<link rel=\"modulepreload\" as=\"script\" crossorigin href=\"/_passive-nuxt/D8RBR3FO.js\">\n<script type=\"module\" src=\"/_passive-nuxt/D8RBR3FO.js\" crossorigin></script>\n<link rel=\"prefetch\" as=\"image\" type=\"image/png\" href=\"/_passive-nuxt/5708fad8e8a351cd.CwyIQDqL.png\">\n<link rel=\"prefetch\" as=\"image\" type=\"image/svg+xml\" href=\"/_passive-nuxt/d32e5f409d5d14b8.C29gs1KR.svg\">\n<link rel=\"prefetch\" as=\"image\" type=\"image/svg+xml\" href=\"/_passive-nuxt/la-brands-400.wsUI3UJ9.svg\">\n<link rel=\"prefetch\" as=\"image\""
+},
+"invesco": {
+"status": 200,
+"type": "text/html;charset=utf-8",
+"bytes": 480411,
+"head": "<!--\n* This file is created specifically to update\n* lang attribute in html tag and\n* data-language attribute body tag\n* based on the country and language\n* in SPA pages\n-->\n<!DOCTYPE html>\n<html lang=\"en\">\n  <head><script>\n;window.NREUM||(NREUM={});NREUM.init={session_replay:{enabled:true,block_selector:'',mask_text_selector:'*',sampling_rate:10.0,error_sampling_rate:100.0,mask_all_inputs:true,collect_fonts:true,inline_images:false,inline_stylesheet:true,mask_input_options:{}},distributed_tracing:{enabled:true},privacy:{cookies_enabled:true},ajax:{deny_list:[\"bam.nr-data.net\"]}};\n\n;NREUM.loader_config={accountID:\"2534815\",trustKey:\"1322840\",agentID:\"1588977597\",licenseKey:\"4bf05804da\",appli"
+},
+"vanguard_us": {
+"status": 200,
+"type": "text/html; charset=utf-8",
+"bytes": 50867,
+"head": "<!DOCTYPE html>\n<html lang=\"en\" data-critters-container>\n  <head>\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" charset=\"utf-8\">\n    <title>Vanguard Investment Products List</title>\n    <base href=\"/investment-products/list/\">\n\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <meta name=\"app_prefix\" content=\"VFA\">\n\n    <link rel=\"icon\" type=\"image/x-icon\" href=\"pkg/1.1.1/web/favicon.ico\">\n    <link rel=\"stylesheet\" fetchpriority=\"high\" href=\"https://n4v.web.vanguard.com/nav-preload.css\">\n\n    <script type=\"text/javascript\" src=\"https://corp-at2.web.vanguard.com/antiflicker_v1/antiflicker.min.js\"></script>\n    <script src=\"https://n4v.web.vanguard.com/se"
+},
+"vanguard_api": {
+"error": "HTTP Error 404: Not Found"
+},
+"amundi_pdf": {
+"status": 200,
+"type": "application/pdf",
+"bytes": 493248,
+"head": "%PDF-1.4\n3 0 obj\n<</Type /Page\n/Parent 1 0 R\n/MediaBox [0 0 594.96 841.92]\n/Resources 2 0 R\n/Contents 4 0 R>>\nendobj\n4 0 obj\n<</Filter /FlateDecode /Length 61>>\nstream\nx\u009c3R\u00f0\u00e22\u00d035W(\u00e7*T0P\u00f0R0T(\u0007\u00d2Y@\u00ec\u000e\u00c4\u00e9\n\u0086z\u0006@\u00a0\u0000\u00820&\n\u0095\u009c\u00ab\u00a0\u001f\u0012\u00e0c\u00a0\u00e0\u0092\u00af\u0010\u00c8\u0005\u0000ke\u000f\u00d4\nendstream\nendobj\n5 0 obj\n<</Type /Page\n/Parent 1 0 R\n/MediaBox [0 0 594.96 841.92]\n/Resources 2 0 R\n/Contents 6 0 R>>\nendobj\n6 0 obj\n<</Filter /FlateDecode /Length 61>>\nstream\nx\u009c3R\u00f0\u00e22\u00d035W(\u00e7*T0P\u00f0R0T(\u0007\u00d2Y@\u00ec\u000e\u00c4\u00e9\n\u0086z\u0006@\u00a0\u0000\u00820&\n\u0095\u009c\u00ab\u00a0\u001f\u0012\u00e0c\u00a8\u00e0\u0092\u00af\u0010\u00c8\u0005\u0000kl\u000f\u00d5\nendstream\nendobj\n7 0 obj\n<</Type /Page\n/Parent 1 0 R\n/MediaBox [0 0 594.96 841.92]\n/Resources 2 0 R\n/Contents 8 0 R>>\nendobj\n8 0 obj\n<</Filter /FlateDecode /Length 61>>\nstream\nx\u009c3R\u00f0\u00e22\u00d035W(\u00e7*T0P\u00f0R0T(\u0007\u00d2Y@\u00ec\u000e\u00c4\u00e9\n\u0086z\u0006@\u00a0\u0000\u00820&\n\u0095\u009c\u00ab\u00a0\u001f\u0012\u00e0c\u00a4\u00e0\u0092\u00af\u0010\u00c8\u0005"
+},
+"yahoo_chart": {
+"error": "HTTP Error 429: Too Many Requests"
+},
+"stooq": {
+"error": "HTTP Error 404: Not Found"
+}
+}
