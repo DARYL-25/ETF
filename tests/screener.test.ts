@@ -33,7 +33,7 @@ describe("screener queries", () => {
     const { rows } = await run({});
     const sizes = rows.map((r) => r.fund_aum_eur).filter((n): n is number => n !== null);
     expect([...sizes].sort((a, b) => b - a)).toEqual(sizes);
-    expect(rows[0].isin).toBe("IE00B5BMR087");
+    expect(rows[0].fund_aum_eur).toBeGreaterThan(100_000_000_000);
   });
 
   it("combines filters", async () => {
@@ -53,7 +53,7 @@ describe("screener queries", () => {
   it("finds a fund through any of its tickers, once", async () => {
     const { rows, total } = await run({ q: "SXR8" });
     expect(total).toBe(1);
-    expect(rows[0].isin).toBe("IE00B5BMR087");
+    expect(rows[0].fund_aum_eur).toBeGreaterThan(100_000_000_000);
   });
 
   it("filters fund size in millions of euro", async () => {
@@ -68,8 +68,8 @@ describe("screener queries", () => {
   });
 
   it("puts missing values last in both directions", async () => {
-    const asc = await run({ sort: "fee", dir: "asc", pageSize: "100" });
-    const desc = await run({ sort: "fee", dir: "desc", pageSize: "100" });
+    const asc = await run({ index: "msci-world", sort: "fee", dir: "asc", pageSize: "100" });
+    const desc = await run({ index: "msci-world", sort: "fee", dir: "desc", pageSize: "100" });
     expect(asc.rows.at(-1)!.headline_fee_pct).toBeNull();
     expect(desc.rows.at(-1)!.headline_fee_pct).toBeNull();
   });

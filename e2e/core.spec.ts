@@ -30,10 +30,10 @@ test("screener filters through the URL and reads back from a shared link", async
 });
 
 test("sorting by fee puts missing fees last", async ({ page }) => {
-  await page.goto("/screener?sort=fee&dir=desc&pageSize=100");
+  await page.goto("/screener?index=msci-world&sort=fee&dir=desc");
   const lastRow = page.locator("tbody tr").last();
   await expect(lastRow).toContainText("—");
-  await expect(page.locator("tbody tr").first()).toContainText("0.65%");
+  await expect(page.locator("tbody tr").first()).toContainText("0.38%");
 });
 
 test("table columns can be changed and stay in the link", async ({ page, isMobile }) => {

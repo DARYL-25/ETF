@@ -35,7 +35,7 @@ issuers = {r["lei"]: r for r in read(f"{OUT}/issuers.csv.gz")} if os.path.exists
 merged, by_isin = {}, {}
 for path in sorted(glob.glob(f"{OUT}/*.csv.gz")):
     source = os.path.basename(path).replace(".csv.gz", "")
-    if source in ("issuers", "universe", "us"): continue
+    if source in ("issuers", "universe", "us", "details"): continue
     for r in read(path):
         key = r["isin"] or f'{r["mic"]}-{r["ticker"]}'
         m = merged.setdefault(key, {"etf_key": key, "isin": r["isin"], "ticker": r["ticker"], "mic": "", "name": "", "currency": "", "issuer_lei": "", "source": source, "venues": set()})
