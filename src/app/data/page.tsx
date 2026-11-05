@@ -36,7 +36,7 @@ export default async function Page() {
         <section>
           <h2 className="mb-2 text-[1.4rem]">Current limits</h2>
           <ul className="list-disc space-y-1.5 pl-5">
-            <li>Most ETFs are basic records from official lists: EU and UK instrument registers, and exchange lists. Issuer and registered country come from the GLEIF register, and asset class on these records is inferred from the name.</li>
+            <li>Most ETFs are basic records from official lists: EU and UK instrument registers, and exchange lists. Issuer and registered country come from the GLEIF register, and asset class, region, theme, style and index on these records are inferred from the name, so they can be wrong.</li>
             <li>A fund traded on several lists can appear more than once where lists share no identifier, especially US funds. Some markets are not covered yet.</li>
             <li>Price history appears only where we hold data licensed for this use. Risk metrics, full holdings and tax analysis are not available yet.</li>
             <li>Only European listings are loaded.</li>

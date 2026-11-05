@@ -147,7 +147,7 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
                     {show("domicile") ? <SortHeader params={params} sort="domicile" label="Domicile" /> : null}
                     {show("replication") ? <SortHeader params={params} sort="replication" label="Replication" /> : null}
                     <SortHeader params={params} sort="fee" label="Yearly fee" numeric />
-                    <SortHeader params={params} sort="aum" label="Fund size" numeric />
+                    <SortHeader params={params} sort="aum" label="Size" numeric />
                     {show("return1y") ? <SortHeader params={params} sort="return1y" label="1Y return" numeric className={phoneHide} /> : null}
                     {show("return3y") ? <SortHeader params={params} sort="return3y" label="3Y return p.a." numeric className={phoneHide} /> : null}
                     {show("yield") ? <SortHeader params={params} sort="yield" label="Yield" numeric /> : null}
@@ -168,7 +168,7 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
                       {show("domicile") ? <td>{countryName(row.domicile)}</td> : null}
                       {show("replication") ? <td className="whitespace-nowrap">{replicationLabel(row.replication)}</td> : null}
                       <td className="num"><Fee row={row} /></td>
-                      <td className="num whitespace-nowrap">{formatMoney(row.fund_aum, row.fund_aum_currency)}</td>
+                      <td className="num whitespace-nowrap">{formatMoney(row.fund_aum, row.fund_aum_currency)}{row.aum_level === "share_class" ? <span className="block text-[0.75rem] text-muted">Share class</span> : null}</td>
                       {show("return1y") ? <td className={`num ${phoneHide}`}><Change value={row.return_1y} /></td> : null}
                       {show("return3y") ? <td className={`num ${phoneHide}`}><Change value={row.return_3y} /></td> : null}
                       {show("yield") ? <td className="num">{formatPct(row.trailing_yield_pct)}</td> : null}
@@ -187,7 +187,7 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
             </nav>
           ) : null}
           <p className="mt-4 max-w-[72ch] text-[0.85rem] text-muted">
-            Most ETFs here are basic records from official lists, with name, identifiers and issuer. Detailed fields appear as issuer data is added, so filters on fees, region or income narrow to researched funds. Asset class on basic records is inferred from the name. A dash means we have no verified figure yet. Size is the whole fund where the issuer gives it, and the share class for iShares, in the currency shown. 1Y and 3Y are official NAV returns from the issuer factsheet where we hold one, otherwise the change in market price. Each ETF page shows which.
+            Most ETFs here are basic records from official lists. Region, theme, style, index and asset class on those records are inferred from the fund name, so check the factsheet. Size is the whole fund unless marked as a share class, in the currency shown. Returns are official NAV figures where we hold them, otherwise market price change. A dash means no verified figure yet.
           </p>
         </section>
       </div>

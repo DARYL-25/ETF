@@ -38,7 +38,8 @@ describe("screener queries", () => {
 
   it("combines filters", async () => {
     const { rows } = await run({ index: "sp-500", distribution: "accumulating", feeMax: "0.07" });
-    expect(rows.map((r) => r.isin).sort()).toEqual(["IE00B5BMR087", "IE00BFMXXD54"]);
+    expect(rows.map((r) => r.isin)).toEqual(expect.arrayContaining(["IE00B5BMR087", "IE00BFMXXD54"]));
+    for (const r of rows) expect(r.headline_fee_pct!).toBeLessThanOrEqual(0.07);
   });
 
   it("matches any tick within a group but all groups together", async () => {
@@ -46,6 +47,7 @@ describe("screener queries", () => {
     const usAndTech = await run({ region: "us", theme: "technology" });
     const us = await run({ region: "us", pageSize: "100" });
     expect(usOrEurope.total).toBeGreaterThan(us.total);
+    expect(us.total).toBeGreaterThan(1000);
     expect(usAndTech.total).toBeLessThan(us.total);
     for (const r of usAndTech.rows) expect(r.category_slugs).toEqual(expect.arrayContaining(["us", "technology"]));
   });
@@ -99,7 +101,8 @@ describe("lookups", () => {
   it("finds every ETF on an index, cheapest first", async () => {
     const result = await getIndex("sp-500");
     expect(result!.etfs.length).toBeGreaterThanOrEqual(5);
-    expect(result!.etfs[0].headline_fee_pct).toBe(0.07);
+    const fees = result!.etfs.map((e) => e.headline_fee_pct).filter((f): f is number => f !== null);
+    expect([...fees].sort((a, b) => a - b)).toEqual(fees);
   });
 
   it("returns comparison rows in the requested order", async () => {

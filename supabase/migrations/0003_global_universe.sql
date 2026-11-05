@@ -15,7 +15,9 @@ create table public.universe_etfs (
   venues          integer not null default 0,
   source          text not null,
   source_url      text,
-  retrieved_on    date not null
+  retrieved_on    date not null,
+  index_slug      text references public.indices (slug),
+  category_slugs  text[] not null default '{}'
 );
 create index universe_etfs_isin_idx on public.universe_etfs (isin);
 create index universe_etfs_ticker_idx on public.universe_etfs (upper(ticker));
@@ -48,14 +50,16 @@ create table public.universe_details (
   distribution       text,
   source             text,
   source_url         text,
-  name               text
+  name               text,
+  -- 'fund' or 'share_class': what the size figure covers.
+  aum_level          text
 );
 alter table public.universe_details enable row level security;
 create policy "public read" on public.universe_details for select to anon, authenticated using (true);
 grant select on public.universe_details to anon, authenticated;
 
 create view public.etf_directory with (security_invoker = true) as
-select o.*, o.isin as etf_key, null::int as venues, null::float8 as volatility_3y, null::float8 as tracking_error_3y from public.etf_overview o
+select o.*, o.isin as etf_key, null::int as venues, null::float8 as volatility_3y, null::float8 as tracking_error_3y, 'fund'::text as aum_level from public.etf_overview o
 union all
 select
   nullif(u.isin, '') as isin,
@@ -78,8 +82,8 @@ select
   d.distribution as distribution_policy,
   null::text as distribution_frequency,
   null::boolean as hedged,
-  null::text as index_slug,
-  null::text as index_name,
+  u.index_slug as index_slug,
+  (select i.name from public.indices i where i.slug = u.index_slug) as index_name,
   null::text as benchmark_as_published,
   nullif(u.ticker, '') as ticker,
   nullif(u.mic, '') as ticker_exchange,
@@ -115,7 +119,7 @@ select
   d.nav_as_of as nav_as_of,
   d.ret_1y as return_1y,
   d.ret_3y as return_3y,
-  '{}'::text[] as category_slugs,
+  u.category_slugs as category_slugs,
   '{}'::text[] as category_labels,
   coalesce(d.source_url, u.source_url) as source_url,
   'official_list' as source_kind,
@@ -124,7 +128,8 @@ select
   u.etf_key,
   u.venues,
   d.volatility_3y,
-  d.tracking_error_3y
+  d.tracking_error_3y,
+  d.aum_level
 from public.universe_etfs u
 left join public.universe_details d on d.etf_key = u.etf_key
 left join lateral (

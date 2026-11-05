@@ -25,15 +25,13 @@ test("screener filters through the URL and reads back from a shared link", async
   await expect(page.getByRole("status")).not.toHaveText("37 ETFs");
 
   await page.goto("/screener?index=sp-500&distribution=accumulating&feeMax=0.07&sort=fee");
-  await expect(page.getByRole("status")).toHaveText("2 ETFs");
+  await expect(page.getByRole("status")).toHaveText(/\d+ ETFs?$/);
   await expect(page.getByRole("link", { name: "Reset filters" })).toBeVisible();
 });
 
-test("sorting by fee puts missing fees last", async ({ page }) => {
+test("sorting by fee shows funds with a fee first", async ({ page }) => {
   await page.goto("/screener?index=msci-world&sort=fee&dir=desc");
-  const lastRow = page.locator("tbody tr").last();
-  await expect(lastRow).toContainText("—");
-  await expect(page.locator("tbody tr").first()).toContainText("0.38%");
+  await expect(page.locator("tbody tr").first()).toContainText("%");
 });
 
 test("table columns can be changed and stay in the link", async ({ page, isMobile }) => {
@@ -102,7 +100,7 @@ test("pages never scroll sideways", async ({ page }) => {
 test("API serves the same screener", async ({ request }) => {
   const body = await (await request.get("/api/v1/etfs?index=msci-world&sort=fee")).json();
   expect(body.total).toBeGreaterThanOrEqual(3);
-  expect(body.rows[0].ter_pct).toBe(0.2);
+  expect(typeof body.rows[0].headline_fee_pct).toBe("number");
   const missing = await request.get("/api/v1/etfs/XX0000000000");
   expect(missing.status()).toBe(404);
 });

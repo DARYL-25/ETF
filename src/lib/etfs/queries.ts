@@ -35,6 +35,7 @@ export type EtfRow = {
   ocf_as_of: string | null;
   headline_fee_pct: number | null;
   headline_fee_type: "ter" | "ocf" | "ger" | "ongoing" | "net" | "gross_sec" | null;
+  aum_level?: string | null;
   volatility_3y?: number | null;
   tracking_error_3y?: number | null;
   fund_aum: number | null;
@@ -105,10 +106,9 @@ export async function screenerOptions() {
     grouped("currency"),
     grouped("index_slug", "index_name"),
     query<FilterOption & { kind: string }>(
-      `select c.slug as value, c.label, c.kind, count(sc.id)::int as count
-       from public.categories c
-       join public.fund_categories fc on fc.category_id = c.id
-       join public.share_classes sc on sc.fund_id = fc.fund_id
+      `select c.slug as value, c.label, c.kind, count(*)::int as count
+       from public.etf_directory d cross join lateral unnest(d.category_slugs) as s(slug)
+       join public.categories c on c.slug = s.slug
        group by 1, 2, 3 order by c.kind, c.label`,
     ),
   ]);
@@ -234,7 +234,7 @@ export type IndexRow = {
 export const getIndices = () =>
   query<IndexRow>(
     `select i.slug, i.name, i.provider, i.asset_class, i.geography, i.currency, i.constituents_count, i.methodology_url, i.description,
-       (select count(*)::int from public.fund_index_relationships r join public.share_classes s on s.fund_id = r.fund_id where r.index_id = i.id) as etf_count
+       (select count(*)::int from public.etf_directory d where d.index_slug = i.slug) as etf_count
      from public.indices i order by etf_count desc, i.name asc`,
   );
 
@@ -243,7 +243,7 @@ export async function getIndex(slug: string): Promise<{ index: IndexRow; etfs: E
   const index = all.find((i) => i.slug === slug);
   if (!index) return null;
   const etfs = await query<EtfRow>(
-    "select * from public.etf_overview where index_slug = $1 order by headline_fee_pct asc nulls last, fund_aum_eur desc nulls last",
+    "select * from public.etf_directory where index_slug = $1 order by headline_fee_pct asc nulls last, fund_aum_eur desc nulls last",
     [slug],
   );
   return { index, etfs };
@@ -251,7 +251,7 @@ export async function getIndex(slug: string): Promise<{ index: IndexRow; etfs: E
 
 export const getSimilarEtfs = (row: EtfRow, limit = 6) =>
   query<EtfRow>(
-    `select * from public.etf_overview
+    `select * from public.etf_directory
      where isin <> $1 and (index_slug = $2 or (asset_class = $3 and category_slugs && $4::text[]))
      order by (index_slug = $2) desc nulls last, headline_fee_pct asc nulls last limit ${limit}`,
     [row.isin, row.index_slug, row.asset_class, row.category_slugs],

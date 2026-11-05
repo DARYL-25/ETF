@@ -29,6 +29,10 @@ The database is the business, so this is the main risk. **Nothing below is legal
 - **Inferred:** asset class on basic rows comes from name keywords, and registered country is the issuer's GLEIF legal address, not a checked domicile.
 - **To check before launch:** reuse terms of each exchange list.
 
+## Inference from names
+
+Region, theme, style, index and some asset classes on basic records come from `src/lib/etfs/infer.ts`. They use name patterns, and narrower variants are kept out of flagship indices. They can be wrong, and the UI says they are inferred. Issuer data replaces them over time.
+
 ## Bulk issuer figures
 
 `scripts/universe/details.py` adds fees, fund size, income, returns and risk figures. It uses an honest client name, goes one request at a time, and accepts refusals.
@@ -37,6 +41,8 @@ The database is the business, so this is the main risk. **Nothing below is legal
 - **Amundi and Lyxor:** monthly factsheet PDFs by ISIN. Cumulative 3 and 5 year returns are annualised by us. A figure is kept only if the ISIN appears in that PDF.
 - **SEC prospectus data:** open government data, used for US fees where no issuer figure exists. Requests state a contact from the `SEC_CONTACT_EMAIL` secret. Filings run from 2024 to 2026, so a fee can be out of date, and each shows its filing date. Figures include acquired fund fees where reported, so funds holding other funds can show high fees.
 - **iShares:** the public product list its own site loads.
+- **State Street Europe:** public product data file.
+- **Waiting on the owner:** Xtrackers and Vanguard show terms first, so the owner accepts them and provides the file or the go-ahead. Invesco's page shows 50 of 300 products and its next page did not respond to automation, so its list also comes from the owner.
 - **Refused:** iShares' older screener address, London Stock Exchange's list and Yahoo's chart endpoint answered 403 or 429 from GitHub. Bypassing those refusals is out of scope.
 
 ## The free data plan

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
+import { inferCategories, inferIndex, prettyName } from "../etfs/infer";
 import { z } from "zod";
 
 const money = z.object({ amount: z.number().positive(), currency: z.string().length(3), asOf: z.string().nullable() }).nullable().optional();
@@ -238,9 +239,11 @@ export function buildSeedSql(root: string): string {
     for (let i = 0; i < lines.length; i += 1000) {
       const values = lines.slice(i, i + 1000).map((line) => {
         const [key, isin, ticker, mic, name, currency, lei, issuer, country, ucits, assetClass, venues, source, url] = parseLine(line);
-        return `(${q(key)}, ${q(isin)}, ${q(ticker)}, ${q(mic)}, ${q(name)}, ${q(currency)}, ${q(lei)}, ${q(issuer)}, ${q(country)}, ${ucits === "t" ? "true" : "null"}, ${q(assetClass)}, ${Number(venues) || 0}, ${q(source)}, ${q(url)}, ${q(universeOn)})`;
+        const pretty = prettyName(name);
+        const slugs = inferCategories(pretty);
+        return `(${q(key)}, ${q(isin)}, ${q(ticker)}, ${q(mic)}, ${q(pretty)}, ${q(currency)}, ${q(lei)}, ${q(issuer)}, ${q(country)}, ${ucits === "t" ? "true" : "null"}, ${q(assetClass)}, ${Number(venues) || 0}, ${q(source)}, ${q(url)}, ${q(universeOn)}, ${q(inferIndex(pretty))}, ${slugs.length ? `array[${slugs.map(q).join(",")}]` : "'{}'::text[]"})`;
       });
-      out.push(`insert into public.universe_etfs (etf_key, isin, ticker, mic, name, currency, issuer_lei, issuer_name, issuer_country, ucits, asset_class, venues, source, source_url, retrieved_on) values\n${values.join(",\n")};`);
+      out.push(`insert into public.universe_etfs (etf_key, isin, ticker, mic, name, currency, issuer_lei, issuer_name, issuer_country, ucits, asset_class, venues, source, source_url, retrieved_on, index_slug, category_slugs) values\n${values.join(",\n")};`);
     }
   }
 
@@ -252,8 +255,14 @@ export function buildSeedSql(root: string): string {
     const numeric = new Set(["fee_pct", "aum", "nav", "ret_1y", "ret_3y", "ret_5y", "ret_si", "volatility_3y", "tracking_error_3y"]);
     for (const line of lines) {
       const cells = parseLine(line);
-      const values = names.map((n, i) => (cells[i] === "" || cells[i] === undefined ? "null" : numeric.has(n) ? q(Number(cells[i])) : q(cells[i])));
-      out.push(`insert into public.universe_details (${names.join(", ")}) select ${values.join(", ")} where exists (select 1 from public.universe_etfs u where u.etf_key = ${values[0]});`);
+      const values = names.map((n, i) => {
+        if (cells[i] === "" || cells[i] === undefined) return "null";
+        if (numeric.has(n)) return q(Number(cells[i]));
+        return q(n === "name" ? prettyName(cells[i]) : cells[i]);
+      });
+      // iShares sizes are per share class. The others cover the whole fund.
+      const level = cells[names.indexOf("source")] === "iShares" ? "share_class" : "fund";
+      out.push(`insert into public.universe_details (${names.join(", ")}, aum_level) select ${values.join(", ")}, ${q(level)} where exists (select 1 from public.universe_etfs u where u.etf_key = ${values[0]});`);
     }
   }
 
