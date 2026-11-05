@@ -77,18 +77,28 @@ def us():
     return rows
 
 def japan():
-    html = get("https://www.jpx.co.jp/english/equities/products/etfs/issues/01.html").decode("utf-8", "replace")
-    rows = {}
-    for code, name in re.findall(r"<td[^>]*>\\s*([0-9][0-9A-Z]{3})\\s*</td>\\s*<td[^>]*>(?:<a[^>]*>)?\\s*([^<]+)", html):
-        rows[code] = {"isin": "", "ticker": code, "mic": "XTKS", "name": name.strip(), "currency": "JPY", "cfi": "", "issuer_lei": "", "market": "JP"}
-    if not rows: raise RuntimeError(f"Could not read JPX table, page starts: {html[:200]}")
-    return list(rows.values())
+    import xlrd
+    page = get("https://www.jpx.co.jp/markets/statistics-equities/misc/01.html").decode("utf-8", "replace")
+    link = re.search(r'href="([^"]+data_j\.xls[x]?)"', page)
+    if not link: raise RuntimeError(f"No file link. xls links: {re.findall(r'href=.[^ ]+xls[^ ]*', page)[:5]}")
+    blob = get(urllib.parse.urljoin("https://www.jpx.co.jp/", link.group(1)))
+    sheet = xlrd.open_workbook(file_contents=blob).sheet_by_index(0)
+    head = [str(c).strip() for c in sheet.row_values(0)]
+    code, name, section = head.index("\u30b3\u30fc\u30c9"), head.index("\u9298\u67c4\u540d"), next(i for i, h in enumerate(head) if "\u5e02\u5834" in h)
+    rows = []
+    for i in range(1, sheet.nrows):
+        row = sheet.row_values(i)
+        if "ETF" in str(row[section]):
+            rows.append({"isin": "", "ticker": str(row[code]).removesuffix(".0"), "mic": "XTKS", "name": str(row[name]).strip(), "currency": "JPY", "cfi": "", "issuer_lei": "", "market": "JP"})
+    return rows
 
 def hongkong():
     import openpyxl
     book = openpyxl.load_workbook(io.BytesIO(get("https://www.hkex.com.hk/eng/services/trading/securities/securitieslists/ListOfSecurities.xlsx")), read_only=True)
     rows, head, seen = [], None, set()
-    for row in book.worksheets[0].iter_rows(values_only=True):
+    sheet = book.worksheets[0]
+    sheet.reset_dimensions()
+    for row in sheet.iter_rows(values_only=True):
         cells = [str(c).strip() if c is not None else "" for c in row]
         if head is None:
             if any(c.lower().startswith("stock code") for c in cells): head = cells
