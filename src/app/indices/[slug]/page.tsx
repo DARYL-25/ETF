@@ -40,7 +40,7 @@ export default async function IndexPage({ params }: Props) {
               <tbody>
                 {etfs.map((row) => (
                   <tr key={row.isin}>
-                    <td className="w-px"><CompareToggle isin={row.isin} /></td>
+                    <td className="w-px"><CompareToggle isin={row.isin!} /></td>
                     <td className="min-w-[16rem]"><EtfName row={row} /></td>
                     <td>{countryName(row.domicile)}</td>
                     <td className="whitespace-nowrap">{replicationLabel(row.replication)}</td>

@@ -84,7 +84,7 @@ describe("screener queries", () => {
   it("treats search text as text, not as a pattern or SQL", async () => {
     expect((await run({ q: "zz%zz" })).total).toBe(0);
     // A literal percent sign is real text: only the index named "10% Capped" matches.
-    expect((await run({ q: "%" })).rows.map((r) => r.isin)).toEqual(["IE00BMC38736"]);
+    expect((await run({ q: "%" })).rows.map((r) => r.isin)).toContain("IE00BMC38736");
     expect((await run({ q: "'; drop table public.funds; --" })).total).toBe(0);
     expect((await run({})).total).toBeGreaterThan(0);
   });

@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Hit = { isin: string; name: string; ticker: string | null; issuer_name: string; index_name: string | null };
+type Hit = { etf_key: string; isin: string | null; name: string; ticker: string | null; issuer_name: string; index_name: string | null };
 
 export function SearchBox() {
   const router = useRouter();
@@ -49,7 +49,7 @@ export function SearchBox() {
   const go = (hit: Hit) => {
     setOpen(false);
     setText("");
-    router.push(`/etfs/${hit.isin}`);
+    router.push(`/etfs/${hit.etf_key}`);
   };
 
   return (
@@ -90,14 +90,14 @@ export function SearchBox() {
           {hits.length === 0 ? (
             <li className="px-3 py-2.5 text-muted">No ETF matches. Try an ISIN, a ticker or an index name.</li>
           ) : hits.map((hit, i) => (
-            <li key={hit.isin} role="option" aria-selected={i === active}>
+            <li key={hit.etf_key} role="option" aria-selected={i === active}>
               <button
                 type="button"
                 onClick={() => go(hit)}
                 className={`block w-full cursor-pointer px-3 py-2 text-left hover:bg-sunken ${i === active ? "bg-sunken" : ""}`}
               >
                 <span className="block font-medium">{hit.name}</span>
-                <span className="data block text-[0.85rem] text-muted">{hit.ticker ?? hit.isin}, {hit.isin}{hit.index_name ? `, tracks ${hit.index_name}` : ""}</span>
+                <span className="data block text-[0.85rem] text-muted">{[hit.ticker, hit.isin].filter(Boolean).join(", ")}{hit.index_name ? `, tracks ${hit.index_name}` : ""}</span>
               </button>
             </li>
           ))}

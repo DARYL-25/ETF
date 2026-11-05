@@ -2,9 +2,11 @@ import { query } from "@/lib/db/client";
 import { SORT_COLUMNS, buildScreenerWhere, defaultDirection, type ScreenerParams } from "./screener-params";
 
 export type EtfRow = {
-  isin: string;
+  etf_key?: string;
+  venues?: number | null;
+  isin: string | null;
   name: string;
-  fund_key: string;
+  fund_key: string | null;
   fund_name: string;
   issuer_slug: string;
   issuer_name: string;
@@ -75,9 +77,9 @@ export async function screenEtfs(p: ScreenerParams): Promise<ScreenerResult> {
   // SORT_COLUMNS is a fixed map, so the column name is never user text. Missing values sort last.
   const order = `${SORT_COLUMNS[p.sort]} ${direction} nulls last, name asc`;
   const offset = (p.page - 1) * p.pageSize;
-  const [{ count }] = await query<{ count: number }>(`select count(*)::int as count from public.etf_overview ${where}`, values);
+  const [{ count }] = await query<{ count: number }>(`select count(*)::int as count from public.etf_directory ${where}`, values);
   const rows = await query<EtfRow>(
-    `select * from public.etf_overview ${where} order by ${order} limit ${p.pageSize} offset ${offset}`,
+    `select * from public.etf_directory ${where} order by ${order} limit ${p.pageSize} offset ${offset}`,
     values,
   );
   return { rows, total: count, page: p.page, pageSize: p.pageSize, pages: Math.max(1, Math.ceil(count / p.pageSize)) };
@@ -88,8 +90,8 @@ export type FilterOption = { value: string; label: string; count: number };
 export async function screenerOptions() {
   const grouped = (column: string, label = column) =>
     query<FilterOption>(
-      `select ${column} as value, ${label} as label, count(*)::int as count from public.etf_overview
-       where ${column} is not null group by 1, 2 order by count desc, label asc`,
+      `select ${column} as value, ${label} as label, count(*)::int as count from public.etf_directory
+       where ${column} is not null group by 1, 2 order by count desc, label asc limit 150`,
     );
   const [issuers, domiciles, assetClasses, replications, distributions, styles, currencies, indices, categories] = await Promise.all([
     grouped("issuer_slug", "issuer_name"),
@@ -112,35 +114,36 @@ export async function screenerOptions() {
 }
 
 export async function getEtf(isin: string): Promise<EtfRow | null> {
-  const rows = await query<EtfRow>("select * from public.etf_overview where isin = $1", [isin.toUpperCase()]);
+  const rows = await query<EtfRow>("select * from public.etf_directory where upper(etf_key) = $1", [isin.toUpperCase()]);
   return rows[0] ?? null;
 }
 
 export async function getEtfs(isins: string[]): Promise<EtfRow[]> {
   if (!isins.length) return [];
   const upper = isins.map((i) => i.toUpperCase());
-  const rows = await query<EtfRow>("select * from public.etf_overview where isin = any($1::text[])", [upper]);
-  return upper.map((i) => rows.find((r) => r.isin === i)).filter((r): r is EtfRow => Boolean(r));
+  const rows = await query<EtfRow>("select * from public.etf_directory where upper(etf_key) = any($1::text[])", [upper]);
+  return upper.map((i) => rows.find((r) => r.etf_key?.toUpperCase() === i)).filter((r): r is EtfRow => Boolean(r));
 }
 
-export type SearchHit = Pick<EtfRow, "isin" | "name" | "ticker" | "issuer_name" | "index_name">;
+export type SearchHit = { etf_key: string; isin: string | null; name: string; ticker: string | null; issuer_name: string; index_name: string | null };
 
-/** Exact ISIN and ticker hits come first, then name matches. Listings never appear as separate ETFs. */
+/** Exact ISIN and ticker hits come first, then names. Listings never appear as separate ETFs. */
 export async function searchEtfs(text: string, limit = 8): Promise<SearchHit[]> {
   const term = text.trim().slice(0, 100);
   if (term.length < 2) return [];
   const like = `%${term.replace(/[\\%_]/g, "\\$&")}%`;
   return query<SearchHit>(
-    `select o.isin, o.name, o.ticker, o.issuer_name, o.index_name
-     from public.etf_overview o
-     where o.name ilike $1 or o.isin ilike $1 or o.index_name ilike $1 or exists (
+    `select o.etf_key, o.isin, o.name, o.ticker, o.issuer_name, o.index_name
+     from public.etf_directory o
+     where o.name ilike $1 or o.isin ilike $1 or o.ticker ilike $1 or o.index_name ilike $1 or exists (
        select 1 from public.listings l join public.share_classes s on s.id = l.share_class_id
        where s.isin = o.isin and l.ticker ilike $1)
      order by
        case when upper(o.isin) = upper($2) or upper(o.ticker) = upper($2) then 0
             when exists (select 1 from public.listings l join public.share_classes s on s.id = l.share_class_id
-                         where s.isin = o.isin and upper(l.ticker) = upper($2)) then 1 else 2 end,
-       o.fund_aum_eur desc nulls last
+                         where s.isin = o.isin and upper(l.ticker) = upper($2)) then 1
+            when o.fund_key is not null then 2 else 3 end,
+       o.fund_aum_eur desc nulls last, o.name
      limit ${Math.min(limit, 20)}`,
     [like, term],
   );
@@ -195,7 +198,8 @@ export type PriceSeries = {
   points: { date: string; close: number }[];
 };
 
-export async function getPriceSeries(isin: string): Promise<PriceSeries | null> {
+export async function getPriceSeries(isin: string | null): Promise<PriceSeries | null> {
+  if (!isin) return null;
   const rows = await query<{
     ticker: string; exchange: string; currency: string | null; frequency: string; price_type: string;
     publisher: string; url: string; licence_note: string | null; retrieved_on: string; date: string; close: number;
@@ -269,13 +273,15 @@ export async function getDashboard() {
        ) t where group_label is not null
        order by group_label, headline_fee_pct asc, fund_aum_eur desc nulls last`,
     ),
-    query<{ etfs: number; funds: number; issuers: number; indices: number; listings: number; priced: number; latest: string }>(
+    query<{ etfs: number; funds: number; issuers: number; indices: number; listings: number; priced: number; latest: string; all_etfs: number; venues: number }>(
       `select (select count(*)::int from public.share_classes) as etfs, (select count(*)::int from public.funds) as funds,
          (select count(*)::int from public.issuers) as issuers,
          (select count(distinct index_id)::int from public.fund_index_relationships) as indices,
          (select count(*)::int from public.listings) as listings,
          (select count(distinct l.share_class_id)::int from public.fund_prices p join public.listings l on l.id = p.listing_id) as priced,
-         (select max(retrieved_on)::text from public.data_sources) as latest`,
+         (select max(retrieved_on)::text from public.data_sources) as latest,
+         (select count(*)::int from public.etf_directory) as all_etfs,
+         (select count(distinct market)::int from (select coalesce(nullif(mic, ''), source) as market from public.universe_etfs) m) as venues`,
     ),
     query<EtfRow>("select * from public.etf_overview where index_slug = 'sp-500' order by headline_fee_pct asc nulls last, fund_aum_eur desc nulls last"),
     getFeePoints(),
@@ -283,7 +289,6 @@ export async function getDashboard() {
   return { largest, cheapest, coverage: coverage[0], sp500, fees };
 }
 
-export const getAllEtfs = () => query<EtfRow>("select * from public.etf_overview order by name asc");
 
 export type FeePoint = { isin: string; name: string; ticker: string | null; fee: number; type: "ter" | "ocf" };
 

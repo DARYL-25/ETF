@@ -18,11 +18,11 @@ export function Change({ value }: { value: number | null | undefined }) {
   return <span className={value >= 0 ? "text-up" : "text-down"}>{formatSignedPct(value)}</span>;
 }
 
-export function EtfName({ row }: { row: Pick<EtfRow, "isin" | "name" | "ticker"> }) {
+export function EtfName({ row }: { row: Pick<EtfRow, "etf_key" | "isin" | "name" | "ticker"> }) {
   return (
     <>
-      <Link href={`/etfs/${row.isin}`} className="font-medium no-underline hover:underline">{row.name}</Link>
-      <span className="data block text-[0.85rem] text-muted">{row.ticker ?? MISSING}, {row.isin}</span>
+      <Link href={`/etfs/${row.etf_key ?? row.isin}`} className="font-medium no-underline hover:underline">{row.name}</Link>
+      <span className="data block text-[0.85rem] text-muted">{[row.ticker, row.isin].filter(Boolean).join(", ") || MISSING}</span>
     </>
   );
 }

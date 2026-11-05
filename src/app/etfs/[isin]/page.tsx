@@ -5,7 +5,7 @@ import { CompareToggle } from "@/components/compare-tray";
 import { AsOf, Change, EtfName, Fee } from "@/components/etf-bits";
 import { FeeRuler } from "@/components/fee-ruler";
 import { PriceChart } from "@/components/price-chart";
-import { getBondMetrics, getEtf, getExposures, getFeePoints, getListings, getPriceSeries, getSimilarEtfs, getTopHoldings } from "@/lib/etfs/queries";
+import { getBondMetrics, getEtf, getExposures, getFeePoints, getListings, getPriceSeries, getSimilarEtfs, getTopHoldings, type EtfRow } from "@/lib/etfs/queries";
 import { MISSING, assetClassLabel, countryName, distributionLabel, formatDate, formatMoney, formatPct, frequencyLabel, productLabel, replicationLabel, styleLabel, yesNoUnknown } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -55,12 +55,42 @@ function Section({ id, title, children }: { id: string; title: string; children:
 
 const Note = ({ children }: { children: React.ReactNode }) => <p className="max-w-[68ch] text-muted">{children}</p>;
 
+function BasicRecord({ row }: { row: EtfRow }) {
+  return (
+    <article className="flex max-w-4xl flex-col gap-6">
+      <header>
+        <h1 className="max-w-[30ch] text-[clamp(1.9rem,3.4vw,2.8rem)]">{row.name}</h1>
+        <p className="data mt-2">{[row.ticker, row.isin].filter(Boolean).join(", ")}</p>
+        <div className="mt-4"><CompareToggle isin={row.etf_key!} wide /></div>
+      </header>
+      <p className="max-w-[68ch] rounded bg-warn-bg px-3 py-2 text-warn-ink">
+        This is a basic record from an official list. It confirms that the ETF exists and where it is identified. Fees, holdings and returns are not loaded for it yet, so check the issuer&apos;s factsheet.
+      </p>
+      <Facts items={[
+        ["ISIN", row.isin ?? MISSING],
+        ["Ticker", row.ticker ? `${row.ticker}${row.ticker_exchange ? ` (${row.ticker_exchange})` : ""}` : MISSING],
+        ["Issuer legal entity", row.issuer_name],
+        ["Issuer's registered country", countryName(row.domicile)],
+        ["Currency on the list", row.currency ?? MISSING],
+        ["Trading venues on the list", row.venues ? String(row.venues) : MISSING],
+        ["UCITS in its name", row.ucits ? "Yes" : MISSING],
+        ["Asset class, inferred from its name", assetClassLabel(row.asset_class)],
+        ["Source", row.source_url ? <a key="s" className="prose-link" href={row.source_url} rel="noreferrer" target="_blank">Official list</a> : MISSING],
+        ["Read on", formatDate(row.source_retrieved_on)],
+      ]} />
+    </article>
+  );
+}
+
 export default async function EtfPage({ params }: Props) {
   const row = await getEtf((await params).isin);
   if (!row) notFound();
+  if (!row.fund_key) return <BasicRecord row={row} />;
+  const fundKey = row.fund_key;
+  const isin = row.isin!;
 
   const [listings, exposures, bond, series, similar, feePoints, topHoldings] = await Promise.all([
-    getListings(row.isin), getExposures(row.fund_key), getBondMetrics(row.fund_key), getPriceSeries(row.isin), getSimilarEtfs(row), getFeePoints(), getTopHoldings(row.fund_key),
+    getListings(isin), getExposures(fundKey), getBondMetrics(fundKey), getPriceSeries(isin), getSimilarEtfs(row), getFeePoints(), getTopHoldings(fundKey),
   ]);
   const sectors = exposures.filter((x) => x.dimension === "sector");
   const countries = exposures.filter((x) => x.dimension === "country");
@@ -73,7 +103,7 @@ export default async function EtfPage({ params }: Props) {
         <p className="text-muted">{row.issuer_name}</p>
         <h1 className="mt-1 max-w-[30ch] text-[clamp(1.9rem,3.4vw,2.8rem)]">{row.name}</h1>
         <p className="data mt-2">{row.ticker ?? MISSING} on {listings.find((l) => l.is_display_ticker)?.exchange_name ?? MISSING}, ISIN {row.isin}</p>
-        <div className="mt-4 flex flex-wrap gap-2"><CompareToggle isin={row.isin} wide /></div>
+        <div className="mt-4 flex flex-wrap gap-2"><CompareToggle isin={isin} wide /></div>
         {row.verification === "extracted_unreviewed" ? (
           <p className="mt-4 max-w-[68ch] rounded bg-warn-bg px-3 py-2 text-warn-ink">
             These figures were read automatically from the issuer&apos;s {row.source_kind === "issuer_factsheet" ? "factsheet" : "website"} and have not yet been checked by a person.{" "}
@@ -159,7 +189,7 @@ export default async function EtfPage({ params }: Props) {
           ["Performance fee", MISSING],
         ]} />
         <p className="mb-5 mt-2"><AsOf date={row.ter_as_of ?? row.ocf_as_of} retrieved={retrieved} /></p>
-        {row.headline_fee_pct !== null ? <FeeRuler points={feePoints} highlight={row.isin} /> : null}
+        {row.headline_fee_pct !== null ? <FeeRuler points={feePoints} highlight={isin} /> : null}
       </Section>
 
       <Section id="holdings" title="Holdings">

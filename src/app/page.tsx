@@ -2,7 +2,7 @@ import Link from "next/link";
 import { FeeRuler } from "@/components/fee-ruler";
 import { Fee, EtfName } from "@/components/etf-bits";
 import { getDashboard } from "@/lib/etfs/queries";
-import { countryName, distributionLabel, formatDate, formatMoney, replicationLabel } from "@/lib/format";
+import { countryName, distributionLabel, formatMoney, replicationLabel } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +18,7 @@ export default async function DashboardPage() {
         </div>
         <p className="mt-4 max-w-[68ch]">
           Each dot is one ETF, placed by its yearly fee. Select a dot to open the fund.
-          The database holds {coverage.etfs} ETFs from {coverage.issuers} issuers so far, read from issuer publications on {formatDate(coverage.latest)}.
+          The database lists {coverage.all_etfs.toLocaleString("en-GB")} ETFs from official registers and exchanges. {coverage.etfs} of them have issuer-sourced fees and fund facts so far, and those are the dots above.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Link className="btn btn-primary" href="/screener">Open the screener</Link>

@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { gunzipSync } from "node:zlib";
 import { z } from "zod";
 
 const money = z.object({ amount: z.number().positive(), currency: z.string().length(3), asOf: z.string().nullable() }).nullable().optional();
@@ -210,6 +211,35 @@ export function buildSeedSql(root: string): string {
     }
     for (const [name, weight] of Object.entries(r.top)) {
       out.push(`insert into public.fund_top_holdings (fund_id, name, weight_pct, as_of, observed_on, source_id) values (${fundId(owner.key)}, ${q(name)}, ${q(weight)}, ${q(r.asOf)}, ${q(sheets.retrievedOn)}, ${src});`);
+    }
+  }
+
+  // The global list. Optional, so a fresh checkout still works before the download job has run.
+  const universePath = join(root, "data/universe/universe.csv.gz");
+  if (existsSync(universePath)) {
+    const lines = gunzipSync(readFileSync(universePath)).toString("utf8").trim().split(/\r?\n/).slice(1);
+    const parseLine = (line: string) => {
+      const cells: string[] = [];
+      let cell = "", quoted = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (quoted) {
+          if (c === '"' && line[i + 1] === '"') { cell += '"'; i++; }
+          else if (c === '"') quoted = false;
+          else cell += c;
+        } else if (c === '"') quoted = true;
+        else if (c === ",") { cells.push(cell); cell = ""; }
+        else cell += c;
+      }
+      cells.push(cell);
+      return cells;
+    };
+    for (let i = 0; i < lines.length; i += 1000) {
+      const values = lines.slice(i, i + 1000).map((line) => {
+        const [key, isin, ticker, mic, name, currency, lei, issuer, country, ucits, assetClass, venues, source, url] = parseLine(line);
+        return `(${q(key)}, ${q(isin)}, ${q(ticker)}, ${q(mic)}, ${q(name)}, ${q(currency)}, ${q(lei)}, ${q(issuer)}, ${q(country)}, ${ucits === "t" ? "true" : "null"}, ${q(assetClass)}, ${Number(venues) || 0}, ${q(source)}, ${q(url)}, ${q(on)})`;
+      });
+      out.push(`insert into public.universe_etfs (etf_key, isin, ticker, mic, name, currency, issuer_lei, issuer_name, issuer_country, ucits, asset_class, venues, source, source_url, retrieved_on) values\n${values.join(",\n")};`);
     }
   }
 

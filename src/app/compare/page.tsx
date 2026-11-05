@@ -13,7 +13,7 @@ type Row = { label: string; render: (r: EtfRow) => React.ReactNode };
 const groups: { title: string; rows: Row[] }[] = [
   { title: "General", rows: [
     { label: "Issuer", render: (r) => r.issuer_name },
-    { label: "ISIN", render: (r) => r.isin },
+    { label: "ISIN", render: (r) => r.isin ?? MISSING },
     { label: "Ticker", render: (r) => r.ticker ?? MISSING },
     { label: "Index", render: (r) => r.index_name ?? MISSING },
     { label: "Asset class", render: (r) => assetClassLabel(r.asset_class) },
@@ -80,7 +80,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
   }
 
   const [exposures, prices] = await Promise.all([
-    Promise.all(etfs.map((e) => getExposures(e.fund_key))),
+    Promise.all(etfs.map((e) => getExposures(e.fund_key ?? ""))),
     Promise.all(etfs.map((e) => getPriceSeries(e.isin))),
   ]);
   const charted = prices.filter((p): p is NonNullable<typeof p> => Boolean(p));
@@ -99,8 +99,8 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
             <tr>
               <th className="sticky left-0 z-10 bg-paper" aria-label="Attribute" />
               {etfs.map((e) => (
-                <th key={e.isin} className="min-w-[11rem] whitespace-normal align-bottom text-ink">
-                  <Link href={`/etfs/${e.isin}`} className="no-underline hover:underline">{e.name}</Link>
+                <th key={e.etf_key} className="min-w-[11rem] whitespace-normal align-bottom text-ink">
+                  <Link href={`/etfs/${e.etf_key}`} className="no-underline hover:underline">{e.name}</Link>
                 </th>
               ))}
             </tr>
@@ -111,7 +111,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
               {group.rows.map((row) => (
                 <tr key={row.label}>
                   <td className="sticky left-0 z-10 min-w-[8rem] bg-paper text-muted">{row.label}</td>
-                  {etfs.map((e) => <td key={e.isin}>{row.render(e)}</td>)}
+                  {etfs.map((e) => <td key={e.etf_key}>{row.render(e)}</td>)}
                 </tr>
               ))}
             </tbody>

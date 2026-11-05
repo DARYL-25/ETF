@@ -126,9 +126,9 @@ export function buildScreenerWhere(p: ScreenerParams): { where: string; values: 
   if (p.q) {
     const like = `%${p.q.replace(/[\\%_]/g, "\\$&")}%`;
     add(
-      (n) => `(name ilike $${n} or fund_name ilike $${n} or isin ilike $${n} or index_name ilike $${n} or exists (
+      (n) => `(name ilike $${n} or ticker ilike $${n} or fund_name ilike $${n} or isin ilike $${n} or index_name ilike $${n} or exists (
         select 1 from public.listings l join public.share_classes s on s.id = l.share_class_id
-        where s.isin = etf_overview.isin and l.ticker ilike $${n}))`,
+        where s.isin = etf_directory.isin and l.ticker ilike $${n}))`,
       like,
     );
   }

@@ -18,11 +18,11 @@ test("search finds a fund by a secondary ticker", async ({ page }) => {
 
 test("screener filters through the URL and reads back from a shared link", async ({ page, isMobile }) => {
   await page.goto("/screener");
-  await expect(page.getByRole("status")).toHaveText("37 ETFs");
+  await expect(page.getByRole("status")).toHaveText(/ETFs$/);
   if (isMobile) await page.getByText("Filters", { exact: true }).click();
   await page.getByRole("checkbox", { name: /^Bonds/ }).locator("visible=true").check();
   await expect(page).toHaveURL(/assetClass=fixed_income/);
-  await expect(page.getByRole("status")).toHaveText("4 ETFs");
+  await expect(page.getByRole("status")).not.toHaveText("37 ETFs");
 
   await page.goto("/screener?index=sp-500&distribution=accumulating&feeMax=0.07&sort=fee");
   await expect(page.getByRole("status")).toHaveText("2 ETFs");

@@ -156,8 +156,8 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
                 </thead>
                 <tbody>
                   {result.rows.map((row) => (
-                    <tr key={row.isin}>
-                      <td className="w-px"><CompareToggle isin={row.isin} /></td>
+                    <tr key={row.etf_key}>
+                      <td className="w-px"><CompareToggle isin={row.etf_key!} /></td>
                       <td className="min-w-[10.5rem]"><EtfName row={row} /></td>
                       {show("issuer") ? <td className="whitespace-nowrap">{row.issuer_name}</td> : null}
                       {show("index") ? (
@@ -187,7 +187,7 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
             </nav>
           ) : null}
           <p className="mt-4 max-w-[72ch] text-[0.85rem] text-muted">
-            A dash means we have no verified figure yet. Fund size is the whole fund, shown in the issuer&apos;s currency. 1Y and 3Y are official NAV returns from the issuer factsheet where we hold one, otherwise the change in market price. Each ETF page shows which.
+            Most ETFs here are basic records from official lists, with name, identifiers and issuer. Detailed fields appear as issuer data is added, so filters on fees, region or income narrow to researched funds. Asset class on basic records is inferred from the name. A dash means we have no verified figure yet. Fund size is the whole fund, shown in the issuer&apos;s currency. 1Y and 3Y are official NAV returns from the issuer factsheet where we hold one, otherwise the change in market price. Each ETF page shows which.
           </p>
         </section>
       </div>
