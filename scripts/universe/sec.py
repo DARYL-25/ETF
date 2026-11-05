@@ -15,8 +15,26 @@ def get(url):
 report = {}
 tick = json.loads(get("https://www.sec.gov/files/company_tickers_mf.json"))
 report["tickers"] = len(tick["data"]); report["fields"] = tick["fields"]
-page = get("https://www.sec.gov/data-research/sec-markets-data/mutual-fund-prospectus-risk-return-summary-data-sets").decode("utf-8", "replace")
-links = sorted(set(re.findall(r'href="([^"]+\.zip)"', page)))
+import gzip, csv
+with gzip.open(OUT.parent / "sec_tickers.csv.gz", "wt", newline="") as fh:
+    w = csv.writer(fh); w.writerow(tick["fields"]); w.writerows(tick["data"])
+links = []
+for pg in ("https://www.sec.gov/data-research/sec-markets-data/mutual-fund-prospectus-risk-return-summary-data-sets", "https://www.sec.gov/dera/data/mutual-fund-prospectus-risk-return-summary-data-sets"):
+    try:
+        links = sorted(set(re.findall(r'href="([^"]+\.zip)"', get(pg).decode("utf-8", "replace"))))
+        report["page"] = pg
+        break
+    except Exception as e:
+        report[f"page_error_{pg[-60:]}"] = str(e)
+if not links:
+    for q in ("2026q3", "2026q2", "2026q1", "2025q4", "2025q3"):
+        for base in ("https://www.sec.gov/files/dera/data/mutual-fund-prospectus-risk-return-summary-data-sets/", "https://www.sec.gov/files/dera/risk-return/"):
+            try:
+                req = urllib.request.Request(f"{base}{q}_rr1.zip", headers={"User-Agent": UA}, method="HEAD")
+                time.sleep(0.5); urllib.request.urlopen(req, timeout=60); links = [f"{base}{q}_rr1.zip"]; break
+            except Exception as e:
+                report[f"try_{q}_{base[-20:]}"] = str(e)[:40]
+        if links: break
 report["zip_links"] = links[-6:]
 if links:
     url = links[-1] if links[-1].startswith("http") else "https://www.sec.gov" + links[-1]
