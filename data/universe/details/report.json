@@ -30,7 +30,15 @@
    "us": "HTTPError: HTTP Error 500: Internal Server Error"
   }
  },
- "fees": 1568,
+ "xtrackers": {
+  "ok": false,
+  "error": "IndexError: list index out of range"
+ },
+ "spdr_eu": {
+  "ok": false,
+  "error": "IndexError: list index out of range"
+ },
+ "fees": 1745,
  "fund_size": 1568,
  "on": "2026-11-05"
 }
