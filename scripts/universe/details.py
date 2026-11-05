@@ -141,36 +141,45 @@ def sheet_rows(blob):
         out[sheet.title] = [[str(c)[:30] for c in r if c is not None][:8] for r in rows[:6]]
     raise RuntimeError(f"No ISIN header: {json.dumps(out)[:700]}")
 
-def from_sheet(url, source, label):
+def parse_number(v):
+    if isinstance(v, (int, float)): return float(v)
+    m = re.search(r"-?\d[\d,]*\.?\d*", str(v or ""))
+    return float(m.group(0).replace(",", "")) if m else ""
+
+def from_sheet(url, source, label, cols, aum_scale=1, aum_currency=None):
     head, body, title = sheet_rows(get(url))
-    (OUT / "details" / f"{label}_sample.json").write_text(json.dumps({"sheet": title, "head": head, "first": [str(c) for c in (body[0] if body else [])]}, indent=0)[:4000])
-    col = lambda pat: next((i for i, h in enumerate(head) if re.search(pat, h, re.I)), None)
-    isin_c, fee_c, aum_c, income_c, name_c = col(r"isin"), col(r"\bTER\b|expense ratio|all.in"), col(r"\bAUM\b|assets under|fund size|net assets"), col(r"distribution|use of income|income"), col(r"^name|fund name|product")
+    index = {k: next((i for i, h in enumerate(head) if re.fullmatch(p, h, re.I)), None) for k, p in cols.items()}
+    cell = lambda r, k: r[index[k]] if index.get(k) is not None and index[k] < len(r) else None
     by_isin = {r["isin"]: r for r in universe if r["isin"]}
     found = unmatched = 0
+    sampled = False
     for r in body:
-        m = re.search(r"\b[A-Z]{2}[A-Z0-9]{9}\d\b", str(r[isin_c] or ""))
+        m = re.search(r"\b[A-Z]{2}[A-Z0-9]{9}\d\b", str(cell(r, "isin") or ""))
         if not m: continue
+        if not sampled:
+            (OUT / "details" / f"{label}_sample.json").write_text(json.dumps({"sheet": title, "columns": index, "first": {k: str(cell(r, k)) for k in cols}}, indent=0))
+            sampled = True
         u = by_isin.get(m.group(0))
         if not u:
             unmatched += 1
             continue
-        fee = r[fee_c] if fee_c is not None else ""
-        if isinstance(fee, str):
-            f = re.search(r"\d+\.?\d*", fee); fee = float(f.group(0)) if f else ""
-        if isinstance(fee, (int, float)) and fee < 0.03: fee = fee * 100  # stored as a fraction
-        policy = str(r[income_c] or "").lower() if income_c is not None else ""
-        policy = "accumulating" if policy.startswith(("acc", "capital")) else "distributing" if policy.startswith(("dis", "inc")) else ""
-        rows.append({"etf_key": u["etf_key"], "fee_pct": fee if isinstance(fee, (int, float)) else "", "fee_type": "ter" if fee != "" else "", "distribution": policy, "source": source, "source_url": url,
-            "aum": "", "aum_currency": "", "aum_as_of": "", "nav": "", "nav_currency": "", "nav_as_of": "", "ret_1y": "", "ret_3y": "", "ret_5y": "", "ret_si": "", "ret_as_of": "", "volatility_3y": "", "tracking_error_3y": "", "name": str(r[name_c]).split("\n")[0].strip() if name_c is not None and r[name_c] else ""})
+        fee, aum = parse_number(cell(r, "fee")), parse_number(cell(r, "aum"))
+        if fee != "" and fee > 3: fee = ""
+        income = str(cell(r, "income") or "").lower()
+        policy = "accumulating" if income.startswith(("acc", "capital", "reinvest")) else "distributing" if income.startswith(("dis", "inc")) else ""
+        when = str(cell(r, "as_of") or "")[:10]
+        rows.append({"etf_key": u["etf_key"], "fee_pct": fee, "fee_type": "ter" if fee != "" else "", "distribution": policy, "source": source, "source_url": url,
+            "aum": aum * aum_scale if aum != "" else "", "aum_currency": (aum_currency or str(cell(r, "aum_currency") or "")) if aum != "" else "", "aum_as_of": when if re.match(r"\d{4}-\d\d-\d\d", when) else "",
+            "nav": parse_number(cell(r, "nav")), "nav_currency": str(cell(r, "currency") or ""), "nav_as_of": when if re.match(r"\d{4}-\d\d-\d\d", when) else "",
+            "ret_1y": parse_number(cell(r, "ret_1y")), "ret_3y": "", "ret_5y": "", "ret_si": "", "ret_as_of": "", "volatility_3y": "", "tracking_error_3y": "", "name": str(cell(r, "name") or "").split("\n")[0].strip()})
         found += 1
-    return {"found": found, "not_in_universe": unmatched, "head": head[:25]}
+    return {"found": found, "not_in_universe": unmatched}
 
 def xtrackers():
-    return from_sheet("https://etf.dws.com/en-gb/product-finder/downloadxls/?query=%7B%22selectedTabIndex%22%3A0%2C%22totalReturnType%22%3A0%2C%22searchTerm%22%3A%22%22%2C%22filters%22%3A%5B%5D%7D", "Xtrackers", "xtrackers")
+    return from_sheet("https://etf.dws.com/en-gb/product-finder/downloadxls/?query=%7B%22selectedTabIndex%22%3A0%2C%22totalReturnType%22%3A0%2C%22searchTerm%22%3A%22%22%2C%22filters%22%3A%5B%5D%7D", "Xtrackers", "xtrackers", {"isin": "ISIN", "name": "Name", "fee": r"TER p\.a\. \(%\)", "aum": r"AuM \(GBP\)", "income": "Distribution policy", "currency": "Share class currency", "ret_1y": r"1Y \(%\)"}, aum_currency="GBP")
 
 def spdr_eu():
-    return from_sheet("https://www.ssga.com/library-content/products/fund-data/etfs/emea/spdr-product-data-ie-en.xlsx", "State Street Europe", "spdr_eu")
+    return from_sheet("https://www.ssga.com/library-content/products/fund-data/etfs/emea/spdr-product-data-ie-en.xlsx", "State Street Europe", "spdr_eu", {"isin": "ISIN", "name": "Fund Name", "fee": r"TER \(%\)", "aum": "Total Fund Assets Raw", "aum_currency": "Base Fund Currency", "income": "Income Treatment", "currency": "Share Class Currency", "nav": "Official NAV Raw", "as_of": "NAV as of Date"})
 
 SOURCE_FUNCS = {"ssga_us": ssga_us, "amundi": amundi, "ishares": ishares, "xtrackers": xtrackers, "spdr_eu": spdr_eu}
 chosen = os.environ.get("SOURCES", "").split(",") if os.environ.get("SOURCES") else list(SOURCE_FUNCS)
