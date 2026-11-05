@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { IssuerLogo } from "@/components/issuer-logo";
 import { CompareToggle } from "@/components/compare-tray";
 import { AsOf, Change, EtfName, Fee } from "@/components/etf-bits";
 import { FeeRuler } from "@/components/fee-ruler";
@@ -59,6 +60,7 @@ function BasicRecord({ row }: { row: EtfRow }) {
   return (
     <article className="flex max-w-4xl flex-col gap-6">
       <header>
+        <div className="mb-3"><IssuerLogo name={row.name} /></div>
         <h1 className="max-w-[30ch] text-[clamp(1.9rem,3.4vw,2.8rem)]">{row.name}</h1>
         <p className="data mt-2">{[row.ticker, row.isin].filter(Boolean).join(", ")}</p>
         <div className="mt-4"><CompareToggle isin={row.etf_key!} wide /></div>
@@ -114,7 +116,7 @@ export default async function EtfPage({ params }: Props) {
   return (
     <article className="flex max-w-6xl flex-col gap-10">
       <header>
-        <p className="text-muted">{row.issuer_name}</p>
+        <div className="flex items-center gap-2.5"><IssuerLogo name={row.name} /><p className="text-muted">{row.issuer_name}</p></div>
         <h1 className="mt-1 max-w-[30ch] text-[clamp(1.9rem,3.4vw,2.8rem)]">{row.name}</h1>
         <p className="data mt-2">{row.ticker ?? MISSING} on {listings.find((l) => l.is_display_ticker)?.exchange_name ?? MISSING}, ISIN {row.isin}</p>
         <div className="mt-4 flex flex-wrap gap-2"><CompareToggle isin={isin} wide /></div>

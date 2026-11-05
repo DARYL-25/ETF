@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Menu } from "lucide-react";
+import { NavLink } from "./nav-link";
 import { SearchBox } from "./search-box";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -50,10 +51,7 @@ function NavList() {
           <ul>
             {group.items.map((item) => (
               <li key={item.href}>
-                <Link href={item.href} className="flex items-baseline justify-between gap-2 rounded px-2 py-1.5 font-medium no-underline hover:bg-sunken">
-                  <span>{item.label}</span>
-                  {item.later ? <span className="text-[0.75rem] font-normal text-muted">Later</span> : null}
-                </Link>
+                <NavLink href={item.href} label={item.label} later={item.later} />
               </li>
             ))}
           </ul>
@@ -65,7 +63,7 @@ function NavList() {
 
 function Wordmark() {
   return (
-    <Link href="/" className="font-display text-[1.35rem] font-bold leading-none tracking-tight no-underline">
+    <Link href="/" className="font-display text-[1.3rem] font-bold leading-none tracking-tight text-pine no-underline">
       ETF Intelligence
     </Link>
   );
@@ -74,18 +72,18 @@ function Wordmark() {
 export function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)]">
-      <aside className="sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r border-line px-3 py-5 lg:flex">
+      <aside className="sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r border-line bg-surface px-3 py-5 lg:flex">
         <div className="px-2"><Wordmark /></div>
         <NavList />
         <div className="mt-auto px-2"><ThemeToggle /></div>
       </aside>
       <div className="min-w-0">
-        <header className="sticky top-0 z-30 border-b border-line bg-paper px-4 py-2.5 lg:px-8">
+        <header className="sticky top-0 z-30 border-b border-line bg-surface/90 px-4 py-2.5 backdrop-blur lg:px-8">
           <div className="flex items-center gap-3">
             <div className="lg:hidden"><Wordmark /></div>
             <details className="group ml-auto lg:hidden">
               <summary className="btn btn-quiet cursor-pointer list-none px-2.5" aria-label="Open menu"><Menu size={18} aria-hidden /></summary>
-              <div className="absolute inset-x-0 top-full max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-b border-line bg-paper px-3 py-4">
+              <div className="absolute inset-x-0 top-full max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-b border-line bg-surface px-3 py-4">
                 <NavList />
                 <div className="mt-4 px-2"><ThemeToggle /></div>
               </div>

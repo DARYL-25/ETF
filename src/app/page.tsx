@@ -11,8 +11,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-12">
-      <section>
-        <h1 className="max-w-[22ch] text-[clamp(2.3rem,5vw,4rem)] font-bold">Find an ETF, check what it costs, and see where each number came from.</h1>
+      <section className="hero-panel">
+        <h1 className="max-w-[24ch] text-[clamp(2rem,4vw,3.2rem)] font-bold">Find an ETF, check what it costs, and see where each number came from.</h1>
         <div className="mt-8 max-w-5xl">
           <FeeRuler points={fees} animate />
         </div>

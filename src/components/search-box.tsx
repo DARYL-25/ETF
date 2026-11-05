@@ -86,7 +86,7 @@ export function SearchBox() {
         autoComplete="off"
       />
       {open ? (
-        <ul id={listId} role="listbox" className="absolute inset-x-0 top-full z-40 mt-1 max-h-96 overflow-y-auto rounded border-[1.5px] border-ink bg-surface">
+        <ul id={listId} role="listbox" className="absolute inset-x-0 top-full z-40 mt-1 max-h-96 overflow-y-auto rounded-xl border border-line bg-surface shadow-lg">
           {hits.length === 0 ? (
             <li className="px-3 py-2.5 text-muted">No ETF matches. Try an ISIN, a ticker or an index name.</li>
           ) : hits.map((hit, i) => (

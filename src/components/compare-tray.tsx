@@ -77,7 +77,7 @@ export function CompareTray() {
   const isins = useCompareList();
   if (!isins.length) return null;
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t-[1.5px] border-ink bg-surface px-4 py-2.5 lg:left-[14.5rem] lg:px-8">
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface shadow-lg px-4 py-2.5 lg:left-[14.5rem] lg:px-8">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p>{isins.length} of {MAX_COMPARE} ETFs selected{isins.length < 2 ? ". Add one more to compare." : "."}</p>
         <div className="flex gap-2">

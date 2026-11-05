@@ -2,57 +2,57 @@
 @import "@fontsource-variable/public-sans/index.css";
 @import "@fontsource-variable/bricolage-grotesque/index.css";
 
-/* Pine and saffron on cool ledger paper. Saffron marks one thing only: "this fund" on a scale. */
+/* Light blue with white surfaces. Orange marks one thing only: "this fund" on a scale. */
 :root {
-  --paper: #f1f4ef;
-  --surface: #fbfcfa;
-  --sunken: #e5ebe4;
-  --ink: #12302a;
-  --muted: #4f6359;
-  --line: #cdd8d0;
-  --pine: #0e5f52;
-  --pine-ink: #f4faf7;
-  --saffron: #c98a00;
-  --up: #0b6e4f;
-  --down: #a32a1e;
-  --warn-bg: #f7eccb;
-  --warn-ink: #5c4300;
+  --paper: #eef6fc;
+  --surface: #ffffff;
+  --sunken: #e1eff9;
+  --ink: #0c2a43;
+  --muted: #47637a;
+  --line: #d0e2f0;
+  --pine: #1270b3;
+  --pine-ink: #ffffff;
+  --saffron: #f08a12;
+  --up: #0a7a5a;
+  --down: #c0352b;
+  --warn-bg: #e3f1fb;
+  --warn-ink: #0d4470;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #0c1c19;
-    --surface: #122824;
-    --sunken: #0a1715;
-    --ink: #e6f0eb;
-    --muted: #a0b5ab;
-    --line: #2a463f;
-    --pine: #62cfb5;
-    --pine-ink: #06211b;
-    --saffron: #f0b429;
-    --up: #62d3a8;
+    --paper: #0a1b2b;
+    --surface: #10263a;
+    --sunken: #0d2133;
+    --ink: #e6f2fb;
+    --muted: #9db6ca;
+    --line: #234058;
+    --pine: #6cc0f2;
+    --pine-ink: #06223a;
+    --saffron: #f5a53d;
+    --up: #5fd3ac;
     --down: #f4907f;
-    --warn-bg: #3a2f10;
-    --warn-ink: #f4dc9a;
+    --warn-bg: #143450;
+    --warn-ink: #cfe8fa;
     color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --paper: #0c1c19;
-  --surface: #122824;
-  --sunken: #0a1715;
-  --ink: #e6f0eb;
-  --muted: #a0b5ab;
-  --line: #2a463f;
-  --pine: #62cfb5;
-  --pine-ink: #06211b;
-  --saffron: #f0b429;
-  --up: #62d3a8;
+  --paper: #0a1b2b;
+  --surface: #10263a;
+  --sunken: #0d2133;
+  --ink: #e6f2fb;
+  --muted: #9db6ca;
+  --line: #234058;
+  --pine: #6cc0f2;
+  --pine-ink: #06223a;
+  --saffron: #f5a53d;
+  --up: #5fd3ac;
   --down: #f4907f;
-  --warn-bg: #3a2f10;
-  --warn-ink: #f4dc9a;
+  --warn-bg: #143450;
+  --warn-ink: #cfe8fa;
   color-scheme: dark;
 }
 
@@ -115,7 +115,8 @@ a { text-underline-offset: 0.18em; }
   font-weight: 600;
   color: var(--muted);
   padding: 0.5rem clamp(0.35rem, 1vw, 0.75rem);
-  border-bottom: 1.5px solid var(--ink);
+  border-bottom: 1px solid var(--line);
+  background: var(--sunken);
   white-space: nowrap;
   vertical-align: bottom;
 }
@@ -126,7 +127,7 @@ a { text-underline-offset: 0.18em; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
-  min-height: 2.5rem; padding: 0 1rem; border-radius: 4px;
+  min-height: 2.5rem; padding: 0 1.05rem; border-radius: 10px;
   font-weight: 600; text-decoration: none; cursor: pointer;
   border: 1.5px solid transparent;
 }
@@ -136,11 +137,27 @@ a { text-underline-offset: 0.18em; }
 .btn-quiet:hover { border-color: var(--ink); }
 
 .field {
-  width: 100%; min-height: 2.5rem; padding: 0 0.7rem; border-radius: 4px;
+  width: 100%; min-height: 2.5rem; padding: 0 0.8rem; border-radius: 10px;
   border: 1.5px solid var(--line); background: var(--surface); color: var(--ink);
 }
 .field:focus { border-color: var(--pine); outline: none; }
 .field::placeholder { color: var(--muted); }
+}
+
+/* Tables sit on white panels with one soft edge. */
+.overflow-x-auto:has(> .table-data) {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgb(18 112 179 / 6%), 0 8px 24px -16px rgb(18 112 179 / 22%);
+}
+.table-data tbody tr:last-child td { border-bottom: 0; }
+
+.hero-panel {
+  background: linear-gradient(135deg, var(--sunken), var(--surface) 70%);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: clamp(1.25rem, 3vw, 2.5rem);
 }
 
 @media (prefers-reduced-motion: no-preference) {

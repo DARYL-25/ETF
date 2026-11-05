@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { IssuerLogo } from "./issuer-logo";
 import type { EtfRow } from "@/lib/etfs/queries";
 import { MISSING, formatDate, formatPct, formatSignedPct, isStale } from "@/lib/format";
 
@@ -22,10 +23,13 @@ export function Change({ value }: { value: number | null | undefined }) {
 
 export function EtfName({ row }: { row: Pick<EtfRow, "etf_key" | "isin" | "name" | "ticker"> }) {
   return (
-    <>
-      <Link href={`/etfs/${row.etf_key ?? row.isin}`} className="font-medium no-underline hover:underline">{row.name}</Link>
-      <span className="data block text-[0.85rem] text-muted">{[row.ticker, row.isin].filter(Boolean).join(", ") || MISSING}</span>
-    </>
+    <div className="flex items-start gap-2.5">
+      <IssuerLogo name={row.name} />
+      <div className="min-w-0">
+        <Link href={`/etfs/${row.etf_key ?? row.isin}`} className="font-medium no-underline hover:text-pine hover:underline">{row.name}</Link>
+        <span className="data block text-[0.85rem] text-muted">{[row.ticker, row.isin].filter(Boolean).join(", ") || MISSING}</span>
+      </div>
+    </div>
   );
 }
 
