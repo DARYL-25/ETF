@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
 import { PGlite } from "@electric-sql/pglite";
 import { buildSeedSql, derivedReturn, fundsFile, parsePriceCsv } from "@/lib/db/seed-sql";
 import { localSchemaSql } from "@/lib/db/client";
@@ -103,6 +104,18 @@ describe.runIf(hasPrices)("stored price files", () => {
     const cspx = parsePriceCsv(readFileSync("data/seed/prices/CSPX.LON.csv", "utf8"));
     expect(cspx.find((p) => p.date === "2026-10-30")?.close).toBe(820.17);
     expect(derivedReturn(cspx, 1, "2026-10-30")).toBeCloseTo((820.17 / 731.75 - 1) * 100, 6);
+  });
+});
+
+describe("fund size sanity", () => {
+  it("has no fund above the largest plausible size", () => {
+    const rows = gunzipSync(readFileSync("data/universe/details.csv.gz")).toString().trim().split(/\r?\n/);
+    const head = rows[0].split(",");
+    const [aum, ccy] = [head.indexOf("aum"), head.indexOf("aum_currency")];
+    for (const line of rows.slice(1)) {
+      const c = line.split(",");
+      if (c[aum] && c[ccy] !== "JPY" && c[ccy] !== "KRW") expect(Number(c[aum]), line.slice(0, 60)).toBeLessThan(1.2e12);
+    }
   });
 });
 

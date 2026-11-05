@@ -47,7 +47,8 @@ create table public.universe_details (
   tracking_error_3y  double precision,
   distribution       text,
   source             text,
-  source_url         text
+  source_url         text,
+  name               text
 );
 alter table public.universe_details enable row level security;
 create policy "public read" on public.universe_details for select to anon, authenticated using (true);
@@ -58,7 +59,7 @@ select o.*, o.isin as etf_key, null::int as venues, null::float8 as volatility_3
 union all
 select
   nullif(u.isin, '') as isin,
-  u.name as name,
+  coalesce(d.name, u.name) as name,
   null::text as fund_key,
   null::text as fund_name,
   nullif(u.issuer_lei, '') as issuer_slug,

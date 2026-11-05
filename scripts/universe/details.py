@@ -7,7 +7,7 @@ from pathlib import Path
 
 OUT = Path("data/universe"); (OUT / "details").mkdir(parents=True, exist_ok=True)
 UA = "etf-intelligence-universe/1.0 (+https://github.com/DARYL-25/ETF)"
-FIELDS = ["etf_key", "fee_pct", "fee_type", "aum", "aum_currency", "aum_as_of", "nav", "nav_currency", "nav_as_of", "ret_1y", "ret_3y", "ret_5y", "ret_si", "ret_as_of", "volatility_3y", "tracking_error_3y", "distribution", "source", "source_url"]
+FIELDS = ["etf_key", "fee_pct", "fee_type", "aum", "aum_currency", "aum_as_of", "nav", "nav_currency", "nav_as_of", "ret_1y", "ret_3y", "ret_5y", "ret_si", "ret_as_of", "volatility_3y", "tracking_error_3y", "distribution", "source", "source_url", "name"]
 
 def get(url):
     with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": UA}), timeout=90) as r:
@@ -112,9 +112,14 @@ def ishares():
             if u["etf_key"] in done: continue
             done.add(u["etf_key"])
             fee, kind = val(f.get("ter")), "ter"
-            size = val(f.get("totalFundSizeInMillions"))
+            # Share class assets in the class's own currency. totalFundSizeInMillions is in the fund's base
+            # currency, which this list does not state, so pairing it with the class currency is wrong.
+            size = val(f.get("totalNetAssets"))
+            name = (f.get("fundName") or "").strip()
+            if f.get("investorClassName") and f["investorClassName"] != "-" and name: name = f'{name} {f["investorClassName"]}'.strip()
+            name = f'{name} {f.get("seriesBaseCurrencyCode", "")} ({f.get("useOfProfits", "")[:4]})' if name and f.get("useOfProfits") else name
             policy = {"Accumulating": "accumulating", "Distributing": "distributing"}.get(f.get("useOfProfits"), "")
-            rows.append({"etf_key": u["etf_key"], "fee_pct": fee, "fee_type": kind if fee != "" else "", "aum": size * 1e6 if size != "" else "", "aum_currency": f.get("seriesBaseCurrencyCode", "") if size != "" else "", "aum_as_of": day(f.get("totalFundSizeInMillionsAsOf")),
+            rows.append({"etf_key": u["etf_key"], "fee_pct": fee, "fee_type": kind if fee != "" else "", "name": name, "aum": size if size != "" else "", "aum_currency": f.get("seriesBaseCurrencyCode", "") if size != "" else "", "aum_as_of": day(f.get("navAmountAsOf")),
                 "nav": val(f.get("navAmount")), "nav_currency": f.get("seriesBaseCurrencyCode", ""), "nav_as_of": day(f.get("navAmountAsOf")), "ret_1y": val(f.get("navOneYearAnnualized")), "ret_3y": val(f.get("navThreeYearAnnualized")), "ret_5y": val(f.get("navFiveYearAnnualized")), "ret_si": val(f.get("navSinceInceptionAnnualized")), "ret_as_of": day(f.get("navAnnualisedAsOf")),
                 "volatility_3y": "", "tracking_error_3y": "", "distribution": policy, "source": "iShares", "source_url": site + f.get("productPageUrl", "")})
         result[label] = {"etfs": len(funds), "unmatched": len(unmatched), "unmatched_sample": unmatched[:8]}

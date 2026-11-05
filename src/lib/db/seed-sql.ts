@@ -214,27 +214,27 @@ export function buildSeedSql(root: string): string {
     }
   }
 
+  const parseLine = (line: string) => {
+    const cells: string[] = [];
+    let cell = "", quoted = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (quoted) {
+        if (c === '"' && line[i + 1] === '"') { cell += '"'; i++; }
+        else if (c === '"') quoted = false;
+        else cell += c;
+      } else if (c === '"') quoted = true;
+      else if (c === ",") { cells.push(cell); cell = ""; }
+      else cell += c;
+    }
+    cells.push(cell);
+    return cells;
+  };
   // The global list. Optional, so a fresh checkout still works before the download job has run.
   const universePath = join(root, "data/universe/universe.csv.gz");
   if (existsSync(universePath)) {
     const universeOn = JSON.parse(readFileSync(join(root, "data/universe/report.json"), "utf8")).esma.on;
     const lines = gunzipSync(readFileSync(universePath)).toString("utf8").trim().split(/\r?\n/).slice(1);
-    const parseLine = (line: string) => {
-      const cells: string[] = [];
-      let cell = "", quoted = false;
-      for (let i = 0; i < line.length; i++) {
-        const c = line[i];
-        if (quoted) {
-          if (c === '"' && line[i + 1] === '"') { cell += '"'; i++; }
-          else if (c === '"') quoted = false;
-          else cell += c;
-        } else if (c === '"') quoted = true;
-        else if (c === ",") { cells.push(cell); cell = ""; }
-        else cell += c;
-      }
-      cells.push(cell);
-      return cells;
-    };
     for (let i = 0; i < lines.length; i += 1000) {
       const values = lines.slice(i, i + 1000).map((line) => {
         const [key, isin, ticker, mic, name, currency, lei, issuer, country, ucits, assetClass, venues, source, url] = parseLine(line);
@@ -248,10 +248,10 @@ export function buildSeedSql(root: string): string {
   const detailsPath = join(root, "data/universe/details.csv.gz");
   if (existsSync(detailsPath)) {
     const [header, ...lines] = gunzipSync(readFileSync(detailsPath)).toString("utf8").trim().split(/\r?\n/);
-    const names = header.split(",");
+    const names = parseLine(header);
     const numeric = new Set(["fee_pct", "aum", "nav", "ret_1y", "ret_3y", "ret_5y", "ret_si", "volatility_3y", "tracking_error_3y"]);
     for (const line of lines) {
-      const cells = line.split(",");
+      const cells = parseLine(line);
       const values = names.map((n, i) => (cells[i] === "" || cells[i] === undefined ? "null" : numeric.has(n) ? q(Number(cells[i])) : q(cells[i])));
       out.push(`insert into public.universe_details (${names.join(", ")}) select ${values.join(", ")} where exists (select 1 from public.universe_etfs u where u.etf_key = ${values[0]});`);
     }

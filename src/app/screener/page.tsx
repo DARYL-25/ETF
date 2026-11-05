@@ -187,7 +187,7 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
             </nav>
           ) : null}
           <p className="mt-4 max-w-[72ch] text-[0.85rem] text-muted">
-            Most ETFs here are basic records from official lists, with name, identifiers and issuer. Detailed fields appear as issuer data is added, so filters on fees, region or income narrow to researched funds. Asset class on basic records is inferred from the name. A dash means we have no verified figure yet. Fund size is the whole fund, shown in the issuer&apos;s currency. 1Y and 3Y are official NAV returns from the issuer factsheet where we hold one, otherwise the change in market price. Each ETF page shows which.
+            Most ETFs here are basic records from official lists, with name, identifiers and issuer. Detailed fields appear as issuer data is added, so filters on fees, region or income narrow to researched funds. Asset class on basic records is inferred from the name. A dash means we have no verified figure yet. Size is the whole fund where the issuer gives it, and the share class for iShares, in the currency shown. 1Y and 3Y are official NAV returns from the issuer factsheet where we hold one, otherwise the change in market price. Each ETF page shows which.
           </p>
         </section>
       </div>
