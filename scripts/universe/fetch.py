@@ -7,7 +7,7 @@ from pathlib import Path
 
 OUT = Path("data/universe")
 FIELDS = ["isin", "ticker", "mic", "name", "currency", "cfi", "issuer_lei", "market"]
-UA = {"User-Agent": "Mozilla/5.0 (compatible; etf-intelligence-universe/1.0)", "Accept": "*/*"}
+UA = {"User-Agent": "etf-intelligence-universe/1.0 (+https://github.com/DARYL-25/ETF)", "Accept": "*/*"}
 
 def get(url, timeout=180, headers=None):
     req = urllib.request.Request(url, headers={**UA, **(headers or {})})
@@ -111,7 +111,7 @@ def hongkong():
     return rows
 
 def india():
-    text = get("https://nsearchives.nseindia.com/content/equities/eq_etfseclist.csv", headers={"User-Agent": "Mozilla/5.0"}).decode("utf-8", "replace")
+    text = get("https://nsearchives.nseindia.com/content/equities/eq_etfseclist.csv").decode("utf-8", "replace")
     rows = []
     for r in csv.DictReader(io.StringIO(text)):
         r = {re.sub(r"[^a-z]", "", (k or "").lower()): (v or "").strip() for k, v in r.items() if k}

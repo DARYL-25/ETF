@@ -22,7 +22,7 @@ for (const listing of listings) {
   const symbol = yahooSymbol(listing.mic, listing.ticker);
   if (!symbol) continue;
   try {
-    const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=10y&interval=1d`, { headers: { "User-Agent": "Mozilla/5.0" } });
+    const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=10y&interval=1d`, { headers: { "User-Agent": "etf-intelligence/1.0 (+https://github.com/DARYL-25/ETF)" } });
     const series = parseYahooChart(await res.json(), listing.currency);
     await pool.query("update public.listings set market_data_symbol = $1 where id = $2", [symbol, listing.id]);
     for (const p of series.points) {
