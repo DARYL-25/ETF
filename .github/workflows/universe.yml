@@ -2,7 +2,7 @@ name: Update ETF universe
 on:
   push:
     branches: [phase-1-mvp]
-    paths: ["scripts/universe/**", ".github/workflows/universe.yml"]
+    paths: ["scripts/universe/fetch.py", ".github/workflows/universe.yml"]
   schedule:
     - cron: "17 4 * * 1"
   workflow_dispatch:
@@ -19,6 +19,7 @@ jobs:
           python-version: "3.12"
       - run: pip install xlrd openpyxl
       - run: python scripts/universe/fetch.py
+      - run: python scripts/universe/merge.py
       - name: Commit results
         run: |
           git config user.name "etf-universe-bot"

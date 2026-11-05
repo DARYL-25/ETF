@@ -77,17 +77,12 @@ def us():
     return rows
 
 def japan():
-    import xlrd
-    blob = get("https://www.jpx.co.jp/markets/statistics-equities/misc/tvdivq0000001vg2-att/data_j.xls")
-    sheet = xlrd.open_workbook(file_contents=blob).sheet_by_index(0)
-    head = [str(c).strip() for c in sheet.row_values(0)]
-    code, name, section = head.index("\u30b3\u30fc\u30c9"), head.index("\u9298\u67c4\u540d"), next(i for i, h in enumerate(head) if "\u5e02\u5834" in h)
-    rows = []
-    for i in range(1, sheet.nrows):
-        row = sheet.row_values(i)
-        if "ETF" in str(row[section]):
-            rows.append({"isin": "", "ticker": str(row[code]).removesuffix(".0"), "mic": "XTKS", "name": str(row[name]).strip(), "currency": "JPY", "cfi": "", "issuer_lei": "", "market": "JP"})
-    return rows
+    html = get("https://www.jpx.co.jp/english/equities/products/etfs/issues/01.html").decode("utf-8", "replace")
+    rows = {}
+    for code, name in re.findall(r"<td[^>]*>\\s*([0-9][0-9A-Z]{3})\\s*</td>\\s*<td[^>]*>(?:<a[^>]*>)?\\s*([^<]+)", html):
+        rows[code] = {"isin": "", "ticker": code, "mic": "XTKS", "name": name.strip(), "currency": "JPY", "cfi": "", "issuer_lei": "", "market": "JP"}
+    if not rows: raise RuntimeError(f"Could not read JPX table, page starts: {html[:200]}")
+    return list(rows.values())
 
 def hongkong():
     import openpyxl
@@ -100,9 +95,9 @@ def hongkong():
             continue
         d = dict(zip(head, cells))
         seen.add(d.get("Category", "")); sub = d.get("Sub-Category", "")
-        if "Exchange Traded" in d.get("Category", "") and "Leveraged" not in sub:
+        if d.get("Category", "").startswith("Exchange Traded") and "L&I" not in sub:
             rows.append({"isin": d.get("ISIN", ""), "ticker": d.get("Stock Code", ""), "mic": "XHKG", "name": d.get("Name of Securities", ""), "currency": d.get("Trading Currency", ""), "cfi": "", "issuer_lei": "", "market": "HK"})
-    if not rows: raise RuntimeError(f"head={head} categories={sorted(seen)[:15]}")
+    if not rows: raise RuntimeError(f"categories={sorted(seen)[:15]}")
     return rows
 
 def india():
@@ -119,15 +114,12 @@ def china_sh():
     return [{"isin": "", "ticker": r.get("fundCode", ""), "mic": "XSHG", "name": r.get("secNameFull") or r.get("fundAbbr", ""), "currency": "CNY", "cfi": "", "issuer_lei": "", "market": "CN"} for r in data.get("result", [])]
 
 def china_sz():
-    data = json.loads(get("https://www.szse.cn/api/report/ShowReport/data?SHOWTYPE=JSON&CATALOGID=1945&TABKEY=tab1&PAGENO=1&PAGESIZE=3000", headers={"Referer": "https://www.szse.cn/"}))
-    return [{"isin": "", "ticker": re.sub(r"<[^>]+>", "", r.get("sys_key", "")), "mic": "XSHE", "name": re.sub(r"<[^>]+>", "", r.get("kzjcurl", r.get("jjjc", ""))), "currency": "CNY", "cfi": "", "issuer_lei": "", "market": "CN"} for r in data[0]["data"]]
+    data = json.loads(get("https://fund.szse.cn/api/report/ShowReport/data?SHOWTYPE=JSON&CATALOGID=1105&TABKEY=tab1&PAGENO=1&PAGESIZE=3000", headers={"Referer": "https://fund.szse.cn/"}))
+    return [{"isin": "", "ticker": re.sub(r"<[^>]+>", "", r.get("sys_key", r.get("jjdm", ""))), "mic": "XSHE", "name": re.sub(r"<[^>]+>", "", r.get("kzjcurl", r.get("jjjc", ""))), "currency": "CNY", "cfi": "", "issuer_lei": "", "market": "CN"} for r in data[0]["data"]]
 
 def korea():
-  
-    body = urllib.parse.urlencode({"bld": "dbms/MDC/STAT/standard/MDCSTAT04601", "share": "1", "csvxls_isNo": "false"}).encode()
-    req = urllib.request.Request("https://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd", data=body, headers={**UA, "Referer": "https://data.krx.co.kr/", "Content-Type": "application/x-www-form-urlencoded"})
-    data = json.loads(urllib.request.urlopen(req, timeout=120).read())
-    return [{"isin": r.get("ISU_CD", ""), "ticker": r.get("ISU_SRT_CD", ""), "mic": "XKRX", "name": r.get("ISU_NM", ""), "currency": "KRW", "cfi": "", "issuer_lei": "", "market": "KR"} for r in data["output"]]
+    data = json.loads(get("https://finance.naver.com/api/sise/etfItemList.nhn").decode("euc-kr", "replace"))
+    return [{"isin": "", "ticker": r["itemcode"], "mic": "XKRX", "name": r["itemname"], "currency": "KRW", "cfi": "", "issuer_lei": "", "market": "KR"} for r in data["result"]["etfItemList"]]
 
 def taiwan():
     data = json.loads(get("https://www.twse.com.tw/rwd/en/ETF/list?response=json"))
