@@ -18,6 +18,17 @@ The database is the business, so this is the main risk. **Nothing below is legal
 | Monthly prices for 3 ETFs | Alpha Vantage free tier | **Not in this repository.** [Terms](https://www.alphavantage.co/terms_of_service/) limit it to personal, non-commercial use, and allowing others to access the data counts as commercial |
 | Index names and descriptions | Our own wording | Names are trademarks of their owners. Index levels and constituents are not loaded |
 
+## The global ETF list
+
+`scripts/universe/fetch.py` runs weekly on GitHub Actions, because the build environment cannot reach these sites, and commits `data/universe/`. `report.json` shows the result per source. Each ETF is one basic row: name, identifiers, issuer and venue count.
+
+- **Official:** ESMA and FCA FIRDS registers (CFI group CE), Nasdaq Trader symbol file, HKEX, JPX, NSE, SSE, TWSE, TSX, SGX. GLEIF supplies issuer names and countries.
+- **Unofficial:** Korea comes from Naver Finance, because the KRX endpoint refused. Replace it.
+- **Missing:** Shenzhen (connection refused from GitHub), Australia, Brazil and smaller markets.
+- **Known duplicates:** US funds can appear twice, as a register row with an ISIN and as an exchange row with a ticker, when the names could not be matched. Canadian rows are selected by name and may miss some funds.
+- **Inferred:** asset class on basic rows comes from name keywords, and registered country is the issuer's GLEIF legal address, not a checked domicile.
+- **To check before launch:** reuse terms of each exchange list.
+
 ## The free data plan
 
 Decided 5 Nov 2026: build without paying for data.

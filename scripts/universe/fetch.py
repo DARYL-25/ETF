@@ -82,15 +82,15 @@ def japan():
     link = re.search(r'href="([^"]+data_j\.xls[x]?)"', page)
     if not link: raise RuntimeError(f"No file link. xls links: {re.findall(r'href=.[^ ]+xls[^ ]*', page)[:5]}")
     blob = get(urllib.parse.urljoin("https://www.jpx.co.jp/", link.group(1)))
-    sheet = xlrd.open_workbook(file_contents=blob).sheet_by_index(0)
-    head = [str(c).strip() for c in sheet.row_values(0)]
+    if blob[:2] == b"PK":
+        import openpyxl
+        table = [list(r) for r in openpyxl.load_workbook(io.BytesIO(blob), read_only=True).worksheets[0].iter_rows(values_only=True)]
+    else:
+        sheet = xlrd.open_workbook(file_contents=blob).sheet_by_index(0)
+        table = [sheet.row_values(i) for i in range(sheet.nrows)]
+    head = [str(c).strip() for c in table[0]]
     code, name, section = head.index("\u30b3\u30fc\u30c9"), head.index("\u9298\u67c4\u540d"), next(i for i, h in enumerate(head) if "\u5e02\u5834" in h)
-    rows = []
-    for i in range(1, sheet.nrows):
-        row = sheet.row_values(i)
-        if "ETF" in str(row[section]):
-            rows.append({"isin": "", "ticker": str(row[code]).removesuffix(".0"), "mic": "XTKS", "name": str(row[name]).strip(), "currency": "JPY", "cfi": "", "issuer_lei": "", "market": "JP"})
-    return rows
+    return [{"isin": "", "ticker": str(row[code]).removesuffix(".0"), "mic": "XTKS", "name": str(row[name]).strip(), "currency": "JPY", "cfi": "", "issuer_lei": "", "market": "JP"} for row in table[1:] if "ETF" in str(row[section])]
 
 def hongkong():
     import openpyxl
@@ -156,14 +156,6 @@ def singapore():
     data = json.loads(get("https://api.sgx.com/securities/v1.1?params=nc,n,type"))
     return [{"isin": "", "ticker": p.get("nc", ""), "mic": "XSES", "name": p.get("n", ""), "currency": "", "cfi": "", "issuer_lei": "", "market": "SG"} for p in data["data"]["prices"] if p.get("type") == "etfs"]
 
-def ishares_details():
-    """iShares publishes its whole product screener as JSON. Writes fees and fund size by ISIN."""
-    url = "https://www.ishares.com/uk/individual/en/product-screener/product-screener-v3.1.jsp?dcrPath=/templatedata/config/product-screener-v3/data/en/uk/product-screener/ishares-product-screener-backend-config&siteEntryPassthrough=true"
-    data = json.loads(get(url))
-    (OUT / "ishares_sample.json").write_text(json.dumps(next(iter(data.values())), indent=0)[:6000])
-    (OUT / "ishares_screener.json.gz").write_bytes(gzip.compress(json.dumps(data).encode()))
-    return []
-
 SOURCES = {"esma": esma, "fca": fca, "us": us, "japan": japan, "hongkong": hongkong, "india": india, "canada": canada, "singapore": singapore, "china_sh": china_sh, "china_sz": china_sz, "korea": korea, "taiwan": taiwan, "australia": australia}
 
 def gleif(report):
@@ -204,10 +196,6 @@ def main():
             old = report.get(name, {})
             report[name] = {**old, "ok": False, "error": f"{type(e).__name__}: {e}"[:400], "trace": traceback.format_exc()[-500:]}
         print(name, report[name], flush=True)
-    try:
-        ishares_details(); report["ishares_details"] = {"ok": True}
-    except Exception as e:
-        report["ishares_details"] = {"ok": False, "error": f"{type(e).__name__}: {e}"[:300]}
     gleif(report)
     report_path.write_text(json.dumps(report, indent=1))
 
