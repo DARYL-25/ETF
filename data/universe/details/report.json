@@ -31,14 +31,20 @@
   }
  },
  "xtrackers": {
-  "ok": false,
-  "error": "IndexError: list index out of range"
+  "ok": true,
+  "result": {
+   "found": 0,
+   "not_in_universe": 0
+  }
  },
  "spdr_eu": {
-  "ok": false,
-  "error": "IndexError: list index out of range"
+  "ok": true,
+  "result": {
+   "found": 177,
+   "not_in_universe": 1
+  }
  },
  "fees": 1745,
- "fund_size": 1568,
+ "fund_size": 1745,
  "on": "2026-11-05"
 }
