@@ -1,0 +1,46 @@
+{
+ "retrieved_on": "2026-11-05",
+ "files": {
+  "AllProductData_3.xlsx": {
+   "kind": "xtrackers_eu",
+   "new_rows": 441
+  },
+  "Product_List.xlsx": {
+   "kind": "vanguard_eu",
+   "new_rows": 0
+  },
+  "AllProductData_2.xlsx": {
+   "kind": "xtrackers_eu",
+   "new_rows": 5
+  },
+  "Product_List_2.xlsx": {
+   "kind": "invesco_eu",
+   "new_rows": 4
+  },
+  "AllProductData.xlsx": {
+   "kind": "xtrackers_eu",
+   "new_rows": 43
+  },
+  "ETFs-Products-List.xlsx": {
+   "kind": "invesco_us",
+   "new_rows": 247
+  },
+  "Product_List_1.xlsx": {
+   "kind": "invesco_eu",
+   "new_rows": 2
+  },
+  "AllProductData_1.xlsx": {
+   "kind": "xtrackers_us",
+   "new_rows": 43
+  },
+  "UBS_ETF_Product_Overview_CH_FR.xlsx": {
+   "kind": "ubs",
+   "new_rows": 430
+  },
+  "All_Investments_view.csv": {
+   "kind": "vanguard_us",
+   "new_rows": 116
+  }
+ },
+ "rows": 1757
+}

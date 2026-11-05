@@ -1,0 +1,50 @@
+{
+ "ssga_us": {
+  "ok": true,
+  "result": 160
+ },
+ "amundi": {
+  "ok": true,
+  "result": {
+   "wanted": 1132,
+   "tried": 1132,
+   "found": 494,
+   "no_factsheet": 638
+  }
+ },
+ "ishares": {
+  "ok": true,
+  "result": {
+   "uk": {
+    "etfs": 924,
+    "unmatched": 6,
+    "unmatched_sample": [
+     "IE00B4NCWG09",
+     "IE00B4LHWP62",
+     "IE00B4ND3602",
+     "IE00B4556L06",
+     "IE000Q2P3ZQ3",
+     "XS2940466316"
+    ]
+   },
+   "us": "HTTPError: HTTP Error 500: Internal Server Error"
+  }
+ },
+ "xtrackers": {
+  "ok": true,
+  "result": {
+   "found": 0,
+   "not_in_universe": 0
+  }
+ },
+ "spdr_eu": {
+  "ok": true,
+  "result": {
+   "found": 177,
+   "not_in_universe": 1
+  }
+ },
+ "fees": 1745,
+ "fund_size": 1745,
+ "on": "2026-11-05"
+}

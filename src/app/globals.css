@@ -1,0 +1,170 @@
+@import "tailwindcss";
+@import "@fontsource-variable/public-sans/index.css";
+@import "@fontsource-variable/bricolage-grotesque/index.css";
+
+/* Light blue with white surfaces. Orange marks one thing only: "this fund" on a scale. */
+:root {
+  --paper: #eef6fc;
+  --surface: #ffffff;
+  --sunken: #e1eff9;
+  --ink: #0c2a43;
+  --muted: #47637a;
+  --line: #d0e2f0;
+  --pine: #1270b3;
+  --pine-ink: #ffffff;
+  --saffron: #f08a12;
+  --up: #0a7a5a;
+  --down: #c0352b;
+  --warn-bg: #e3f1fb;
+  --warn-ink: #0d4470;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0a1b2b;
+    --surface: #10263a;
+    --sunken: #0d2133;
+    --ink: #e6f2fb;
+    --muted: #9db6ca;
+    --line: #234058;
+    --pine: #6cc0f2;
+    --pine-ink: #06223a;
+    --saffron: #f5a53d;
+    --up: #5fd3ac;
+    --down: #f4907f;
+    --warn-bg: #143450;
+    --warn-ink: #cfe8fa;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #0a1b2b;
+  --surface: #10263a;
+  --sunken: #0d2133;
+  --ink: #e6f2fb;
+  --muted: #9db6ca;
+  --line: #234058;
+  --pine: #6cc0f2;
+  --pine-ink: #06223a;
+  --saffron: #f5a53d;
+  --up: #5fd3ac;
+  --down: #f4907f;
+  --warn-bg: #143450;
+  --warn-ink: #cfe8fa;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-pine: var(--pine);
+  --color-pine-ink: var(--pine-ink);
+  --color-saffron: var(--saffron);
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --color-warn-bg: var(--warn-bg);
+  --color-warn-ink: var(--warn-ink);
+  --font-sans: "Public Sans Variable", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "Public Sans Variable", system-ui, sans-serif;
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--paper);
+  min-height: 100dvh;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  line-height: 1.12;
+}
+
+a { text-underline-offset: 0.18em; }
+
+:focus-visible {
+  outline: 2px solid var(--pine);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.prose-link { color: var(--pine); text-decoration: underline; }
+
+.data { font-variant-numeric: tabular-nums; }
+
+@layer components {
+/* Dense research tables. Rules run across rows only, so columns of numbers stay easy to scan. */
+.table-data { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.table-data th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0.5rem clamp(0.35rem, 1vw, 0.75rem);
+  border-bottom: 1px solid var(--line);
+  background: var(--sunken);
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+.table-data td { padding: 0.55rem clamp(0.35rem, 1vw, 0.75rem); border-bottom: 1px solid var(--line); vertical-align: top; }
+.table-data tbody tr:hover { background: var(--sunken); }
+.table-data .num { text-align: right; }
+.table-data th.num { text-align: right; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+  min-height: 2.5rem; padding: 0 1.05rem; border-radius: 10px;
+  font-weight: 600; text-decoration: none; cursor: pointer;
+  border: 1.5px solid transparent;
+}
+.btn-primary { background: var(--pine); color: var(--pine-ink); }
+.btn-primary:hover { filter: brightness(1.12); }
+.btn-quiet { border-color: var(--line); color: var(--ink); background: transparent; }
+.btn-quiet:hover { border-color: var(--ink); }
+
+.field {
+  width: 100%; min-height: 2.5rem; padding: 0 0.8rem; border-radius: 10px;
+  border: 1.5px solid var(--line); background: var(--surface); color: var(--ink);
+}
+.field:focus { border-color: var(--pine); outline: none; }
+.field::placeholder { color: var(--muted); }
+}
+
+/* Tables sit on white panels with one soft edge. */
+.overflow-x-auto:has(> .table-data) {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgb(18 112 179 / 6%), 0 8px 24px -16px rgb(18 112 179 / 22%);
+}
+.table-data tbody tr:last-child td { border-bottom: 0; }
+
+.hero-panel {
+  background: linear-gradient(135deg, var(--sunken), var(--surface) 70%);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The one moment of motion: the fee dots drop into their stacks on the dashboard. */
+  .fee-dot-drop { animation: fee-drop 520ms cubic-bezier(0.2, 0.9, 0.3, 1.1) backwards; }
+  @keyframes fee-drop {
+    from { translate: -50% -46px; opacity: 0; }
+    to { translate: -50% 0; opacity: 1; }
+  }
+}

@@ -1,0 +1,31 @@
+{
+ "tickers": 28647,
+ "fields": [
+  "cik",
+  "seriesId",
+  "classId",
+  "symbol"
+ ],
+ "page_error_ts-data/mutual-fund-prospectus-risk-return-summary-data-sets": "HTTP Error 404: Not Found",
+ "page": "https://www.sec.gov/dera/data/mutual-fund-prospectus-risk-return-summary-data-sets",
+ "zip_links": [
+  "/files/dera/data/mutual-fund-prospectus-risk/return-summary-data-sets/2024q3_rr1.zip",
+  "/files/dera/data/mutual-fund-prospectus-risk/return-summary-data-sets/2024q4_rr1.zip",
+  "/files/dera/data/mutual-fund-prospectus-risk/return-summary-data-sets/2025q1_rr1.zip",
+  "/files/dera/data/mutual-fund-prospectus-risk/return-summary-data-sets/2025q2_rr1.zip",
+  "/files/dera/data/mutual-fund-prospectus-risk/return-summary-data-sets/2025q3_rr1.zip",
+  "/files/dera/data/mutual-fund-prospectus-risk/return-summary-data-sets/2025q4_rr1.zip",
+  "/files/dera/data/mutual-fund-prospectus-risk/return-summary-data-sets/2026q1_rr1.zip",
+  "/files/dera/data/mutual-fund-prospectus-risk/return-summary-data-sets/2026q2_rr1.zip"
+ ],
+ "after_2026q2_rr1.zip": 0,
+ "after_2026q1_rr1.zip": 2,
+ "after_2025q4_rr1.zip": 3,
+ "after_2025q3_rr1.zip": 4,
+ "after_2025q2_rr1.zip": 530,
+ "after_2025q1_rr1.zip": 1579,
+ "after_2024q4_rr1.zip": 2470,
+ "after_2024q3_rr1.zip": 2906,
+ "us_etfs_with_fee": 2906,
+ "us_etfs_total": 5531
+}

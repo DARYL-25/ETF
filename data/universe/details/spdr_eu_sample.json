@@ -1,0 +1,25 @@
+{
+"sheet": "ETFs",
+"columns": {
+"isin": 2,
+"name": 1,
+"fee": 14,
+"aum": 10,
+"aum_currency": 17,
+"income": 20,
+"currency": 16,
+"nav": 5,
+"as_of": 0
+},
+"first": {
+"isin": "IE00020O1MD6",
+"name": "comdirect S&P All World State Street UCITS ETF (Acc)",
+"fee": "0.4",
+"aum": "111662491.71",
+"aum_currency": "USD",
+"income": "Accumulation",
+"currency": "USD",
+"nav": "10.6345",
+"as_of": "03 Nov 2026"
+}
+}

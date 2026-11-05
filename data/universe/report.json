@@ -1,0 +1,89 @@
+{
+ "esma": {
+  "ok": true,
+  "rows": 114608,
+  "distinct_isin": 8144,
+  "on": "2026-11-05"
+ },
+ "fca": {
+  "ok": true,
+  "rows": 192659,
+  "distinct_isin": 10374,
+  "on": "2026-11-05"
+ },
+ "us": {
+  "ok": true,
+  "rows": 5775,
+  "distinct_isin": 0,
+  "on": "2026-11-05"
+ },
+ "japan": {
+  "ok": true,
+  "rows": 488,
+  "distinct_isin": 0,
+  "on": "2026-11-05"
+ },
+ "hongkong": {
+  "ok": true,
+  "rows": 450,
+  "distinct_isin": 281,
+  "on": "2026-11-05"
+ },
+ "india": {
+  "ok": false,
+  "rows": 359,
+  "distinct_isin": 359,
+  "on": "2026-11-05",
+  "error": "TimeoutError: The read operation timed out",
+  "trace": "hon3.12/socket.py\", line 720, in readinto\n    return self._sock.recv_into(b)\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/ssl.py\", line 1264, in recv_into\n    return self.read(nbytes, buffer)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/ssl.py\", line 1116, in read\n    return self._sslobj.read(len, buffer)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTimeoutError: The read operation timed out\n"
+ },
+ "canada": {
+  "ok": true,
+  "rows": 318,
+  "distinct_isin": 0,
+  "on": "2026-11-05"
+ },
+ "singapore": {
+  "ok": true,
+  "rows": 106,
+  "distinct_isin": 0,
+  "on": "2026-11-05"
+ },
+ "china_sh": {
+  "ok": true,
+  "rows": 947,
+  "distinct_isin": 0,
+  "on": "2026-11-05"
+ },
+ "china_sz": {
+  "ok": false,
+  "error": "URLError: <urlopen error [Errno 104] Connection reset by peer>",
+  "trace": " 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/urllib/request.py\", line 1405, in https_open\n    return self.do_open(http.client.HTTPSConnection, req,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/urllib/request.py\", line 1360, in do_open\n    raise URLError(err)\nurllib.error.URLError: <urlopen error [Errno 104] Connection reset by peer>\n"
+ },
+ "korea": {
+  "ok": true,
+  "rows": 1184,
+  "distinct_isin": 0,
+  "on": "2026-11-05"
+ },
+ "taiwan": {
+  "ok": true,
+  "rows": 240,
+  "distinct_isin": 0,
+  "on": "2026-11-05"
+ },
+ "australia": {
+  "ok": false,
+  "error": "HTTPError: HTTP Error 404: Not Found",
+  "trace": "b/python3.12/urllib/request.py\", line 559, in error\n    return self._call_chain(*args)\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/urllib/request.py\", line 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/urllib/request.py\", line 639, in http_error_default\n    raise HTTPError(req.full_url, code, msg, hdrs, fp)\nurllib.error.HTTPError: HTTP Error 404: Not Found\n"
+ },
+ "gleif": {
+  "ok": true,
+  "rows": 6889,
+  "wanted": 6889
+ },
+ "ishares_details": {
+  "ok": false,
+  "error": "HTTPError: HTTP Error 404: Not Found"
+ }
+}

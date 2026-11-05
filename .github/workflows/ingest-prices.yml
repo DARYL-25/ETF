@@ -1,0 +1,17 @@
+name: Ingest prices
+on:
+  schedule:
+    - cron: "37 22 * * 1-5"
+  workflow_dispatch:
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npx tsx scripts/ingest-yahoo.ts
+        env:
+          INGEST_DATABASE_URL: ${{ secrets.INGEST_DATABASE_URL }}
