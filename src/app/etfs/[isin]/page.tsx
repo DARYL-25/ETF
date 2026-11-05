@@ -122,7 +122,7 @@ export default async function EtfPage({ params }: Props) {
         <div className="flex items-center gap-2.5"><IssuerLogo name={row.name} /><p className="text-muted">{row.issuer_name}</p></div>
         <h1 className="mt-1 max-w-[30ch] text-[clamp(1.9rem,3.4vw,2.8rem)]">{row.name}</h1>
         <p className="data mt-2">{row.ticker ?? MISSING} on {listings.find((l) => l.is_display_ticker)?.exchange_name ?? MISSING}, ISIN {row.isin}</p>
-        <div className="mt-4 flex flex-wrap gap-2"><CompareToggle isin={isin} wide /><SaveToWatchlist etfKey={isin} /></div>
+        <div className="mt-4 flex flex-wrap gap-2"><CompareToggle isin={isin} wide /><SaveToWatchlist etfKey={isin} /><Link className="btn btn-quiet" href={`/assistant?q=${encodeURIComponent(`Find ETFs similar to ${row.name}`)}`}>Ask AI</Link></div>
         {row.verification === "extracted_unreviewed" ? (
           <p className="mt-4 max-w-[68ch] rounded bg-warn-bg px-3 py-2 text-warn-ink">
             These figures were read automatically from the issuer&apos;s {row.source_kind === "issuer_factsheet" ? "factsheet" : "website"} and have not yet been checked by a person.{" "}

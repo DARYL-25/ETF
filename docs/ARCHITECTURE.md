@@ -47,3 +47,7 @@ Still required before accounts go public: data export, an account deletion scree
 ## Design
 
 Pine and saffron on cool ledger paper, set in Bricolage Grotesque and Public Sans with tabular figures. The signature element is the fee ruler, a dot plot of every ETF on one fee scale, where filled and hollow dots keep TER and OCF apart. Saffron has one meaning: "this fund".
+
+## AI assistant
+
+`src/lib/assistant`: `intent.ts` reads a request with fixed rules, `rank.ts` filters and scores in code, `agent.ts` adds an optional Claude tool loop. The model can only reach the database through tools, and the system prompt forbids stating figures or tax rules from memory. With no `ANTHROPIC_API_KEY`, or if the AI call fails, the ranked list still works. Scores weight fee, size, UCITS status and data available, and they are shown to the user. They do not include tax, because no country rules are verified yet.

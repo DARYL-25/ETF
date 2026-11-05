@@ -143,3 +143,12 @@ test("a hypothetical portfolio values a position from NAV", async ({ page, isMob
   await page.getByRole("button", { name: "Add", exact: true }).click();
   await expect(page.getByRole("status").first()).toContainText("Value");
 });
+
+test("the AI search answers a Swiss Nasdaq-100 request", async ({ page }) => {
+  await page.goto("/assistant");
+  await page.getByLabel("Describe what you are looking for").fill("Nasdaq-100 ETF for a Swiss investor");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Closest matches" })).toBeVisible();
+  await expect(page.getByText(/Nasdaq|NASDAQ/).first()).toBeVisible();
+  await expect(page.getByText(/not verified here yet/)).toBeVisible();
+});

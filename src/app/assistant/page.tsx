@@ -1,20 +1,15 @@
 import type { Metadata } from "next";
-import { PlannedPage } from "@/components/planned-page";
+import { Assistant } from "@/components/assistant";
+import { PageTitle } from "@/components/etf-bits";
 
 export const metadata: Metadata = { title: "AI Assistant" };
 
-export default function Page() {
+export default async function Page({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams;
   return (
-    <PlannedPage
-      title="AI Assistant"
-      intro="Ask questions about ETFs in plain language. Answers will come from this database and reviewed articles, with their sources and dates."
-      phase="phase 6"
-      plans={[
-        "Search such as: the cheapest accumulating UCITS ETFs on the S&P 500",
-        "Comparisons and explanations that state what is fact, what is assumption and what is missing",
-        "No invented fees, returns, holdings or tax rules",
-      ]}
-      now={{ href: "/screener?index=sp-500&distribution=accumulating&sort=fee", label: "Run that search in the screener" }}
-    />
+    <div className="max-w-5xl">
+      <PageTitle title="AI Assistant">Ask in plain language, in English or French. Say where you live and what matters to you. Every fund and figure comes from our database, with what could not be checked listed alongside.</PageTitle>
+      <Assistant initial={q?.slice(0, 500)} />
+    </div>
   );
 }

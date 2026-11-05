@@ -29,7 +29,7 @@ const NAV: { heading: string; items: Item[] }[] = [
     items: [
       { href: "/academy", label: "ETF Academy" },
       { href: "/tax", label: "Tax Intelligence", later: true },
-      { href: "/assistant", label: "AI Assistant", later: true },
+      { href: "/assistant", label: "AI Assistant" },
     ],
   },
   {
