@@ -21,7 +21,7 @@ jobs:
       - run: pip install pdfplumber openpyxl
       - run: python3 scripts/universe/details.py
         env:
-          SOURCES: xtrackers,spdr_eu
+          SOURCES: spdr_eu
       - run: |
           git config user.name "etf-universe-bot"
           git config user.email "actions@users.noreply.github.com"

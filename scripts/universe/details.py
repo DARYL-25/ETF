@@ -167,7 +167,11 @@ def from_sheet(url, source, label, cols, aum_scale=1, aum_currency=None):
         if fee != "" and fee > 3: fee = ""
         income = str(cell(r, "income") or "").lower()
         policy = "accumulating" if income.startswith(("acc", "capital", "reinvest")) else "distributing" if income.startswith(("dis", "inc")) else ""
-        when = str(cell(r, "as_of") or "")[:10]
+        when = str(cell(r, "as_of") or "")
+        try:
+            when = dt.datetime.strptime(when, "%d %b %Y").date().isoformat()
+        except ValueError:
+            when = when[:10]
         rows.append({"etf_key": u["etf_key"], "fee_pct": fee, "fee_type": "ter" if fee != "" else "", "distribution": policy, "source": source, "source_url": url,
             "aum": aum * aum_scale if aum != "" else "", "aum_currency": (aum_currency or str(cell(r, "aum_currency") or "")) if aum != "" else "", "aum_as_of": when if re.match(r"\d{4}-\d\d-\d\d", when) else "",
             "nav": parse_number(cell(r, "nav")), "nav_currency": str(cell(r, "currency") or ""), "nav_as_of": when if re.match(r"\d{4}-\d\d-\d\d", when) else "",
