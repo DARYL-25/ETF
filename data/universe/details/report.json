@@ -7,12 +7,12 @@
   "ok": true,
   "result": {
    "wanted": 1132,
-   "tried": 1000,
-   "found": 423,
-   "no_factsheet": 577
+   "tried": 1132,
+   "found": 494,
+   "no_factsheet": 638
   }
  },
- "fees": 274,
- "fund_size": 274,
+ "fees": 650,
+ "fund_size": 650,
  "on": "2026-11-05"
 }
