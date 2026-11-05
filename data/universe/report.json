@@ -24,13 +24,13 @@
  },
  "hongkong": {
   "ok": false,
-  "error": "RuntimeError: Source returned no ETFs",
-  "trace": "Traceback (most recent call last):\n  File \"/home/runner/work/ETF/ETF/scripts/universe/fetch.py\", line 140, in main\n    if not rows: raise RuntimeError(\"Source returned no ETFs\")\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Source returned no ETFs\n"
+  "error": "RuntimeError: head=['Stock Code', 'Name of Securities', 'Category', 'Sub-Category', 'Board Lot', 'ISIN', 'Expiry Date', 'Subject to Stamp Duty', 'Shortsell Eligible', 'CAS Eligible', 'VCM Eligible', 'Admitted to CCASS', 'Debt Securities Board Lot (Nominal)', 'Debt Securities Investor Type', 'POS Eligible', 'Spread Table\\n1 = Part A\\n3 = Part B\\n5 = Part D\\n4 & 6 = Part E', 'Trading Currency', 'RMB",
+  "trace": " ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: head=['Stock Code', 'Name of Securities', 'Category', 'Sub-Category', 'Board Lot', 'ISIN', 'Expiry Date', 'Subject to Stamp Duty', 'Shortsell Eligible', 'CAS Eligible', 'VCM Eligible', 'Admitted to CCASS', 'Debt Securities Board Lot (Nominal)', 'Debt Securities Investor Type', 'POS Eligible', 'Spread Table\\n1 = Part A\\n3 = Part B\\n5 = Part D\\n4 & 6 = Part E', 'Trading Currency', 'RMB Counter'] categories=['Equity']\n"
  },
  "india": {
   "ok": true,
   "rows": 359,
-  "distinct_isin": 0,
+  "distinct_isin": 359,
   "on": "2026-11-05"
  },
  "canada": {
@@ -44,5 +44,37 @@
   "rows": 106,
   "distinct_isin": 0,
   "on": "2026-11-05"
+ },
+ "china_sh": {
+  "ok": true,
+  "rows": 947,
+  "distinct_isin": 0,
+  "on": "2026-11-05"
+ },
+ "china_sz": {
+  "ok": false,
+  "error": "URLError: <urlopen error [Errno 104] Connection reset by peer>",
+  "trace": " 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/urllib/request.py\", line 1405, in https_open\n    return self.do_open(http.client.HTTPSConnection, req,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/urllib/request.py\", line 1360, in do_open\n    raise URLError(err)\nurllib.error.URLError: <urlopen error [Errno 104] Connection reset by peer>\n"
+ },
+ "korea": {
+  "ok": false,
+  "error": "HTTPError: HTTP Error 400: Bad Request",
+  "trace": "python3.12/urllib/request.py\", line 559, in error\n    return self._call_chain(*args)\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/urllib/request.py\", line 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/urllib/request.py\", line 639, in http_error_default\n    raise HTTPError(req.full_url, code, msg, hdrs, fp)\nurllib.error.HTTPError: HTTP Error 400: Bad Request\n"
+ },
+ "taiwan": {
+  "ok": true,
+  "rows": 240,
+  "distinct_isin": 0,
+  "on": "2026-11-05"
+ },
+ "australia": {
+  "ok": false,
+  "error": "HTTPError: HTTP Error 404: Not Found",
+  "trace": "b/python3.12/urllib/request.py\", line 559, in error\n    return self._call_chain(*args)\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/urllib/request.py\", line 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/urllib/request.py\", line 639, in http_error_default\n    raise HTTPError(req.full_url, code, msg, hdrs, fp)\nurllib.error.HTTPError: HTTP Error 404: Not Found\n"
+ },
+ "gleif": {
+  "ok": true,
+  "rows": 6889,
+  "wanted": 6889
  }
 }
