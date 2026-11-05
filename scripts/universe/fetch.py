@@ -78,39 +78,66 @@ def us():
 
 def japan():
     import xlrd
-    book = xlrd.open_workbook(file_contents=get("https://www.jpx.co.jp/english/markets/statistics-equities/misc/tvdivq0000001vg2-att/data_e.xls"))
-    sheet = book.sheet_by_index(0)
+    blob = get("https://www.jpx.co.jp/markets/statistics-equities/misc/tvdivq0000001vg2-att/data_j.xls")
+    sheet = xlrd.open_workbook(file_contents=blob).sheet_by_index(0)
     head = [str(c).strip() for c in sheet.row_values(0)]
-    code, name, section = head.index("Local Code"), head.index("Name (English)"), head.index("Section/Products")
+    code, name, section = head.index("\u30b3\u30fc\u30c9"), head.index("\u9298\u67c4\u540d"), next(i for i, h in enumerate(head) if "\u5e02\u5834" in h)
     rows = []
     for i in range(1, sheet.nrows):
         row = sheet.row_values(i)
         if "ETF" in str(row[section]):
-            ticker = str(row[code]).removesuffix(".0")
-            rows.append({"isin": "", "ticker": ticker, "mic": "XTKS", "name": str(row[name]).strip(), "currency": "JPY", "cfi": "", "issuer_lei": "", "market": "JP"})
+            rows.append({"isin": "", "ticker": str(row[code]).removesuffix(".0"), "mic": "XTKS", "name": str(row[name]).strip(), "currency": "JPY", "cfi": "", "issuer_lei": "", "market": "JP"})
     return rows
 
 def hongkong():
     import openpyxl
     book = openpyxl.load_workbook(io.BytesIO(get("https://www.hkex.com.hk/eng/services/trading/securities/securitieslists/ListOfSecurities.xlsx")), read_only=True)
-    rows, head = [], None
-    for row in book.active.iter_rows(values_only=True):
+    rows, head, seen = [], None, set()
+    for row in book.worksheets[0].iter_rows(values_only=True):
         cells = [str(c).strip() if c is not None else "" for c in row]
         if head is None:
-            if "Stock Code" in cells: head = cells
+            if any(c.lower().startswith("stock code") for c in cells): head = cells
             continue
         d = dict(zip(head, cells))
-        if d.get("Category") == "Exchange Traded Products":
-            rows.append({"isin": d.get("ISIN", ""), "ticker": d["Stock Code"], "mic": "XHKG", "name": d.get("Name of Securities", ""), "currency": d.get("Trading Currency", ""), "cfi": "", "issuer_lei": "", "market": "HK"})
+        seen.add(d.get("Category", "")); sub = d.get("Sub-Category", "")
+        if "Exchange Traded" in d.get("Category", "") and "Leveraged" not in sub:
+            rows.append({"isin": d.get("ISIN", ""), "ticker": d.get("Stock Code", ""), "mic": "XHKG", "name": d.get("Name of Securities", ""), "currency": d.get("Trading Currency", ""), "cfi": "", "issuer_lei": "", "market": "HK"})
+    if not rows: raise RuntimeError(f"head={head} categories={sorted(seen)[:15]}")
     return rows
 
 def india():
     text = get("https://nsearchives.nseindia.com/content/equities/eq_etfseclist.csv", headers={"User-Agent": "Mozilla/5.0"}).decode("utf-8", "replace")
     rows = []
     for r in csv.DictReader(io.StringIO(text)):
-        r = {k.strip(): (v or "").strip() for k, v in r.items() if k}
-        rows.append({"isin": r.get("ISIN Number", ""), "ticker": r.get("Symbol", ""), "mic": "XNSE", "name": r.get("SecurityName", r.get("Security Name", "")), "currency": "INR", "cfi": "", "issuer_lei": "", "market": "IN"})
+        r = {re.sub(r"[^a-z]", "", (k or "").lower()): (v or "").strip() for k, v in r.items() if k}
+        isin = next((v for k, v in r.items() if "isin" in k), "")
+        rows.append({"isin": isin, "ticker": r.get("symbol", ""), "mic": "XNSE", "name": r.get("securityname", r.get("underlying", "")), "currency": "INR", "cfi": "", "issuer_lei": "", "market": "IN"})
     return rows
+
+def china_sh():
+    data = json.loads(get("https://query.sse.com.cn/commonSoaQuery.do?isPagination=true&pageHelp.pageSize=3000&pageHelp.pageNo=1&sqlId=FUND_LIST&fundType=00", headers={"Referer": "https://etf.sse.com.cn/"}))
+    return [{"isin": "", "ticker": r.get("fundCode", ""), "mic": "XSHG", "name": r.get("secNameFull") or r.get("fundAbbr", ""), "currency": "CNY", "cfi": "", "issuer_lei": "", "market": "CN"} for r in data.get("result", [])]
+
+def china_sz():
+    data = json.loads(get("https://www.szse.cn/api/report/ShowReport/data?SHOWTYPE=JSON&CATALOGID=1945&TABKEY=tab1&PAGENO=1&PAGESIZE=3000", headers={"Referer": "https://www.szse.cn/"}))
+    return [{"isin": "", "ticker": re.sub(r"<[^>]+>", "", r.get("sys_key", "")), "mic": "XSHE", "name": re.sub(r"<[^>]+>", "", r.get("kzjcurl", r.get("jjjc", ""))), "currency": "CNY", "cfi": "", "issuer_lei": "", "market": "CN"} for r in data[0]["data"]]
+
+def korea():
+  
+    body = urllib.parse.urlencode({"bld": "dbms/MDC/STAT/standard/MDCSTAT04601", "share": "1", "csvxls_isNo": "false"}).encode()
+    req = urllib.request.Request("https://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd", data=body, headers={**UA, "Referer": "https://data.krx.co.kr/", "Content-Type": "application/x-www-form-urlencoded"})
+    data = json.loads(urllib.request.urlopen(req, timeout=120).read())
+    return [{"isin": r.get("ISU_CD", ""), "ticker": r.get("ISU_SRT_CD", ""), "mic": "XKRX", "name": r.get("ISU_NM", ""), "currency": "KRW", "cfi": "", "issuer_lei": "", "market": "KR"} for r in data["output"]]
+
+def taiwan():
+    data = json.loads(get("https://www.twse.com.tw/rwd/en/ETF/list?response=json"))
+    rows = data.get("data", [])
+    return [{"isin": "", "ticker": str(r[1]).strip(), "mic": "XTAI", "name": str(r[2]).strip(), "currency": "TWD", "cfi": "", "issuer_lei": "", "market": "TW"} for r in rows]
+
+def australia():
+    data = json.loads(get("https://asx.api.markitdigital.com/asx-research/1.0/etfs/directory?page=0&itemsPerPage=1000"))
+    items = data["data"]["items"]
+    return [{"isin": i.get("isin", ""), "ticker": i.get("symbol", ""), "mic": "XASX", "name": i.get("displayName", ""), "currency": "AUD", "cfi": "", "issuer_lei": "", "market": "AU"} for i in items]
 
 def canada():
     rows = []
@@ -127,7 +154,29 @@ def singapore():
     data = json.loads(get("https://api.sgx.com/securities/v1.1?params=nc,n,type"))
     return [{"isin": "", "ticker": p.get("nc", ""), "mic": "XSES", "name": p.get("n", ""), "currency": "", "cfi": "", "issuer_lei": "", "market": "SG"} for p in data["data"]["prices"] if p.get("type") == "etfs"]
 
-SOURCES = {"esma": esma, "fca": fca, "us": us, "japan": japan, "hongkong": hongkong, "india": india, "canada": canada, "singapore": singapore}
+SOURCES = {"esma": esma, "fca": fca, "us": us, "japan": japan, "hongkong": hongkong, "india": india, "canada": canada, "singapore": singapore, "china_sh": china_sh, "china_sz": china_sz, "korea": korea, "taiwan": taiwan, "australia": australia}
+
+def gleif(report):
+    """Issuer legal name and registered country for each LEI. GLEIF data is open (CC0)."""
+    leis = set()
+    for f in OUT.glob("*.csv.gz"):
+        if f.name == "issuers.csv.gz": continue
+        with gzip.open(f, "rt", encoding="utf-8") as fh:
+            leis |= {r["issuer_lei"] for r in csv.DictReader(fh) if r["issuer_lei"]}
+    leis = sorted(leis); out = []
+    try:
+        for i in range(0, len(leis), 100):
+            q = urllib.parse.quote(",".join(leis[i:i + 100]))
+            data = json.loads(get(f"https://api.gleif.org/api/v1/lei-records?filter[lei]={q}&page[size]=100"))
+            for d in data["data"]:
+                e = d["attributes"]["entity"]
+                out.append({"lei": d["attributes"]["lei"], "legal_name": e["legalName"]["name"], "country": e["legalAddress"]["country"]})
+        with gzip.open(OUT / "issuers.csv.gz", "wt", newline="", encoding="utf-8", compresslevel=9) as fh:
+            w = csv.DictWriter(fh, ["lei", "legal_name", "country"]); w.writeheader(); w.writerows(out)
+        report["gleif"] = {"ok": True, "rows": len(out), "wanted": len(leis)}
+    except Exception as e:
+        report["gleif"] = {"ok": False, "got": len(out), "wanted": len(leis), "error": str(e)[:300]}
+    print(report["gleif"], flush=True)
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
@@ -145,6 +194,7 @@ def main():
             old = report.get(name, {})
             report[name] = {**old, "ok": False, "error": f"{type(e).__name__}: {e}"[:400], "trace": traceback.format_exc()[-500:]}
         print(name, report[name], flush=True)
+    gleif(report)
     report_path.write_text(json.dumps(report, indent=1))
 
 main()
