@@ -1,15 +1,29 @@
 {
- "on": "2026-11-14",
+ "on": "2026-11-13",
  "fx": {
-  "ok": false,
-  "error": "URLError: <urlopen error Tunnel connection failed: 403 Forbidden>"
+  "ok": true,
+  "rate_date": "2026-11-13",
+  "currencies": 29
  },
- "nav_points": 2247,
+ "nav_points": 2250,
  "taiwan": {
   "ok": false,
-  "error": "URLError: <urlopen error Tunnel connection failed: 403 Forbidden>"
+  "points": 0,
+  "sample": {
+   "Date": "1151113",
+   "Code": "00400A",
+   "Name": "主動國泰動能高息",
+   "TradeVolume": "45554747",
+   "TradeValue": "593663444",
+   "OpeningPrice": "13.00",
+   "HighestPrice": "13.26",
+   "LowestPrice": "12.80",
+   "ClosingPrice": "12.86",
+   "Change": "0.2900",
+   "Transaction": "6406"
+  }
  },
- "new_points": 2247,
- "etfs_priced": 2247,
- "latest_date": "2026-11-04"
+ "new_points": 1258,
+ "etfs_priced": 2250,
+ "latest_date": "2026-11-13"
 }
