@@ -9,7 +9,7 @@ SOURCE_URL = {"issuer_identity": "https://www.ubs.com/etf", "esma": "https://reg
   "us": "https://www.nasdaqtrader.com/trader.aspx?id=symboldirdefs", "india": "https://www.nseindia.com/market-data/exchange-traded-funds-etf",
   "canada": "https://www.tsx.com/listings/listing-with-us/listed-company-directory", "singapore": "https://www.sgx.com/securities/etf-screener",
   "china_sh": "https://etf.sse.com.cn/", "china_sz": "https://fund.szse.cn/", "taiwan": "https://www.twse.com.tw/en/products/securities/etf/products/list.html",
-  "hongkong": "https://www.hkex.com.hk/Products/Securities/Exchange-Traded-Products", "japan": "https://www.jpx.co.jp/english/equities/products/etfs/", "korea": "https://finance.naver.com/sise/etf.naver"}
+  "hongkong": "https://www.hkex.com.hk/Products/Securities/Exchange-Traded-Products", "japan": "https://www.jpx.co.jp/english/equities/products/etfs/", "korea": "https://finance.naver.com/sise/etf.naver", "australia": "https://www.asx.com.au/issuers/investment-products/asx-funds-statistics"}
 
 def read(path):
     with gzip.open(path, "rt", encoding="utf-8") as fh:
@@ -35,7 +35,7 @@ issuers = {r["lei"]: r for r in read(f"{OUT}/issuers.csv.gz")} if os.path.exists
 merged, by_isin = {}, {}
 for path in sorted(glob.glob(f"{OUT}/*.csv.gz")):
     source = os.path.basename(path).replace(".csv.gz", "")
-    if source in ("issuers", "universe", "us", "details", "issuer_files", "sec_fees", "sec_series", "sec_tickers"): continue
+    if source in ("issuers", "universe", "us", "details", "issuer_files", "sec_fees", "sec_series", "sec_tickers", "figi"): continue
     for r in read(path):
         if "isin" not in r: break  # A file of figures, not a list of ETFs.
         key = r["isin"] or f'{r["mic"]}-{r["ticker"]}'
@@ -47,6 +47,19 @@ for path in sorted(glob.glob(f"{OUT}/*.csv.gz")):
         if r["ticker"] and not m["ticker"]: m["ticker"], m["mic"] = r["ticker"], r["mic"]
         if r["currency"] and not m["currency"]: m["currency"] = r["currency"]
         if r["issuer_lei"]: m["issuer_lei"] = r["issuer_lei"]
+
+# Tickers looked up by ISIN (scripts/universe/figi.py). An identifier match beats a name match.
+EXCH_MIC = {"LN": "XLON", "GY": "XETR", "GR": "XETR", "SW": "XSWX", "SE": "XSWX", "FP": "XPAR", "NA": "XAMS", "IM": "XMIL", "SM": "XMAD", "ID": "XDUB", "AV": "XWBO", "BB": "XBRU", "SS": "XSTO",
+  "CN": "XTSE", "CT": "XTSE", "AU": "XASX", "AT": "XASX", "HK": "XHKG", "JP": "XTKS", "JT": "XTKS", "SP": "XSES", "KS": "XKRX", "TT": "XTAI", "IN": "XNSE", "IS": "XNSE", "IT": "XTAE", "SJ": "XJSE", "BZ": "BVMF", "MM": "XMEX"}
+figi = {r["isin"]: r for r in read(f"{OUT}/figi.csv.gz")} if os.path.exists(f"{OUT}/figi.csv.gz") else {}
+by_us_ticker = {}
+for isin, f in figi.items():
+    m = merged.get(isin)
+    if not m or m["ticker"]: continue
+    if f["us_ticker"] and isin.startswith("US"): by_us_ticker.setdefault(f["us_ticker"], []).append(m)
+    elif f["ticker"] and f["exch"] != "US": m["ticker"], m["mic"] = f["ticker"], EXCH_MIC.get(f["exch"], "")
+by_us_ticker = {t: ms[0] for t, ms in by_us_ticker.items() if len(ms) == 1}
+figi_matched = 0
 
 # Match US tickers to ISIN records by the start of the name.
 prefixes = {}
@@ -67,7 +80,10 @@ def loose(name):
 matched = 0
 for r in read(f"{OUT}/us.csv.gz"):
     name = clean(r["name"]); candidates = prefixes.get(norm(name)[:22], [])
-    if len(candidates) == 1 and len(norm(name)) >= 12:
+    known = by_us_ticker.get(r["ticker"])
+    if known and not known["ticker"]:
+        known["ticker"], known["mic"], known["name"], known["currency"], known["source"] = r["ticker"], r["mic"], name, "USD", "us"; known["venues"].add(r["mic"]); figi_matched += 1
+    elif len(candidates) == 1 and len(norm(name)) >= 12:
         m = candidates[0]; m["ticker"], m["mic"], m["name"], m["currency"], m["source"] = r["ticker"], r["mic"], name, "USD", "us"; m["venues"].add(r["mic"]); matched += 1
     elif loose(name):
         m = loose(name); m["ticker"], m["mic"], m["name"], m["currency"], m["source"] = r["ticker"], r["mic"], name, "USD", "us"; m["venues"].add(r["mic"]); matched += 1
@@ -86,4 +102,4 @@ with gzip.open(f"{OUT}/universe.csv.gz", "wt", newline="", encoding="utf-8", com
     w = csv.DictWriter(fh, fields, extrasaction="ignore"); w.writeheader(); w.writerows(rows)
 counts = {}
 for r in rows: counts[r["source"]] = counts.get(r["source"], 0) + 1
-print(json.dumps({"total": len(rows), "with_isin": sum(1 for r in rows if r["isin"]), "us_matched_to_isin": matched, "by_source": counts}))
+print(json.dumps({"total": len(rows), "with_isin": sum(1 for r in rows if r["isin"]), "us_matched_to_isin": matched, "us_matched_by_figi": figi_matched, "by_source": counts}))

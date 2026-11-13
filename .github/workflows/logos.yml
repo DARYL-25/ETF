@@ -1,7 +1,7 @@
 name: Update issuer logos
 on:
   push:
-    branches: [phase-1-mvp]
+    branches: [phase-1-mvp, main]
     paths: ["scripts/universe/logos.py"]
 permissions:
   contents: write

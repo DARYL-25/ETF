@@ -1,0 +1,15 @@
+{
+ "on": "2026-11-14",
+ "fx": {
+  "ok": false,
+  "error": "URLError: <urlopen error Tunnel connection failed: 403 Forbidden>"
+ },
+ "nav_points": 2247,
+ "taiwan": {
+  "ok": false,
+  "error": "URLError: <urlopen error Tunnel connection failed: 403 Forbidden>"
+ },
+ "new_points": 2247,
+ "etfs_priced": 2247,
+ "latest_date": "2026-11-04"
+}

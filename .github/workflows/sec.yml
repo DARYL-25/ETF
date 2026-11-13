@@ -1,13 +1,13 @@
-name: Update SEC data
+# Quarterly: US fees from SEC prospectus data sets, which the SEC publishes each quarter.
+name: Quarterly SEC fees
 on:
-  push:
-    branches: [phase-1-mvp]
-    paths: ["scripts/universe/sec.py"]
+  schedule:
+    - cron: "11 6 15 2,5,8,11 *"
   workflow_dispatch:
 permissions:
   contents: write
 concurrency:
-  group: sec
+  group: data
 jobs:
   sec:
     runs-on: ubuntu-latest
@@ -17,10 +17,13 @@ jobs:
       - run: python3 scripts/universe/sec.py
         env:
           SEC_CONTACT_EMAIL: ${{ secrets.SEC_CONTACT_EMAIL }}
-      - run: |
-          git config user.name "etf-universe-bot"
+      - name: Commit results
+        run: |
+          git config user.name "etf-data-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/universe/details data/universe/sec_tickers.csv.gz data/universe/sec_fees.csv.gz
-          git diff --cached --quiet || git commit -m "Update SEC data"
+          git add data
+          git diff --cached --quiet || git commit -m "$MESSAGE"
           git pull --rebase -X theirs origin "$GITHUB_REF_NAME"
           git push
+        env:
+          MESSAGE: Update SEC fees

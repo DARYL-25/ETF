@@ -137,9 +137,36 @@ def taiwan():
     return [{"isin": "", "ticker": str(r[1]).strip(), "mic": "XTAI", "name": str(r[2]).strip(), "currency": "TWD", "cfi": "", "issuer_lei": "", "market": "TW"} for r in rows]
 
 def australia():
-    data = json.loads(get("https://asx.api.markitdigital.com/asx-research/1.0/etfs/directory?page=0&itemsPerPage=1000"))
-    items = data["data"]["items"]
-    return [{"isin": i.get("isin", ""), "ticker": i.get("symbol", ""), "mic": "XASX", "name": i.get("displayName", ""), "currency": "AUD", "cfi": "", "issuer_lei": "", "market": "AU"} for i in items]
+    """ASX's monthly investment products report, an Excel file linked from its statistics page."""
+    import openpyxl
+    page = get("https://www.asx.com.au/issuers/investment-products/asx-funds-statistics").decode("utf-8", "replace")
+    months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
+    links = re.findall(r'(/content/dam/asx/issuers/asx-investment-products-reports/(\d{4})/excel/asx-investment-products-([a-z]+)-\d{4}[^"\']*\.xlsx)', page)
+    if not links: raise RuntimeError(f"No Excel link. xlsx links: {re.findall(r'[^ \"]+xlsx', page)[:5]}")
+    link = max(links, key=lambda l: (int(l[1]), months.index(l[2][:3]) if l[2][:3] in months else -1))[0]
+    book = openpyxl.load_workbook(io.BytesIO(get("https://www.asx.com.au" + link)), read_only=True, data_only=True)
+    rows, sample, seen = [], {"file": link}, set()
+    for sheet in book.worksheets:
+        sheet.reset_dimensions()
+        table = [[str(c).strip() if c is not None else "" for c in r] for r in sheet.iter_rows(values_only=True)]
+        sample[sheet.title] = [[c[:28] for c in r[:14]] for r in table[:12]]
+        head = next((i for i, r in enumerate(table[:30]) if any(c.lower() in ("asx code", "code") for c in r)), None)
+        if head is None: continue
+        names = [c.lower() for c in table[head]]
+        code = next(i for i, c in enumerate(names) if c in ("asx code", "code"))
+        kind = next((i for i, c in enumerate(names) if c in ("type", "product type")), None)
+        name = next((i for i, c in enumerate(names) if "name" in c or "exposure" in c), None)
+        fee = next((i for i, c in enumerate(names) if c.startswith("mer") or "management" in c), None)
+        sample[sheet.title + " columns"] = {"code": code, "type": kind, "name": name, "fee": fee, "head": table[head][:20]}
+        for r in table[head + 1:]:
+            if len(r) <= code or not re.fullmatch(r"[A-Z0-9]{3,6}", r[code]) or r[code] in seen: continue
+            label = r[kind] if kind is not None and kind < len(r) else ""
+            if kind is not None and not re.search(r"ETF|ETP|ETMF|Active|SP", label, re.I): continue
+            seen.add(r[code])
+            rows.append({"isin": "", "ticker": r[code], "mic": "XASX", "name": r[name] if name is not None and name < len(r) else "", "currency": "AUD", "cfi": "", "issuer_lei": "", "market": "AU"})
+    (OUT / "details").mkdir(exist_ok=True)
+    (OUT / "details" / "asx_sample.json").write_text(json.dumps(sample, indent=0)[:20000])
+    return rows
 
 def canada():
     rows = []

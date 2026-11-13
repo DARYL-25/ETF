@@ -1,19 +1,20 @@
-name: Update ETF universe
+# Weekly: which ETFs exist. Official registers and exchange lists, then tickers by ISIN.
+name: Weekly ETF list
 on:
   push:
     branches: [phase-1-mvp]
-    paths: ["scripts/universe/fetch.py", ".github/workflows/universe.yml"]
+    paths: [".github/workflows/universe.yml", "scripts/universe/fetch.py", "scripts/universe/figi.py"]
   schedule:
     - cron: "17 4 * * 1"
   workflow_dispatch:
 concurrency:
-  group: universe
+  group: data
 permissions:
   contents: write
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -22,11 +23,17 @@ jobs:
       - run: pip install xlrd openpyxl
       - run: python scripts/universe/fetch.py
       - run: python scripts/universe/merge.py
+      - run: python scripts/universe/figi.py
+        env:
+          OPENFIGI_API_KEY: ${{ secrets.OPENFIGI_API_KEY }}
+      - run: python scripts/universe/merge.py
       - name: Commit results
         run: |
-          git config user.name "etf-universe-bot"
+          git config user.name "etf-data-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/universe
-          git diff --cached --quiet || git commit -m "Update ETF universe lists"
+          git add data
+          git diff --cached --quiet || git commit -m "$MESSAGE"
           git pull --rebase -X theirs origin "$GITHUB_REF_NAME"
           git push
+        env:
+          MESSAGE: Update ETF list
