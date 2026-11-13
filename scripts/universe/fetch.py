@@ -191,7 +191,7 @@ def gleif(report):
     for f in OUT.glob("*.csv.gz"):
         if f.name == "issuers.csv.gz": continue
         with gzip.open(f, "rt", encoding="utf-8") as fh:
-            leis |= {r["issuer_lei"] for r in csv.DictReader(fh) if r["issuer_lei"]}
+            leis |= {r["issuer_lei"] for r in csv.DictReader(fh) if r.get("issuer_lei")}
     leis = sorted(leis); out = []
     try:
         for i in range(0, len(leis), 100):
