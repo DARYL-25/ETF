@@ -35,8 +35,11 @@ export function isStale(asOf: string | null | undefined, today = new Date()): bo
   return (today.getTime() - new Date(`${asOf}T00:00:00Z`).getTime()) / 86_400_000 > STALE_AFTER_DAYS;
 }
 
-const COUNTRIES: Record<string, string> = { IE: "Ireland", LU: "Luxembourg", FR: "France", DE: "Germany", CH: "Switzerland", GB: "United Kingdom", NL: "Netherlands", IT: "Italy", JE: "Jersey", US: "United States" };
-export const countryName = (code: string | null | undefined) => (code ? COUNTRIES[code] ?? code : MISSING);
+const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+export const countryName = (code: string | null | undefined) => {
+  if (!code) return MISSING;
+  try { return /^[A-Z]{2}$/.test(code) ? regionNames.of(code) ?? code : code; } catch { return code; }
+};
 
 const REPLICATION: Record<string, string> = {
   physical: "Physical",

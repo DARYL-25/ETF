@@ -236,6 +236,11 @@ export function buildSeedSql(root: string): string {
     return cells;
   };
   // The global list. Optional, so a fresh checkout still works before the download job has run.
+  // A record's key changes from "exchange-ticker" to its ISIN once the ISIN is found. Figure files written
+  // before that still use the old key, so they are matched through the ticker.
+  const liveKeys = new Set<string>();
+  const oldKeys = new Map<string, string>();
+  const current = (key: string) => (liveKeys.has(key) ? key : oldKeys.get(key) ?? key);
   const universePath = join(root, "data/universe/universe.csv.gz");
   if (existsSync(universePath)) {
     const universeOn = JSON.parse(readFileSync(join(root, "data/universe/report.json"), "utf8")).esma.on;
@@ -256,11 +261,15 @@ export function buildSeedSql(root: string): string {
     for (let i = 0; i < lines.length; i += 1000) {
       const values = lines.slice(i, i + 1000).map((line) => {
         const [key, isin, ticker, mic, name, currency, lei, issuer, country, ucits, assetClass, venues, source, url] = parseLine(line);
+        liveKeys.add(key);
+        if (ticker && mic) oldKeys.set(`${mic}-${ticker}`, key);
         const full = prettyName(name);
         const pretty = cleanName(full);
         const slugs = inferCategories(full);
         // A brand in the fund's name is a surer guide to the issuer than the register's legal entity, which can be a platform.
-        const who = brandOf(pretty)?.label ?? issuer;
+        // The register's issuer field sometimes holds a trading platform, a broker, or the fund itself. Those are not issuers.
+        const notAnIssuer = /TRADEWEB|RESIDUAL|VIRTU |BLOOMBERG TRADING|\bCBOE\b|AQUIS|TURQUOISE|STOCK EXCHANGE|\bMTF\b|BROKER|\bETF\b|\bFUND\b(?! MANAGE)|\bUCITS\b/i.test(issuer) || issuer.toLowerCase() === name.toLowerCase();
+        const who = brandOf(pretty)?.label ?? (notAnIssuer ? "" : issuer);
         // Funds on the US symbol list are registered in the United States.
         const where = country || (source === "us" && !isin ? "US" : "");
         const kind = assetClass || (inferEquity(full) ? "equity" : "");
@@ -339,7 +348,8 @@ export function buildSeedSql(root: string): string {
   if (existsSync(secPath)) {
     const secUrl = "https://www.sec.gov/dera/data/mutual-fund-prospectus-risk-return-summary-data-sets";
     for (const line of gunzipSync(readFileSync(secPath)).toString("utf8").trim().split(/\r?\n/).slice(1)) {
-      const [key, fee, kind, filed] = line.split(",");
+      const [rawKey, fee, kind, filed] = line.split(",");
+      const key = current(rawKey);
       const date = `${filed.slice(0, 4)}-${filed.slice(4, 6)}-${filed.slice(6, 8)}`;
       out.push(`insert into public.universe_details (etf_key, fee_pct, fee_type, fee_as_of, source, source_url) select ${q(key)}, ${Number(fee)}, ${q(kind)}, ${q(date)}, 'SEC prospectus data', ${q(secUrl)} where exists (select 1 from public.universe_etfs u where u.etf_key = ${q(key)}) on conflict (etf_key) do update set fee_type = coalesce(public.universe_details.fee_type, excluded.fee_type), fee_as_of = case when public.universe_details.fee_pct is null then excluded.fee_as_of else public.universe_details.fee_as_of end, fee_pct = coalesce(public.universe_details.fee_pct, excluded.fee_pct);`);
     }
@@ -361,7 +371,8 @@ export function buildSeedSql(root: string): string {
     const lines = gunzipSync(readFileSync(join(dailyDir, file))).toString("utf8").trim().split(/\r?\n/).slice(1);
     for (let i = 0; i < lines.length; i += 1000) {
       const values = lines.slice(i, i + 1000).map((line) => {
-        const [key, date, value, currency, kind, source] = parseLine(line);
+        const [rawKey, date, value, currency, kind, source] = parseLine(line);
+        const key = current(rawKey);
         return `(${q(key)}, ${q(date)}::date, ${Number(value)}, ${q(currency)}, ${q(kind)}, ${q(source)})`;
       });
       out.push(`insert into public.universe_prices (etf_key, price_date, value, currency, kind, source)

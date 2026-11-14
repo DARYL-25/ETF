@@ -5,9 +5,9 @@
 | Area | State |
 |---|---|
 | Website, design, phone layout | Done. Tested on desktop and phone |
-| Global ETF list | Done for the EU, UK, US, Japan, Hong Kong, India, Shanghai, Taiwan, Canada, Singapore, Korea and Australia. About 18,500 records |
-| Fees, size, returns | About a third of the list has a fee. Filled issuer by issuer |
-| Daily prices | Issuer NAV for about 2,250 ETFs, of which 1,260 refresh every day. History builds from 4 November 2026 |
+| Global ETF list | Done for the EU, UK, US, Japan, Hong Kong, India, Shanghai, Taiwan, Canada, Singapore, Korea and Australia. About 17,900 ETFs after joining duplicate US records |
+| Fees, size, returns | 6,650 ETFs have a fee (37%), 3,400 a size and 2,200 official returns. Filled issuer by issuer |
+| Daily prices | Issuer NAV or an open-data close for about 2,500 ETFs, of which 1,500 refresh every day. History builds from 4 November 2026 |
 | Update schedule | Done: weekly list, daily prices, monthly details, quarterly SEC fees. See [DATA_UPDATES.md](DATA_UPDATES.md) |
 | Search, ask bar, screener, comparison, index pages, CSV export | Done |
 | Investor country | Done: rankings, quick filters and ETF pages adapt |

@@ -35,6 +35,7 @@ export const DATASETS: Dataset[] = [
       { name: "State Street product data", covers: "About 340 SPDR ETFs, US and Europe", url: "https://www.ssga.com/", state: "automatic" },
       { name: "Amundi monthly factsheets", covers: "About 500 Amundi and Lyxor ETFs", url: "https://www.amundietf.com/", state: "automatic" },
       { name: "SEC prospectus data sets", covers: "Fees of about 2,900 US ETFs", url: "https://www.sec.gov/data-research/sec-markets-data/mutual-fund-prospectus-risk-return-summary-data-sets", state: "automatic" },
+      { name: "ASX investment products report", covers: "Fee and size of about 480 Australian ETFs", url: "https://www.asx.com.au/issuers/investment-products/asx-funds-statistics", state: "automatic" },
       { name: "Xtrackers, Invesco, Vanguard and UBS product files", covers: "About 1,750 ETFs", url: "https://github.com/DARYL-25/ETF/blob/main/docs/DATA_UPDATES.md", state: "owner file", note: "These sites show terms before the download, so a person accepts them and downloads the files each quarter." },
     ],
   },
@@ -85,13 +86,15 @@ export function getFreshness(): Freshness[] {
   const prices = read("data/prices/report.json") as { on?: string; latest_date?: string; etfs_priced?: number; fx?: { ok?: boolean; rate_date?: string } } | null;
   const files = read("data/universe/details/issuer_files_report.json") as { retrieved_on?: string } | null;
   const listDates = list ? Object.values(list).filter((s) => s?.ok && s.on).map((s) => s.on as string).sort() : [];
-  const failing = list ? Object.entries(list).filter(([, s]) => s && s.ok === false).map(([k]) => k) : [];
+  const LABEL: Record<string, string> = { india: "India", china_sz: "Shenzhen", china_sh: "Shanghai", australia: "Australia", korea: "Korea", japan: "Japan", hongkong: "Hong Kong", taiwan: "Taiwan", canada: "Canada", singapore: "Singapore", us: "United States", esma: "EU register", fca: "UK register", gleif: "GLEIF" };
+  const failing = list ? Object.entries(list).filter(([k, s]) => s && s.ok === false && LABEL[k]).map(([k]) => LABEL[k]) : [];
+  const day = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   return [
-    { id: "list", lastRun: listDates.at(-1) ?? null, detail: failing.length ? `Not updating: ${failing.join(", ").replaceAll("_", " ")}` : null },
-    { id: "facts", lastRun: details?.on ?? null, detail: files?.retrieved_on ? `Owner files read ${files.retrieved_on}` : null },
+    { id: "list", lastRun: listDates.at(-1) ?? null, detail: failing.length ? `Not updating on the last run: ${failing.join(", ")}` : null },
+    { id: "facts", lastRun: details?.on ?? null, detail: files?.retrieved_on ? `Owner files read ${day(files.retrieved_on)}` : null },
     { id: "size", lastRun: details?.on ?? null, detail: null },
-    { id: "prices", lastRun: prices?.on ?? null, detail: prices?.latest_date ? `${prices.etfs_priced?.toLocaleString("en-GB")} ETFs, latest price dated ${prices.latest_date}` : null },
-    { id: "fx", lastRun: prices?.fx?.ok ? prices.on ?? null : null, detail: prices?.fx?.rate_date ? `Rates of ${prices.fx.rate_date}` : null },
+    { id: "prices", lastRun: prices?.on ?? null, detail: prices?.latest_date ? `${prices.etfs_priced?.toLocaleString("en-GB")} ETFs, latest price dated ${day(prices.latest_date)}` : null },
+    { id: "fx", lastRun: prices?.fx?.ok ? prices.on ?? null : null, detail: prices?.fx?.rate_date ? `Rates of ${day(prices.fx.rate_date)}` : null },
     { id: "tax", lastRun: "2026-11-14", detail: "Not yet reviewed by a tax adviser" },
   ];
 }

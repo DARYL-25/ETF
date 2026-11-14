@@ -194,6 +194,12 @@ describe("database", () => {
     expect(rows[0].n).toBeGreaterThanOrEqual(25);
   });
 
+  it("keeps regulator fees for US funds whose key changed to an ISIN", async () => {
+    const { rows } = await db.query<{ f: number | null; isin: string | null }>("select headline_fee_pct f, isin from public.etf_directory where ticker = 'AGGY' and ticker_exchange = 'ARCX'");
+    expect(rows[0].isin).toMatch(/^US/);
+    expect(rows[0].f).toBeGreaterThan(0);
+  });
+
   it("marks SIX listings from issuer files", async () => {
     const { rows } = await db.query<{ six: boolean }>("select listed_on_six six from public.etf_directory where isin = 'IE00BD4TXV59'");
     expect(rows[0].six).toBe(true);

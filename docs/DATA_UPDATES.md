@@ -27,7 +27,7 @@ Fees and fund facts change rarely, so a quarterly refresh is enough. Where a fee
 | FCA FIRDS register | Funds traded on UK venues | Automatic |
 | Nasdaq Trader symbol directory | All US-listed ETFs | Automatic |
 | JPX, HKEX, NSE, SSE, TWSE, TSX, SGX | Japan, Hong Kong, India, Shanghai, Taiwan, Canada, Singapore | Automatic. NSE times out on some runs, and the last good list is kept |
-| ASX monthly investment products report | Australia | Automatic, new |
+| ASX monthly investment products report | Australia: 481 products, with fee and size | Automatic |
 | Naver Finance | Korea | Unofficial. Replace with the exchange's own list |
 | GLEIF | Issuer legal names and countries | Automatic, open data |
 | OpenFIGI | Tickers for ISINs that have none, which also joins US register rows to their exchange rows | Automatic, 25 requests a minute without a key. An `OPENFIGI_API_KEY` secret makes it ten times faster |

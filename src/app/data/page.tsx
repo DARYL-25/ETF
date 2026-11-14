@@ -35,11 +35,11 @@ export default async function Page() {
                 <p className="data"><span className="rounded-full bg-sunken px-2.5 py-0.5 font-medium text-pine">{d.cadence}</span></p>
               </div>
               <p className="mt-1.5 max-w-[72ch]">{d.what}</p>
-              <p className="mt-1.5 text-[0.9rem] text-muted">When: {d.schedule}. Last run: {formatDate(fresh[d.id]?.lastRun)}{fresh[d.id]?.detail ? `. ${fresh[d.id]!.detail}` : ""}.</p>
+              <p className="mt-1.5 text-[0.9rem] text-muted">When: {d.schedule.replace(/\.$/, "")}. Last run: {formatDate(fresh[d.id]?.lastRun)}{fresh[d.id]?.detail ? `. ${fresh[d.id]!.detail}` : ""}.</p>
               <ul className="mt-3 divide-y divide-line border-t border-line">
                 {d.sources.map((s) => (
                   <li key={s.name} className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-0.5 py-2">
-                    <span className="min-w-0 flex-1"><a className="prose-link" href={s.url} target="_blank" rel="noreferrer">{s.name}</a><span className="text-muted">, {s.covers.charAt(0).toLowerCase() + s.covers.slice(1)}</span>{s.note ? <span className="block text-[0.85rem] text-muted">{s.note}</span> : null}</span>
+                    <span className="min-w-0 flex-1"><a className="prose-link" href={s.url} target="_blank" rel="noreferrer">{s.name}</a><span className="block text-[0.9rem] text-muted">{s.covers}</span>{s.note ? <span className="block text-[0.85rem] text-muted">{s.note}</span> : null}</span>
                     <span className={`text-[0.85rem] ${s.state === "automatic" ? "text-up" : s.state === "owner file" ? "text-muted" : "text-down"}`}>{STATE[s.state]}</span>
                   </li>
                 ))}

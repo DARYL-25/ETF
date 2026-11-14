@@ -117,16 +117,28 @@ export async function screenerOptions() {
   return { issuers, domiciles, assetClasses, replications, distributions, styles, currencies, indices, categories };
 }
 
+/**
+ * A record's key changes from "exchange-ticker" to its ISIN once the ISIN is found, so saved links and
+ * watchlists made before that still resolve through the ticker.
+ */
+async function byOldKey(key: string): Promise<EtfRow | null> {
+  const m = /^([A-Z]{4})-([A-Z0-9.]{1,10})$/.exec(key);
+  if (!m) return null;
+  return (await query<EtfRow>("select * from public.etf_directory where ticker_exchange = $1 and upper(ticker) = $2 limit 1", [m[1], m[2]]))[0] ?? null;
+}
+
 export async function getEtf(isin: string): Promise<EtfRow | null> {
-  const rows = await query<EtfRow>("select * from public.etf_directory where upper(etf_key) = $1", [isin.toUpperCase()]);
-  return rows[0] ?? null;
+  const key = isin.toUpperCase();
+  const rows = await query<EtfRow>("select * from public.etf_directory where upper(etf_key) = $1", [key]);
+  return rows[0] ?? (await byOldKey(key));
 }
 
 export async function getEtfs(isins: string[]): Promise<EtfRow[]> {
   if (!isins.length) return [];
   const upper = isins.map((i) => i.toUpperCase());
   const rows = await query<EtfRow>("select * from public.etf_directory where upper(etf_key) = any($1::text[])", [upper]);
-  return upper.map((i) => rows.find((r) => r.etf_key?.toUpperCase() === i)).filter((r): r is EtfRow => Boolean(r));
+  const found = await Promise.all(upper.map(async (i) => rows.find((r) => r.etf_key?.toUpperCase() === i) ?? (await byOldKey(i))));
+  return found.filter((r): r is EtfRow => Boolean(r));
 }
 
 export type SearchHit = { etf_key: string; isin: string | null; name: string; ticker: string | null; issuer_name: string; index_name: string | null };

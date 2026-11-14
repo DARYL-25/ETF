@@ -113,6 +113,14 @@ describe("lookups", () => {
     expect([...fees].sort((a, b) => a - b)).toEqual(fees);
   });
 
+  it("still opens a US fund through its old exchange-ticker key after its ISIN is found", async () => {
+    const { getEtf } = await import("@/lib/etfs/queries");
+    const row = await getEtf("ARCX-VOO");
+    expect(row?.ticker).toBe("VOO");
+    expect(row?.isin).toMatch(/^US/);
+    expect((await getEtfs(["arcx-voo", "IE00BK5BQT80"])).map((r) => r.ticker)).toEqual(["VOO", "VWCE"]);
+  });
+
   it("returns comparison rows in the requested order", async () => {
     const rows = await getEtfs(["IE00BK5BQT80", "IE00B5BMR087"]);
     expect(rows.map((r) => r.isin)).toEqual(["IE00BK5BQT80", "IE00B5BMR087"]);

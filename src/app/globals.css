@@ -216,3 +216,9 @@ dialog.palette::backdrop { background: rgb(10 34 56 / 28%); backdrop-filter: blu
   @keyframes pop { from { opacity: 0; scale: 0.97; translate: 0 -6px; } to { opacity: 1; scale: 1; translate: 0 0; } }
   @view-transition { navigation: auto; }
 }
+
+.skeleton { border-radius: 14px; background: var(--sunken); }
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton { background: linear-gradient(100deg, var(--sunken) 40%, var(--surface) 50%, var(--sunken) 60%) 0 0 / 200% 100%; animation: shimmer 1.2s linear infinite; }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+}

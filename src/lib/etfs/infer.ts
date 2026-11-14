@@ -69,7 +69,7 @@ export const inferIndex = (name: string): string | null => INDEX_RULES.find(([, 
 /** Register names carry umbrella and share-class boilerplate. This removes it, and nothing else. */
 export function cleanName(name: string): string {
   return name
-    .replace(/^(Multi Units (Luxembourg|France)|Amundi Index Solutions|Amundi ETF Icav|Lyxor Index Fund|Xtrackers \(IE\) (Plc|Public Limited Company)|iShares [IVX]+ (Plc|Public Limited Company)|Vanguard Funds Plc)\s*-\s*/i, "")
+    .replace(/^(Multi Units (Luxembourg|France)|Amundi Index Solutions|Amundi ETF Icav|Lyxor Index Fund|Xtrackers \(IE\) (Plc|Public Limited Company)|iShares [IVX]+ (Plc|Public Limited Company)|Vanguard Funds Plc)\s*-?\s+(?=\S)/i, "")
     .replace(/\s+Cmn Class( ETF)*( Series)?( ETF)*(\s+On\s+.*)?$/i, " ETF")
     .replace(/\s+Cmn Series ETF$/i, "")
     .replace(/((?: UCITS)? ETF)\s+On\s+.*$/i, "$1")
