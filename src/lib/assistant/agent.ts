@@ -2,6 +2,8 @@ import { GLOSSARY, LESSONS } from "@/lib/academy/content";
 import { getEtfs } from "@/lib/etfs/queries";
 import { parseIntent } from "./intent";
 import { findBestEtfs, type Ranked } from "./rank";
+import { TAX_CHECKED_ON, taxCountry } from "@/lib/tax/content";
+import { lensCountry } from "@/lib/lens";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 export type AssistantReply = { text: string; aiUsed: boolean; etfs: Ranked[]; applied: string[]; notChecked: string[]; lessons: { slug: string; title: string }[] };
@@ -9,7 +11,7 @@ export type AssistantReply = { text: string; aiUsed: boolean; etfs: Ranked[]; ap
 const SYSTEM = `You are the research assistant of ETF Intelligence, an ETF research site.
 Rules you must follow:
 - Use only facts returned by your tools for fees, returns, sizes, holdings and legal characteristics. Never state one from memory. If a tool did not return it, say it is not available.
-- Never state a tax rate or tax rule as fact. No verified tax rules exist in this system yet. You may explain which questions matter and point to the tax authority or an adviser.
+- For tax, use only what get_tax_rules returns, which exists for Switzerland and France. Quote the rule with its source name, say that no tax adviser has reviewed it, and never apply it to the user's own amounts. For any other country, say the rules are not loaded and point to the tax authority or an adviser.
 - You give research support, not personal investment or tax advice. Say "closest matches", never "you should buy".
 - Separate facts from the database, assumptions, and general explanations. Name what is missing.
 - Give the date of a figure when the tool provides it.
@@ -19,6 +21,7 @@ Rules you must follow:
 const TOOLS = [
   { name: "search_etfs", description: "Rank ETFs from the database for a plain-language request, including the investor's country. Returns matches, filters applied and what could not be checked.", input_schema: { type: "object", properties: { request: { type: "string" } }, required: ["request"] } },
   { name: "get_etfs", description: "Get database records for up to 5 ETFs by the key returned by search_etfs.", input_schema: { type: "object", properties: { keys: { type: "array", items: { type: "string" } } }, required: ["keys"] } },
+  { name: "get_tax_rules", description: "Official-source tax rules for private investors resident in Switzerland (CH) or France (FR). Returns nothing for other countries.", input_schema: { type: "object", properties: { country: { type: "string", description: "CH or FR" } }, required: ["country"] } },
   { name: "search_academy", description: "Find reviewed-status educational lessons and glossary entries on a topic.", input_schema: { type: "object", properties: { topic: { type: "string" } }, required: ["topic"] } },
 ];
 
@@ -40,10 +43,13 @@ function academyHits(topic: string) {
 const NO_KEY_NOTE = "AI explanations are not switched on yet, so this list comes from the search rules alone.";
 
 /** Works with no AI at all: the ranked list comes from the database either way. */
-export async function answer(messages: ChatMessage[], fetchFn: typeof fetch = fetch): Promise<AssistantReply> {
+export async function answer(messages: ChatMessage[], fetchFn: typeof fetch = fetch, lens: string | null = null): Promise<AssistantReply> {
   const latest = messages.at(-1)?.content ?? "";
   const key = process.env.ANTHROPIC_API_KEY;
-  const outcome = await findBestEtfs(parseIntent(latest), 10);
+  // The reader's chosen country applies unless the question names another one.
+  const home = lensCountry(lens)?.name ?? null;
+  const read = (text: string) => { const i = parseIntent(text); return i.investorCountry || !home ? i : { ...i, investorCountry: home }; };
+  const outcome = await findBestEtfs(read(latest), 10);
   const lessons = academyHits(latest).lessons.map(({ slug, title }) => ({ slug, title }));
   const base = { etfs: outcome.results, applied: outcome.applied, notChecked: outcome.notChecked, lessons };
 
@@ -60,7 +66,7 @@ export async function answer(messages: ChatMessage[], fetchFn: typeof fetch = fe
     const res = await fetchFn("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: process.env.ASSISTANT_MODEL ?? "claude-haiku-5-5", max_tokens: 900, system: SYSTEM, tools: TOOLS, messages: convo }),
+      body: JSON.stringify({ model: process.env.ASSISTANT_MODEL ?? "claude-haiku-5-5", max_tokens: 900, system: home ? `${SYSTEM}\nThe user has told the site they live in ${home}.` : SYSTEM, tools: TOOLS, messages: convo }),
     });
     if (!res.ok) return { ...base, text: `The AI explanation is unavailable right now (status ${res.status}). The list below still comes from the database.`, aiUsed: false };
     const body = await res.json() as { stop_reason: string; content: { type: string; text?: string; id?: string; name?: string; input?: Record<string, unknown> }[] };
@@ -73,10 +79,13 @@ export async function answer(messages: ChatMessage[], fetchFn: typeof fetch = fe
     for (const call of body.content.filter((c) => c.type === "tool_use")) {
       let output: unknown;
       if (call.name === "search_etfs") {
-        shown = await findBestEtfs(parseIntent(String(call.input?.request ?? "")), 10);
+        shown = await findBestEtfs(read(String(call.input?.request ?? "")), 10);
         output = { total: shown.total, filters_applied: shown.applied, not_checked: shown.notChecked, matches: shown.results.map((r) => ({ ...compact(r.row), score: r.score, reasons: r.reasons, cautions: r.cautions })) };
       } else if (call.name === "get_etfs") {
         output = (await getEtfs((call.input?.keys as string[] ?? []).slice(0, 5))).map(compact);
+      } else if (call.name === "get_tax_rules") {
+        const c = taxCountry(String(call.input?.country ?? ""));
+        output = c ? { country: c.name, read_on: TAX_CHECKED_ON, reviewed_by_tax_adviser: false, summary: c.summary, rules: c.rules.map((r) => ({ rule: r.title, detail: r.body, source: r.sources.map((x) => x.label).join("; ") })), accounts: c.wrappers.map((w) => ({ account: w.name, detail: w.body })), not_covered: c.open } : { error: "No rules loaded for this country." };
       } else if (call.name === "search_academy") {
         output = academyHits(String(call.input?.topic ?? ""));
       } else output = { error: "Unknown tool" };

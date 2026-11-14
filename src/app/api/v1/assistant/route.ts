@@ -17,5 +17,5 @@ export async function POST(request: NextRequest) {
 
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Enter a question of up to 2,000 characters." }, { status: 400 });
-  return NextResponse.json(await answer(parsed.data.messages));
+  return NextResponse.json(await answer(parsed.data.messages, fetch, request.cookies.get("lens")?.value ?? null));
 }

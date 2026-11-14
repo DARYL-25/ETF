@@ -52,11 +52,14 @@ export function scoreRow(row: EtfRow, intent: Intent, onSix: boolean, feeRange: 
   const policy = policyOf(row);
   if (intent.distribution && policy === intent.distribution) { score += 5; reasons.push(policy === "accumulating" ? "Accumulating" : "Distributing"); }
   if (isSynthetic(row)) cautions.push("Synthetic: adds swap counterparty risk");
-  if (row.verification !== "reviewed") cautions.push("Figures not yet checked by a person");
   return { row, score: Math.round(score), reasons, cautions, onSix };
 }
 
-const COUNTRY_TAX = (c: string) => `Tax for a ${c} resident: country rules are not verified here yet, so no tax advantage counted in this ranking. Compare domicile and income treatment, and check with your tax authority or an adviser.`;
+const TAX_NOTES: Record<string, string> = { Switzerland: "/tax/switzerland", France: "/tax/france" };
+const COUNTRY_TAX = (c: string) => TAX_NOTES[c]
+  ? `Tax is not scored in this ranking. Our ${c} notes quote the official rules, and no tax adviser has reviewed them yet.`
+  : `Tax for a resident of ${c}: country rules are not verified here yet, so no tax advantage is counted in this ranking. Check with your tax authority or an adviser.`;
+export const taxNotesHref = (country: string | null) => (country ? TAX_NOTES[country] ?? null : null);
 
 export async function findBestEtfs(intent: Intent, limit = 10): Promise<SearchOutcome> {
   const where: string[] = [];
@@ -106,6 +109,7 @@ export async function findBestEtfs(intent: Intent, limit = 10): Promise<SearchOu
     .slice(0, limit);
 
   const notChecked = [
+    "Figures are read automatically from issuers and official lists, and a person has not checked them yet.",
     "Tracking difference, which needs index data we do not hold. It can matter more than the fee.",
     "Bid-ask spread and your broker's costs and availability.",
   ];

@@ -35,11 +35,11 @@ issuers = {r["lei"]: r for r in read(f"{OUT}/issuers.csv.gz")} if os.path.exists
 merged, by_isin = {}, {}
 for path in sorted(glob.glob(f"{OUT}/*.csv.gz")):
     source = os.path.basename(path).replace(".csv.gz", "")
-    if source in ("issuers", "universe", "us", "details", "issuer_files", "sec_fees", "sec_series", "sec_tickers", "figi"): continue
+    if source in ("issuers", "universe", "us", "details", "issuer_files", "sec_fees", "sec_series", "sec_tickers", "figi", "exchange_facts"): continue
     for r in read(path):
         if "isin" not in r: break  # A file of figures, not a list of ETFs.
         key = r["isin"] or f'{r["mic"]}-{r["ticker"]}'
-        m = merged.setdefault(key, {"etf_key": key, "isin": r["isin"], "ticker": r["ticker"], "mic": "", "name": "", "currency": "", "issuer_lei": "", "source": source, "venues": set()})
+        m = merged.setdefault(key, {"etf_key": key, "isin": r["isin"], "ticker": r["ticker"], "mic": r["mic"] if r["ticker"] else "", "name": "", "currency": "", "issuer_lei": "", "source": source, "venues": set()})
         name = clean(r["name"])
         # Prefer the longest mixed-case name, since registers truncate and shout.
         if len(name) > len(m["name"]) or (m["name"].isupper() and not name.isupper() and len(name) >= len(m["name"])): m["name"] = name

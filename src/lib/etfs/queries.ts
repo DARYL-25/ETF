@@ -34,7 +34,7 @@ export type EtfRow = {
   ocf_pct: number | null;
   ocf_as_of: string | null;
   headline_fee_pct: number | null;
-  headline_fee_type: "ter" | "ocf" | "ger" | "ongoing" | "net" | "gross_sec" | "ocf_ter" | "flat_fee" | null;
+  headline_fee_type: "ter" | "ocf" | "ger" | "ongoing" | "net" | "gross_sec" | "ocf_ter" | "flat_fee" | "mer" | null;
   aum_level?: string | null;
   listed_on_six?: boolean | null;
   size_eur?: number | null;
@@ -254,9 +254,9 @@ export async function getIndex(slug: string): Promise<{ index: IndexRow; etfs: E
 export const getSimilarEtfs = (row: EtfRow, limit = 6) =>
   query<EtfRow>(
     `select * from public.etf_directory
-     where isin <> $1 and (index_slug = $2 or (asset_class = $3 and category_slugs && $4::text[]))
-     order by (index_slug = $2) desc nulls last, headline_fee_pct asc nulls last limit ${limit}`,
-    [row.isin, row.index_slug, row.asset_class, row.category_slugs],
+     where etf_key <> $1 and (index_slug = $2 or ($2::text is null and asset_class = $3 and category_slugs && $4::text[] and cardinality($4::text[]) > 0))
+     order by (index_slug = $2) desc nulls last, headline_fee_pct asc nulls last, size_eur desc nulls last limit ${limit}`,
+    [row.etf_key ?? row.isin, row.index_slug, row.asset_class, row.category_slugs],
   );
 
 export async function getDashboard() {
@@ -316,4 +316,36 @@ export const getTopHoldings = (fundKey: string) =>
      where f.key = $1 and h.observed_on = (select max(y.observed_on) from public.fund_top_holdings y where y.fund_id = f.id)
      order by h.weight_pct desc`,
     [fundKey],
+  );
+
+export type NavPoint = { date: string; value: number; currency: string | null; kind: string; source: string };
+
+/** Daily price points we collected ourselves for an ETF in the global list. Oldest first. */
+export const getDailyPoints = (etfKey: string) =>
+  query<NavPoint>(
+    `select price_date::text as date, value, currency, kind, source from public.universe_prices
+     where etf_key = (select etf_key from public.universe_etfs where etf_key = $1 or isin = $1 order by (etf_key = $1) desc limit 1)
+     order by price_date asc`,
+    [etfKey],
+  );
+
+export type Coverage = { all_etfs: number; with_fee: number; with_size: number; with_return: number; with_price: number; latest_price: string | null; markets: number; issuers: number };
+
+export const getCoverage = async () =>
+  (await query<Coverage>(
+    `select count(*)::int as all_etfs, count(headline_fee_pct)::int as with_fee, count(size_eur)::int as with_size, count(nav_return_1y)::int as with_return,
+       (select count(distinct etf_key)::int from public.universe_prices) as with_price,
+       (select max(price_date)::text from public.universe_prices) as latest_price,
+       (select count(distinct source)::int from public.universe_etfs) as markets,
+       count(distinct issuer_name)::int as issuers
+     from public.etf_directory`,
+  ))[0];
+
+export type IndexTile = { slug: string; name: string; etf_count: number; min_fee: number | null };
+
+export const getIndexTiles = (limit = 8) =>
+  query<IndexTile>(
+    `select i.slug, i.name, count(d.*)::int as etf_count, min(d.headline_fee_pct) as min_fee
+     from public.indices i join public.etf_directory d on d.index_slug = i.slug
+     group by i.slug, i.name order by count(d.*) desc limit ${limit}`,
   );

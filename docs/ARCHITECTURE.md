@@ -29,6 +29,14 @@ Ingestion scripts (scripts/) --> Postgres, with a source on every row
 
 **Category filters.** Ticks within a group match any; groups combine with AND, so United States + Technology narrows the list.
 
+**The investor's country is a cookie, not an account setting.** The reader picks it, the server reads it, and pages render for that country without sign-in. It is never guessed from location.
+
+**Tax notes are data with sources.** `src/lib/tax/content.ts` holds each rule with its official source. A test fails if a rule has no source on a government domain. Notes are stated, never applied to a person's figures.
+
+**Payments without an SDK.** `src/lib/billing/stripe.ts` calls Stripe over HTTP and verifies webhook signatures itself. Until every key is set, nothing is locked.
+
+**Public data reloads whole.** User tables hold ETF keys as text with no foreign key into public tables, so `scripts/sync-db.ts` can replace public data in one transaction.
+
 **Monthly closes only for now.** The chart component takes any series. Candlesticks, volume, NAV and benchmark lines need licensed daily data, so they wait for a provider.
 
 **shadcn/ui not used yet.** Its CLI fetches from a registry this build environment cannot reach, and the MVP needs few primitives, so `globals.css` holds them. Adopting it later for dialogs and menus is straightforward.

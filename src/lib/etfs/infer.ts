@@ -65,3 +65,20 @@ const INDEX_RULES: [string, RegExp][] = [
 ];
 
 export const inferIndex = (name: string): string | null => INDEX_RULES.find(([, re]) => re.test(name))?.[0] ?? null;
+
+/** Register names carry umbrella and share-class boilerplate. This removes it, and nothing else. */
+export function cleanName(name: string): string {
+  return name
+    .replace(/^(Multi Units (Luxembourg|France)|Amundi Index Solutions|Amundi ETF Icav|Lyxor Index Fund|Xtrackers \(IE\) (Plc|Public Limited Company)|iShares [IVX]+ (Plc|Public Limited Company)|Vanguard Funds Plc)\s*-\s*/i, "")
+    .replace(/\s+Cmn Class( ETF)*( Series)?( ETF)*(\s+On\s+.*)?$/i, " ETF")
+    .replace(/\s+Cmn Series ETF$/i, "")
+    .replace(/((?: UCITS)? ETF)\s+On\s+.*$/i, "$1")
+    .replace(/\bETF( ETF)+\b/g, "ETF")
+    .replace(/\s+Registered Shares o\.N\.$/i, "")
+    .replace(/\s+/g, " ").trim();
+}
+
+const EQUITY = /\b(Equity|Equities|Stock|S&P ?\d+|MSCI|Nasdaq|Stoxx|FTSE (100|250|All|Developed|Emerging)|Russell|DAX|CAC 40|SMI|Nikkei|TOPIX|Hang Seng|CSI 300|KOSPI|Nifty|Dividend|(Small|Mid|Large)[- ]?Cap|Growth|Momentum|Semiconductor|Health ?Care|Dow Jones Industrial)\b/i;
+
+/** Equity only where the name points to a share index or style. Bonds, commodities and cash are decided before this. */
+export const inferEquity = (name: string): boolean => EQUITY.test(name) && !/\b(Bond|Treasur|Gilt|Credit|Debt|Loan|Money Market|Commodit|Gold|Silver|Bitcoin|Ether|Crypto|Volatility|VIX)\b/i.test(name);

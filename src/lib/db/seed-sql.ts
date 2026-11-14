@@ -1,7 +1,8 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
-import { inferCategories, inferIndex, prettyName } from "../etfs/infer";
+import { cleanName, inferCategories, inferEquity, inferIndex, prettyName } from "../etfs/infer";
+import { brandOf } from "../etfs/brands";
 import { z } from "zod";
 
 const money = z.object({ amount: z.number().positive(), currency: z.string().length(3), asOf: z.string().nullable() }).nullable().optional();
@@ -92,6 +93,9 @@ const q = (v: unknown): string => {
 };
 
 /** Builds idempotent-free insert SQL for an empty database. Same SQL for local and Supabase. */
+/** Public data tables, in an order that is safe to empty together. User tables never reference them. */
+export const PUBLIC_DATA_TABLES = ["universe_prices", "universe_details", "universe_etfs", "fund_top_holdings", "fund_prices", "fund_exposures", "metric_observations", "share_class_fees", "listings", "share_classes", "fund_categories", "fund_index_relationships", "funds", "categories", "indices", "exchanges", "issuers", "fx_rates", "data_sources"];
+
 export function buildSeedSql(root: string): string {
   const funds = fundsFile.parse(JSON.parse(readFileSync(join(root, "data/seed/funds.json"), "utf8")));
   const reference = referenceFile.parse(JSON.parse(readFileSync(join(root, "data/seed/reference.json"), "utf8")));
@@ -252,9 +256,15 @@ export function buildSeedSql(root: string): string {
     for (let i = 0; i < lines.length; i += 1000) {
       const values = lines.slice(i, i + 1000).map((line) => {
         const [key, isin, ticker, mic, name, currency, lei, issuer, country, ucits, assetClass, venues, source, url] = parseLine(line);
-        const pretty = prettyName(name);
-        const slugs = inferCategories(pretty);
-        return `(${q(key)}, ${q(isin)}, ${q(ticker)}, ${q(mic)}, ${q(pretty)}, ${q(currency)}, ${q(lei)}, ${q(issuer)}, ${q(country)}, ${ucits === "t" ? "true" : "null"}, ${q(assetClass)}, ${Number(venues) || 0}, ${q(source)}, ${q(url)}, ${q(universeOn)}, ${q(inferIndex(pretty) ?? inferIndex(benchmarkOf(isin, ticker)))}, ${slugs.length ? `array[${slugs.map(q).join(",")}]` : "'{}'::text[]"})`;
+        const full = prettyName(name);
+        const pretty = cleanName(full);
+        const slugs = inferCategories(full);
+        // A brand in the fund's name is a surer guide to the issuer than the register's legal entity, which can be a platform.
+        const who = brandOf(pretty)?.label ?? issuer;
+        // Funds on the US symbol list are registered in the United States.
+        const where = country || (source === "us" && !isin ? "US" : "");
+        const kind = assetClass || (inferEquity(full) ? "equity" : "");
+        return `(${q(key)}, ${q(isin)}, ${q(ticker)}, ${q(mic)}, ${q(pretty)}, ${q(currency)}, ${q(lei)}, ${q(who)}, ${q(where)}, ${ucits === "t" ? "true" : "null"}, ${q(kind)}, ${Number(venues) || 0}, ${q(source)}, ${q(url)}, ${q(universeOn)}, ${q(inferIndex(full) ?? inferIndex(benchmarkOf(isin, ticker)))}, ${slugs.length ? `array[${slugs.map(q).join(",")}]` : "'{}'::text[]"})`;
       });
       out.push(`insert into public.universe_etfs (etf_key, isin, ticker, mic, name, currency, issuer_lei, issuer_name, issuer_country, ucits, asset_class, venues, source, source_url, retrieved_on, index_slug, category_slugs) values\n${values.join(",\n")};`);
     }
@@ -332,6 +342,31 @@ export function buildSeedSql(root: string): string {
       const [key, fee, kind, filed] = line.split(",");
       const date = `${filed.slice(0, 4)}-${filed.slice(4, 6)}-${filed.slice(6, 8)}`;
       out.push(`insert into public.universe_details (etf_key, fee_pct, fee_type, fee_as_of, source, source_url) select ${q(key)}, ${Number(fee)}, ${q(kind)}, ${q(date)}, 'SEC prospectus data', ${q(secUrl)} where exists (select 1 from public.universe_etfs u where u.etf_key = ${q(key)}) on conflict (etf_key) do update set fee_type = coalesce(public.universe_details.fee_type, excluded.fee_type), fee_as_of = case when public.universe_details.fee_pct is null then excluded.fee_as_of else public.universe_details.fee_as_of end, fee_pct = coalesce(public.universe_details.fee_pct, excluded.fee_pct);`);
+    }
+  }
+
+  // Fees and sizes that an exchange publishes for its own listings, used only where nothing better exists.
+  const exchangePath = join(root, "data/universe/exchange_facts.csv.gz");
+  if (existsSync(exchangePath)) {
+    for (const line of gunzipSync(readFileSync(exchangePath)).toString("utf8").trim().split(/\r?\n/).slice(1)) {
+      const [key, fee, feeType, aum, aumCurrency, asOf, , source, url] = parseLine(line);
+      const n = (v: string) => (v === "" ? "null" : String(Number(v)));
+      out.push(`insert into public.universe_details (etf_key, fee_pct, fee_type, fee_as_of, aum, aum_currency, aum_as_of, aum_level, source, source_url) select ${q(key)}, ${n(fee)}, ${q(feeType)}, ${q(asOf)}, ${n(aum)}, ${q(aumCurrency)}, ${q(asOf)}, 'fund', ${q(source)}, ${q(url)} where exists (select 1 from public.universe_etfs u where u.etf_key = ${q(key)}) on conflict (etf_key) do nothing;`);
+    }
+  }
+
+  // Daily price points, from scripts/universe/daily.py.
+  const dailyDir = join(root, "data/prices");
+  for (const file of existsSync(dailyDir) ? readdirSync(dailyDir).filter((n) => /^nav-\d{4}\.csv\.gz$/.test(n)).sort() : []) {
+    const lines = gunzipSync(readFileSync(join(dailyDir, file))).toString("utf8").trim().split(/\r?\n/).slice(1);
+    for (let i = 0; i < lines.length; i += 1000) {
+      const values = lines.slice(i, i + 1000).map((line) => {
+        const [key, date, value, currency, kind, source] = parseLine(line);
+        return `(${q(key)}, ${q(date)}::date, ${Number(value)}, ${q(currency)}, ${q(kind)}, ${q(source)})`;
+      });
+      out.push(`insert into public.universe_prices (etf_key, price_date, value, currency, kind, source)
+        select v.* from (values\n${values.join(",\n")}) as v(etf_key, price_date, value, currency, kind, source)
+        where exists (select 1 from public.universe_etfs u where u.etf_key = v.etf_key) on conflict do nothing;`);
     }
   }
 

@@ -73,6 +73,8 @@ export const screenerSchema = z.object({
   aumMin: optionalNumber,
   aumMax: optionalNumber,
   ucits: single.transform((s) => (s === "yes" || s === "no" ? s : "")),
+  six: single.transform((s) => (s === "1" ? "1" : "")),
+  hasFee: single.transform((s) => (s === "1" ? "1" : "")),
   sort: single.transform((s): SortKey => (s in SORT_COLUMNS ? (s as SortKey) : "aum")),
   dir: single.transform((s) => (s === "asc" ? "asc" : s === "desc" ? "desc" : "")),
   page: optionalNumber.transform((n) => Math.max(1, Math.floor(n ?? 1))),
@@ -151,6 +153,8 @@ export function buildScreenerWhere(p: ScreenerParams): { where: string; values: 
   if (p.aumMax !== undefined) add((n) => `size_eur <= $${n}`, p.aumMax * 1e6);
   if (p.ucits === "yes") clauses.push("ucits is true");
   if (p.ucits === "no") clauses.push("ucits is false");
+  if (p.six) clauses.push("listed_on_six is true");
+  if (p.hasFee) clauses.push("headline_fee_pct is not null");
 
   return { where: clauses.length ? `where ${clauses.join(" and ")}` : "", values };
 }

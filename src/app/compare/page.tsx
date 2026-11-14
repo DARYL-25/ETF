@@ -3,10 +3,12 @@ import Link from "next/link";
 import { Change, Fee, PageTitle } from "@/components/etf-bits";
 import { PriceChart } from "@/components/price-chart";
 import { getEtfs, getExposures, getPriceSeries, type EtfRow, type Exposure } from "@/lib/etfs/queries";
+import { currentPlan } from "@/lib/billing/plan";
+import { PLANS } from "@/lib/billing/stripe";
 import { MISSING, assetClassLabel, countryName, distributionLabel, formatDate, formatMoney, formatPct, replicationLabel, styleLabel, yesNoUnknown } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "ETF Comparison" };
+export const metadata: Metadata = { title: "Compare" };
 
 type Row = { label: string; render: (r: EtfRow) => React.ReactNode };
 
@@ -19,8 +21,8 @@ const groups: { title: string; rows: Row[] }[] = [
     { label: "Asset class", render: (r) => assetClassLabel(r.asset_class) },
     { label: "Domicile", render: (r) => countryName(r.domicile) },
     { label: "Share class launched", render: (r) => formatDate(r.share_class_launch_date) },
-    { label: "Fund size", render: (r) => formatMoney(r.fund_aum, r.fund_aum_currency) },
-    { label: "Fund size date", render: (r) => r.fund_aum ? (r.fund_aum_as_of ? formatDate(r.fund_aum_as_of) : "Not published") : MISSING },
+    { label: "Size", render: (r) => <>{formatMoney(r.fund_aum ?? r.class_aum, r.fund_aum_currency ?? r.class_aum_currency)}{(r.aum_level === "share_class" || (r.fund_aum === null && r.class_aum !== null)) ? <span className="block text-[0.75rem] text-muted">Share class</span> : null}</> },
+    { label: "Size date", render: (r) => formatDate(r.fund_aum_as_of ?? r.class_aum_as_of) },
     { label: "Share class currency", render: (r) => r.currency ?? MISSING },
   ] },
   { title: "Structure", rows: [
@@ -63,12 +65,17 @@ const topLines = (items: Exposure[]) =>
 
 export default async function ComparePage({ searchParams }: { searchParams: Promise<{ isins?: string }> }) {
   const requested = ((await searchParams).isins ?? "").split(",").map((s) => s.trim()).filter(Boolean).slice(0, 5);
-  const etfs = await getEtfs(requested);
+  const { plan, locked } = await currentPlan();
+  const limit = PLANS[plan].compare;
+  const etfs = await getEtfs(requested.slice(0, limit));
+  const cut = locked && requested.length > limit;
+  const fees = etfs.map((e) => e.headline_fee_pct).filter((f): f is number => f !== null);
+  const lowest = fees.length > 1 ? Math.min(...fees) : null;
 
   if (etfs.length < 2) {
     return (
       <div>
-        <PageTitle title="ETF Comparison">Compare 2 to 5 ETFs side by side.</PageTitle>
+        <PageTitle title="Compare">Put 2 to 5 ETFs side by side.</PageTitle>
         <p className="max-w-[68ch]">Select at least two ETFs with the plus button in the <Link className="prose-link" href="/screener">screener</Link> or on an <Link className="prose-link" href="/indices">index page</Link>, then choose Compare.</p>
         <h2 className="mb-2 mt-8 text-[1.3rem]">Or start from a common question</h2>
         <ul className="flex flex-col gap-1.5">
@@ -93,12 +100,13 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
 
   return (
     <div>
-      <PageTitle title="ETF Comparison">A dash means we have no verified figure, not that the value is zero. Holdings overlap needs full holdings lists, which are not loaded yet.</PageTitle>
+      <PageTitle title="Compare">A dash means we hold no figure, not that the value is zero. The lowest yearly fee is marked.</PageTitle>
+      {cut ? <p className="mb-4 max-w-[70ch] rounded-xl bg-warn-bg px-3.5 py-2.5 text-warn-ink">Showing the first {limit} of {requested.length} ETFs. <Link className="underline" href="/pricing">Premium compares up to 5</Link>.</p> : null}
       <div className="overflow-x-auto">
         <table className="table-data">
           <thead>
             <tr>
-              <th className="sticky left-0 z-10 bg-paper" aria-label="Attribute" />
+              <th className="sticky left-0 z-10 bg-surface" aria-label="Attribute" />
               {etfs.map((e) => (
                 <th key={e.etf_key} className="min-w-[11rem] whitespace-normal align-bottom text-ink">
                   <Link href={`/etfs/${e.etf_key}`} className="no-underline hover:underline">{e.name}</Link>
@@ -108,11 +116,11 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
           </thead>
           {[...groups, { title: "Allocation", rows: allRenders }].map((group) => (
             <tbody key={group.title}>
-              <tr><th colSpan={etfs.length + 1} className="sticky left-0 bg-paper pt-5 text-left text-[1.05rem] text-ink">{group.title}</th></tr>
+              <tr><th colSpan={etfs.length + 1} className="sticky left-0 bg-surface pt-5 text-left text-[1.05rem] text-ink">{group.title}</th></tr>
               {group.rows.map((row) => (
                 <tr key={row.label}>
-                  <td className="sticky left-0 z-10 min-w-[8rem] bg-paper text-muted">{row.label}</td>
-                  {etfs.map((e) => <td key={e.etf_key}>{row.render(e)}</td>)}
+                  <td className="sticky left-0 z-10 min-w-[8rem] bg-surface text-muted">{row.label}</td>
+                  {etfs.map((e) => <td key={e.etf_key} className={row.label === "Yearly fee" && lowest !== null && e.headline_fee_pct === lowest ? "bg-sunken font-semibold" : undefined}>{row.render(e)}</td>)}
                 </tr>
               ))}
             </tbody>
@@ -121,7 +129,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
       </div>
 
       <section className="mt-10 max-w-5xl">
-        <h2 className="mb-3 text-[1.5rem]">Price history</h2>
+        <h2 className="mb-3 text-[1.3rem]">Price history</h2>
         {charted.length ? (
           <>
             <PriceChart series={charted.map((s) => ({ label: s.ticker, currency: s.currency, points: s.points }))} />

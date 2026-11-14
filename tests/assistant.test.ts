@@ -25,7 +25,7 @@ describe("ranking", () => {
     const out = await findBestEtfs(parseIntent("Nasdaq-100 ETF as a Swiss investor"));
     expect(out.results.length).toBeGreaterThan(2);
     for (const r of out.results) expect(r.row.index_slug).toBe("nasdaq-100");
-    expect(out.notChecked[0]).toMatch(/not verified/);
+    expect(out.notChecked[0]).toMatch(/not scored/);
     expect(out.results.some((r) => r.onSix)).toBe(true);
     const scores = out.results.map((r) => r.score);
     expect([...scores].sort((a, b) => b - a)).toEqual(scores);
@@ -67,7 +67,7 @@ describe("assistant", () => {
     expect(r.aiUsed).toBe(true);
     expect(r.text).toBe("Here are the closest matches.");
     expect(JSON.stringify(calls[1].messages)).toContain("nasdaq");
-    expect(calls[0].system).toMatch(/Never state a tax rate/);
+    expect(calls[0].system).toMatch(/use only what get_tax_rules returns/);
   });
 
   it("falls back to the database list when the AI call fails", async () => {

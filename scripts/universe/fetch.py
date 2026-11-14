@@ -145,27 +145,33 @@ def australia():
     if not links: raise RuntimeError(f"No Excel link. xlsx links: {re.findall(r'[^ \"]+xlsx', page)[:5]}")
     link = max(links, key=lambda l: (int(l[1]), months.index(l[2][:3]) if l[2][:3] in months else -1))[0]
     book = openpyxl.load_workbook(io.BytesIO(get("https://www.asx.com.au" + link)), read_only=True, data_only=True)
-    rows, sample, seen = [], {"file": link}, set()
+    rows, facts, seen = [], [], set()
+    stamp = re.search(r"products-([a-z]+)-(\d{4})", link)
+    month = months.index(stamp.group(1)[:3]) + 1
+    import calendar
+    as_of = f"{stamp.group(2)}-{month:02d}-{calendar.monthrange(int(stamp.group(2)), month)[1]}"
     for sheet in book.worksheets:
+        if "etp list" not in sheet.title.lower(): continue
         sheet.reset_dimensions()
-        table = [[str(c).strip() if c is not None else "" for c in r] for r in sheet.iter_rows(values_only=True)]
-        sample[sheet.title] = [[c[:28] for c in r[:14]] for r in table[:12]]
-        head = next((i for i, r in enumerate(table[:30]) if any(c.lower() in ("asx code", "code") for c in r)), None)
+        table = [[re.sub(r"\s+", " ", str(c)).strip() if c is not None else "" for c in r] for r in sheet.iter_rows(values_only=True)]
+        head = next((i for i, r in enumerate(table[:40]) if any(c.lower() == "asx code" for c in r)), None)
         if head is None: continue
         names = [c.lower() for c in table[head]]
-        code = next(i for i, c in enumerate(names) if c in ("asx code", "code"))
-        kind = next((i for i, c in enumerate(names) if c in ("type", "product type")), None)
-        name = next((i for i, c in enumerate(names) if "name" in c or "exposure" in c), None)
-        fee = next((i for i, c in enumerate(names) if c.startswith("mer") or "management" in c), None)
-        sample[sheet.title + " columns"] = {"code": code, "type": kind, "name": name, "fee": fee, "head": table[head][:20]}
+        col = lambda *starts: next((i for i, c in enumerate(names) if c.startswith(starts)), None)
+        code, kind, name, fee, fum = col("asx code"), col("type"), col("fund name"), col("mer"), col("fum ($m)")
         for r in table[head + 1:]:
-            if len(r) <= code or not re.fullmatch(r"[A-Z0-9]{3,6}", r[code]) or r[code] in seen: continue
-            label = r[kind] if kind is not None and kind < len(r) else ""
-            if kind is not None and not re.search(r"ETF|ETP|ETMF|Active|SP", label, re.I): continue
+            if len(r) <= max(code, name) or not re.fullmatch(r"[A-Z0-9]{3,6}", r[code]) or r[code] in seen or not r[name]: continue
             seen.add(r[code])
-            rows.append({"isin": "", "ticker": r[code], "mic": "XASX", "name": r[name] if name is not None and name < len(r) else "", "currency": "AUD", "cfi": "", "issuer_lei": "", "market": "AU"})
-    (OUT / "details").mkdir(exist_ok=True)
-    (OUT / "details" / "asx_sample.json").write_text(json.dumps(sample, indent=0)[:20000])
+            rows.append({"isin": "", "ticker": r[code], "mic": "XASX", "name": r[name], "currency": "AUD", "cfi": "", "issuer_lei": "", "market": "AU"})
+            def number(i):
+                try: return float(r[i]) if i is not None and i < len(r) and r[i] not in ("", "-", "n/a") else ""
+                except ValueError: return ""
+            mer, size = number(fee), number(fum)
+            if mer != "" and not 0 <= mer <= 5: mer = ""
+            facts.append({"etf_key": f"XASX-{r[code]}", "fee_pct": mer, "fee_type": "mer" if mer != "" else "", "aum": round(size * 1e6) if size != "" else "", "aum_currency": "AUD" if size != "" else "", "as_of": as_of, "kind": r[kind] if kind is not None else "", "source": "ASX investment products report", "source_url": "https://www.asx.com.au/issuers/investment-products/asx-funds-statistics"})
+    if facts:
+        with gzip.open(OUT / "exchange_facts.csv.gz", "wt", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, list(facts[0])); w.writeheader(); w.writerows(facts)
     return rows
 
 def canada():

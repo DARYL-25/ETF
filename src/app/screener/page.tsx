@@ -5,7 +5,8 @@ import { CompareToggle } from "@/components/compare-tray";
 import { Change, EtfName, Fee, PageTitle } from "@/components/etf-bits";
 import { screenEtfs, screenerOptions, type FilterOption } from "@/lib/etfs/queries";
 import { DEFAULT_COLUMNS, OPTIONAL_COLUMNS, defaultDirection, parseScreenerParams, screenerHref, type RawParams, type ScreenerParams, type SortKey } from "@/lib/etfs/screener-params";
-import { assetClassLabel, countryName, distributionLabel, formatMoney, formatPct, replicationLabel, styleLabel } from "@/lib/format";
+import { getLens } from "@/lib/lens-server";
+import { assetClassLabel, formatDate, countryName, distributionLabel, formatMoney, formatPct, replicationLabel, styleLabel } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "ETF Screener" };
@@ -65,6 +66,10 @@ function SortHeader({ params, sort, label, numeric, className }: { params: Scree
   );
 }
 
+/** Returns differ in date and currency between funds, so each cell says which it is. */
+const returnNote = (row: { nav_return_1y: number | null; nav_return_as_of: string | null; nav_currency: string | null; currency: string | null; market_return_as_of?: string | null }) =>
+  row.nav_return_1y !== null ? `NAV return in ${row.nav_currency ?? row.currency ?? "fund currency"}, to ${formatDate(row.nav_return_as_of)}` : row.market_return_as_of ? `Market price change, to ${formatDate(row.market_return_as_of)}` : "";
+
 export default async function ScreenerPage({ searchParams }: { searchParams: Promise<RawParams> }) {
   const params = parseScreenerParams(await searchParams);
   const [result, options] = await Promise.all([screenEtfs(params), screenerOptions()]);
@@ -72,7 +77,19 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
   const activeFilters = [params.issuer, params.domicile, params.assetClass, params.region, params.factor, params.theme, params.bondType, params.index, params.replication, params.distribution, params.style, params.currency]
     .reduce((sum, list) => sum + list.length, 0)
     + [params.feeMin, params.feeMax, params.aumMin, params.aumMax].filter((v) => v !== undefined).length
-    + (params.ucits ? 1 : 0) + (params.q ? 1 : 0);
+    + (params.ucits ? 1 : 0) + (params.q ? 1 : 0) + (params.six ? 1 : 0) + (params.hasFee ? 1 : 0);
+  const lens = await getLens();
+  const has = (list: string[], v: string) => list.includes(v);
+  const flip = (list: string[], v: string) => (has(list, v) ? list.filter((x) => x !== v) : [...list, v]);
+  const quick: { label: string; on: boolean; href: string }[] = [
+    { label: "UCITS", on: params.ucits === "yes", href: screenerHref(params, { ucits: params.ucits === "yes" ? "" : "yes" }) },
+    { label: "Accumulating", on: has(params.distribution, "accumulating"), href: screenerHref(params, { distribution: flip(params.distribution, "accumulating") }) },
+    { label: "Distributing", on: has(params.distribution, "distributing"), href: screenerHref(params, { distribution: flip(params.distribution, "distributing") }) },
+    { label: "Fee known", on: Boolean(params.hasFee), href: screenerHref(params, { hasFee: params.hasFee ? "" : "1" }) },
+    { label: "Fee up to 0.10%", on: params.feeMax === 0.1, href: screenerHref(params, { feeMax: params.feeMax === 0.1 ? undefined : 0.1 }) },
+    { label: "Listed on SIX", on: Boolean(params.six), href: screenerHref(params, { six: params.six ? "" : "1" }) },
+  ];
+  if (lens?.code === "CH") quick.unshift(quick.pop()!);
 
   const columns = params.cols.length ? params.cols : DEFAULT_COLUMNS;
   const show = (key: string) => columns.includes(key);
@@ -83,6 +100,8 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
     <AutoSubmitForm>
       {/* Carries the search text and the sort order through filter changes. */}
       <input type="hidden" name="sort" value={params.sort} />
+      {params.six ? <input type="hidden" name="six" value="1" /> : null}
+      {params.hasFee ? <input type="hidden" name="hasFee" value="1" /> : null}
       {params.dir ? <input type="hidden" name="dir" value={params.dir} /> : null}
       <label className="block pb-3 font-semibold">Name, ISIN or ticker
         <input key={params.q} className="field mt-1 font-normal" type="search" name="q" defaultValue={params.q} />
@@ -116,9 +135,9 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
 
   return (
     <div>
-      <PageTitle title="ETF Screener">Combine filters to narrow the list. The page address updates as you go, so you can share a search by copying the link.</PageTitle>
+      <PageTitle title="Screener">Combine filters to narrow the list. The address updates as you go, so a search can be shared by copying the link.</PageTitle>
       <div className="grid gap-6 lg:grid-cols-[17rem_minmax(0,1fr)]">
-        <aside className="min-w-0">
+        <aside className="min-w-0 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:self-start lg:overflow-y-auto lg:pr-2">
           <details className="lg:hidden">
             <summary className="btn btn-quiet w-full list-none">Filters{activeFilters ? ` (${activeFilters} on)` : ""}</summary>
             <div className="pt-2">{form}</div>
@@ -126,9 +145,12 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
           <div className="hidden lg:block">{form}</div>
         </aside>
         <section className="min-w-0" aria-label="Results">
+          <div className="mb-3 flex flex-wrap gap-1.5" aria-label="Quick filters">
+            {quick.map((q) => <Link key={q.label} href={q.href} scroll={false} aria-pressed={q.on} className="chip">{q.label}</Link>)}
+          </div>
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-            <p className="font-semibold" role="status">{result.total} {result.total === 1 ? "ETF" : "ETFs"}</p>
-            {activeFilters ? <Link href="/screener" className="prose-link">Reset filters</Link> : null}
+            <p className="font-semibold" role="status">{result.total.toLocaleString("en-GB")} {result.total === 1 ? "ETF" : "ETFs"}</p>
+            <span className="flex gap-4">{activeFilters ? <Link href="/screener" className="prose-link">Reset filters</Link> : null}<a href={screenerHref(params, {}).replace("/screener", "/api/v1/etfs/export")} className="prose-link" download>Export CSV</a></span>
           </div>
           {result.rows.length === 0 ? (
             <div className="border-y border-line py-8">
@@ -169,8 +191,8 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
                       {show("replication") ? <td className="whitespace-nowrap">{replicationLabel(row.replication)}</td> : null}
                       <td className="num"><Fee row={row} /></td>
                       <td className="num whitespace-nowrap">{formatMoney(row.fund_aum ?? row.class_aum, row.fund_aum_currency ?? row.class_aum_currency)}{row.aum_level === "share_class" || row.fund_aum === null && row.class_aum !== null ? <span className="block text-[0.75rem] text-muted">Share class</span> : null}</td>
-                      {show("return1y") ? <td className={`num ${phoneHide}`}><Change value={row.return_1y} /></td> : null}
-                      {show("return3y") ? <td className={`num ${phoneHide}`}><Change value={row.return_3y} /></td> : null}
+                      {show("return1y") ? <td className={`num ${phoneHide}`} title={returnNote(row)}><Change value={row.return_1y} />{row.return_1y !== null && returnNote(row) ? <span className="block text-[0.75rem] text-muted">{row.nav_return_1y !== null ? row.nav_currency ?? row.currency ?? "" : "price"}</span> : null}</td> : null}
+                      {show("return3y") ? <td className={`num ${phoneHide}`} title={returnNote(row)}><Change value={row.return_3y} /></td> : null}
                       {show("yield") ? <td className="num">{formatPct(row.trailing_yield_pct)}</td> : null}
                       {show("currency") ? <td>{row.currency ?? "—"}</td> : null}
                     </tr>

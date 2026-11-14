@@ -1,17 +1,18 @@
 import { expect, test } from "@playwright/test";
 
-test("dashboard shows the fee ruler and opens a fund from a dot", async ({ page }) => {
+test("home shows the ask bar and the fee ruler opens a fund from a dot", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Find an ETF");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Describe the ETF you need");
+  await expect(page.getByLabel("Describe what you are looking for")).toBeVisible();
   await page.getByRole("link", { name: /iShares Global Clean Energy.*TER 0\.65%/ }).click();
   await expect(page).toHaveURL(/IE00B1XNHC34/);
 });
 
 test("search finds a fund by a secondary ticker", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("combobox", { name: /Search ETFs/ }).locator("visible=true").fill("SXR8");
-  const option = page.getByRole("option").locator("visible=true").filter({ hasText: "iShares Core S&P 500" });
-  await option.getByRole("button").click();
+  await page.getByRole("button", { name: "Search ETFs, pages or ask a question" }).click();
+  await page.getByRole("combobox", { name: /Search ETFs/ }).fill("SXR8");
+  await page.getByRole("option").filter({ hasText: "iShares Core S&P 500" }).getByRole("button").click();
   await expect(page).toHaveURL(/IE00B5BMR087/);
   await expect(page.getByRole("heading", { level: 1 })).toContainText("iShares Core S&P 500");
 });
@@ -53,15 +54,15 @@ test("profile shows source, fee type and a working chart", async ({ page }) => {
     await page.getByRole("button", { name: "MAX" }).click();
     await expect(page.getByText(/over the full history/)).toBeVisible();
   } else {
-    await expect(page.getByText("We have no price history for this ETF yet.")).toBeVisible();
+    await expect(page.getByText(/We have no price history for this ETF yet|We started collecting|collected by us since/)).toBeVisible();
   }
   await expect(page.getByRole("heading", { name: "Where it trades" })).toBeVisible();
 });
 
 test("a fund with missing facts says so instead of inventing them", async ({ page }) => {
   await page.goto("/etfs/IE00B60SX394");
-  await expect(page.getByText("We have no price history for this ETF yet.")).toBeVisible();
   await expect(page.getByText("Not published on the source").first()).toBeVisible();
+  await expect(page.getByText("Not loaded yet").first()).toBeVisible();
 });
 
 test("an old figure is flagged as out of date", async ({ page }) => {
@@ -78,9 +79,49 @@ test("comparison builds from the tray", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Fees" }).or(page.getByRole("columnheader", { name: "Fees" }))).toBeVisible();
 });
 
-test("unbuilt sections say so plainly", async ({ page }) => {
+test("tax notes quote official sources and say they are unreviewed", async ({ page }) => {
   await page.goto("/tax");
-  await expect(page.getByText(/Not built yet/)).toBeVisible();
+  await page.getByRole("link", { name: /Switzerland/ }).first().click();
+  await expect(page.getByRole("heading", { name: "Gains from selling are tax-free for private investors" })).toBeVisible();
+  await expect(page.getByText(/No tax adviser has reviewed this page/)).toBeVisible();
+  await expect(page.getByRole("link", { name: /Federal Tax Administration, taxes in force/ }).first()).toHaveAttribute("href", /estv/);
+  await page.goto("/tax/france");
+  await expect(page.getByText(/31\.4%/).first()).toBeVisible();
+  expect((await page.goto("/tax/atlantis"))?.status()).toBe(404);
+});
+
+test("choosing a country changes what an ETF page shows", async ({ page }) => {
+  await page.goto("/etfs/IE00B5BMR087");
+  await expect(page.getByRole("heading", { name: "Where do you live?" })).toBeVisible();
+  await page.getByLabel("Choose the country you invest from").click();
+  await page.getByRole("button", { name: /^Switzerland/ }).click();
+  await expect(page.getByRole("heading", { name: "For an investor in Switzerland" })).toBeVisible();
+  await expect(page.getByText(/keeps its income, and that income is still taxable each year/)).toBeVisible();
+  await page.goto("/screener");
+  await expect(page.getByLabel("Quick filters").getByRole("link").first()).toHaveText("Listed on SIX");
+});
+
+test("the data page shows the update schedule with last runs", async ({ page }) => {
+  await page.goto("/data");
+  await expect(page.getByRole("heading", { name: "Update schedule" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Prices", exact: true })).toBeVisible();
+  await expect(page.getByText(/Tuesday to Saturday/)).toBeVisible();
+});
+
+test("a basic record has the same page, with a dated price and no invented facts", async ({ page }) => {
+  await page.goto("/screener?q=VOO&hasFee=1");
+  await page.getByRole("link", { name: "Vanguard S&P 500 ETF", exact: true }).first().click();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Vanguard S&P 500 ETF");
+  await expect(page.getByLabel("Key figures")).toContainText("0.03%");
+  await expect(page.getByText(/No person has checked them yet/)).toBeVisible();
+});
+
+test("screener results export to CSV", async ({ request }) => {
+  const res = await request.get("/api/v1/etfs/export?index=sp-500&hasFee=1");
+  expect(res.headers()["content-type"]).toContain("text/csv");
+  const lines = (await res.text()).split("\n");
+  expect(lines[0]).toContain("name,isin,ticker");
+  expect(lines.length).toBeGreaterThan(5);
 });
 
 test("an unknown ISIN returns a 404 page", async ({ page }) => {
@@ -90,7 +131,7 @@ test("an unknown ISIN returns a 404 page", async ({ page }) => {
 });
 
 test("pages never scroll sideways", async ({ page }) => {
-  for (const path of ["/", "/screener", "/etfs", "/indices", "/etfs/IE00B5BMR087", "/compare?isins=IE00B5BMR087,IE00BK5BQT80,IE00BKM4GZ66", "/data", "/pricing"]) {
+  for (const path of ["/", "/screener", "/etfs", "/indices", "/etfs/IE00B5BMR087", "/compare?isins=IE00B5BMR087,IE00BK5BQT80,IE00BKM4GZ66", "/data", "/pricing", "/tax/switzerland", "/assistant?q=Nasdaq-100%20ETF%20for%20a%20Swiss%20investor", "/academy", "/etfs/ARCX-VOO"]) {
     await page.goto(path);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, path).toBeLessThanOrEqual(0);
@@ -150,5 +191,6 @@ test("the AI search answers a Swiss Nasdaq-100 request", async ({ page }) => {
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Closest matches" })).toBeVisible();
   await expect(page.getByText(/Nasdaq|NASDAQ/).first()).toBeVisible();
-  await expect(page.getByText(/not verified here yet/)).toBeVisible();
+  await expect(page.getByText(/Tax is not scored in this ranking/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Read the tax notes" })).toHaveAttribute("href", "/tax/switzerland");
 });

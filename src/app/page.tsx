@@ -1,97 +1,72 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { Assistant } from "@/components/assistant";
 import { FeeRuler } from "@/components/fee-ruler";
-import { Fee, EtfName } from "@/components/etf-bits";
-import { getDashboard } from "@/lib/etfs/queries";
-import { countryName, distributionLabel, formatMoney, replicationLabel } from "@/lib/format";
+import { getCoverage, getFeePoints, getIndexTiles } from "@/lib/etfs/queries";
+import { getFreshness } from "@/lib/data/policy";
+import { getLens } from "@/lib/lens-server";
+import { formatDate, formatPct } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
-  const { largest, cheapest, coverage, sp500, fees } = await getDashboard();
+export default async function HomePage() {
+  const [coverage, tiles, fees, lens] = await Promise.all([getCoverage(), getIndexTiles(8), getFeePoints(), getLens()]);
+  const fresh = Object.fromEntries(getFreshness().map((f) => [f.id, f]));
+  const n = (v: number) => v.toLocaleString("en-GB");
 
   return (
-    <div className="flex flex-col gap-12">
-      <section className="hero-panel">
-        <h1 className="max-w-[24ch] text-[clamp(2rem,4vw,3.2rem)] font-bold">Find an ETF, check what it costs, and see where each number came from.</h1>
-        <div className="mt-8 max-w-5xl">
-          <FeeRuler points={fees} animate />
+    <div className="flex flex-col gap-16 lg:gap-20">
+      <section className="pt-6 lg:pt-14">
+        <div className="mx-auto max-w-3xl text-center">
+          <h1 className="text-[clamp(2.3rem,5.4vw,4rem)] font-semibold">Describe the ETF you need.</h1>
+          <p className="mx-auto mt-4 max-w-[52ch] text-[1.1rem] text-muted">
+            {n(coverage.all_etfs)} ETFs from official registers and exchanges, ranked for where you live. Every figure shows its source and its date.
+          </p>
         </div>
-        <p className="mt-4 max-w-[68ch]">
-          Each dot is one ETF, placed by its yearly fee. Select a dot to open the fund.
-          The database lists {coverage.all_etfs.toLocaleString("en-GB")} ETFs from official registers and exchanges. {coverage.with_fee.toLocaleString("en-GB")} have a published fee so far. The dots above show the {coverage.etfs} ETFs with the fullest records.
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Link className="btn btn-primary" href="/screener">Open the screener</Link>
-          <Link className="btn btn-quiet" href="/data">See how the data works</Link>
-        </div>
+        <div className="mt-8"><Assistant hero home={lens?.name ?? null} /></div>
       </section>
 
       <section>
-        <h2 className="text-[1.6rem]">One index, several funds</h2>
-        <p className="mb-3 mt-1 max-w-[68ch] text-muted">
-          These all follow the S&amp;P 500. They can still differ in where they are domiciled, how they hold the shares and what they do with dividends, and each of those can matter to you.
-        </p>
-        <div className="overflow-x-auto">
-          <table className="table-data">
-            <thead>
-              <tr>
-                <th>ETF</th><th>Domicile</th><th>Replication</th><th>Income</th><th className="num">Yearly fee</th><th className="num">Fund size</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sp500.map((row) => (
-                <tr key={row.isin}>
-                  <td className="min-w-[16rem]"><EtfName row={row} /></td>
-                  <td>{countryName(row.domicile)}</td>
-                  <td className="whitespace-nowrap">{replicationLabel(row.replication)}</td>
-                  <td>{distributionLabel(row.distribution_policy)}</td>
-                  <td className="num"><Fee row={row} /></td>
-                  <td className="num whitespace-nowrap">{formatMoney(row.fund_aum, row.fund_aum_currency)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="mb-4 flex items-baseline justify-between gap-4">
+          <h2 className="text-[1.5rem]">Start from an index</h2>
+          <Link href="/indices" className="prose-link whitespace-nowrap">All indices</Link>
         </div>
-        <p className="mt-2"><Link className="prose-link" href="/indices/sp-500">Compare all S&amp;P 500 ETFs</Link></p>
+        <ul className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+          {tiles.map((t) => (
+            <li key={t.slug}>
+              <Link href={`/indices/${t.slug}`} className="panel group flex h-full flex-col gap-3 p-4 no-underline transition-colors hover:border-pine">
+                <span className="flex items-start justify-between gap-2 font-semibold">{t.name}<ArrowRight size={16} aria-hidden className="mt-1 flex-none text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-pine" /></span>
+                <span className="data mt-auto text-[0.9rem] text-muted">{t.etf_count} ETFs{t.min_fee !== null ? `, from ${formatPct(t.min_fee)} a year` : ""}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </section>
 
-      <div className="grid gap-12 xl:grid-cols-2">
-        <section className="min-w-0">
-          <h2 className="mb-3 text-[1.6rem]">Largest funds</h2>
-          <div className="overflow-x-auto">
-            <table className="table-data">
-              <thead><tr><th>ETF</th><th className="num">Fund size</th><th className="num">Yearly fee</th></tr></thead>
-              <tbody>
-                {largest.map((row) => (
-                  <tr key={row.isin}>
-                    <td className="min-w-[14rem]"><EtfName row={row} /></td>
-                    <td className="num whitespace-nowrap">{formatMoney(row.fund_aum, row.fund_aum_currency)}</td>
-                    <td className="num"><Fee row={row} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-center">
+        <div>
+          <h2 className="text-[1.5rem]">What funds charge</h2>
+          <p className="mt-2 max-w-[44ch] text-muted">Each dot is one of the {fees.length} ETFs with our fullest records, placed by its yearly fee. Select a dot to open the fund.</p>
+          <p className="mt-4"><Link className="btn btn-quiet" href="/screener?sort=fee&dir=asc">Sort every ETF by fee</Link></p>
+        </div>
+        <div className="panel min-w-0 p-5"><FeeRuler points={fees} animate /></div>
+      </section>
+
+      <section className="panel grid gap-x-8 gap-y-5 p-5 sm:grid-cols-2 lg:grid-cols-4 lg:p-6" aria-label="How current the data is">
+        {[
+          [n(coverage.all_etfs), "ETFs listed", `List checked ${formatDate(fresh.list?.lastRun)}`],
+          [n(coverage.with_fee), "with a published fee", `Read ${formatDate(fresh.facts?.lastRun)}`],
+          [n(coverage.with_price), "with a daily price", coverage.latest_price ? `Latest ${formatDate(coverage.latest_price)}` : "Not loaded yet"],
+          [n(coverage.with_return), "with official returns", "Dated on each fund"],
+        ].map(([value, label, when]) => (
+          <div key={label}>
+            <p className="stat-value">{value}</p>
+            <p className="mt-1">{label}</p>
+            <p className="text-[0.85rem] text-muted">{when}</p>
           </div>
-        </section>
-        <section className="min-w-0">
-          <h2 className="mb-3 text-[1.6rem]">Lowest published fee by group</h2>
-          <div className="overflow-x-auto">
-            <table className="table-data">
-              <thead><tr><th>Group</th><th>ETF</th><th className="num">Yearly fee</th></tr></thead>
-              <tbody>
-                {cheapest.map((row) => (
-                  <tr key={row.group_label}>
-                    <td className="whitespace-nowrap">{row.group_label}</td>
-                    <td className="min-w-[14rem]"><EtfName row={row} /></td>
-                    <td className="num"><Fee row={row} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-2 max-w-[68ch] text-[0.85rem] text-muted">Only among ETFs in this database. The lowest fee is not always the best fund, because tracking and tax can matter more.</p>
-        </section>
-      </div>
+        ))}
+        <p className="text-[0.9rem] sm:col-span-2 lg:col-span-4"><Link href="/data" className="prose-link">How and when each figure is updated</Link></p>
+      </section>
     </div>
   );
 }

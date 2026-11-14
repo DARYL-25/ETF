@@ -64,3 +64,6 @@ export const yesNoUnknown = (v: boolean | null | undefined) => (v === true ? "Ye
 
 /** ETC gold is not an ETF; say so wherever the product type is shown. */
 export const productLabel = (v: string) => v.toUpperCase();
+
+const EXCHANGES: Record<string, string> = { ARCX: "NYSE Arca", XNAS: "Nasdaq", XNYS: "New York Stock Exchange", BATS: "Cboe BZX", XASE: "NYSE American", IEXG: "IEX", XLON: "London Stock Exchange", XETR: "Xetra", XSWX: "SIX Swiss Exchange", XPAR: "Euronext Paris", XAMS: "Euronext Amsterdam", XMIL: "Borsa Italiana", XTKS: "Tokyo Stock Exchange", XHKG: "Hong Kong Exchange", XNSE: "NSE India", XSHG: "Shanghai Stock Exchange", XKRX: "Korea Exchange", XTAI: "Taiwan Stock Exchange", XTSE: "Toronto Stock Exchange", XTSX: "TSX Venture", XSES: "Singapore Exchange", XASX: "ASX" };
+export const exchangeName = (mic: string | null | undefined) => (mic ? EXCHANGES[mic] ?? mic : null);

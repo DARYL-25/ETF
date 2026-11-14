@@ -55,14 +55,14 @@ report["nav_points"] = len(points)
 # Taiwan Stock Exchange publishes daily closes as government open data.
 try:
     data = json.loads(get("https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL"))
-    tw = {r["ticker"]: r["etf_key"] for r in universe if r["mic"] == "XTAI"}
+    tw = {r["ticker"]: r["etf_key"] for r in universe if r["etf_key"].startswith("XTAI-")}
     n = 0
     for row in data:
         code, raw = str(row.get("Code", "")).strip(), str(row.get("Date", ""))
         if code not in tw or not re.fullmatch(r"\d{7}", raw): continue
         date = f"{int(raw[:3]) + 1911}-{raw[3:5]}-{raw[5:7]}"  # The file uses the Republic of China calendar.
         size = len(points); add(tw[code], date, row.get("ClosingPrice"), "TWD", "close", "Taiwan Stock Exchange open data"); n += len(points) > size
-    report["taiwan"] = {"ok": n > 0, "points": n, "sample": data[0] if data else None}
+    report["taiwan"] = {"ok": n > 0, "points": n}
 except Exception as e:
     report["taiwan"] = {"ok": False, "error": f"{type(e).__name__}: {e}"[:200]}
 

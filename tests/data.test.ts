@@ -176,6 +176,24 @@ describe("database", () => {
     expect((await fee("ticker = 'QQQ'")).f).toBe(0.18);
   });
 
+  it("loads daily price points only for ETFs in the list, and reloads cleanly", async () => {
+    const before = await db.query<{ n: number; etfs: number }>("select count(*)::int n, (select count(*)::int from public.etf_directory) etfs from public.universe_prices");
+    expect(before.rows[0].n).toBeGreaterThan(2000);
+    const orphan = await db.query<{ n: number }>("select count(*)::int n from public.universe_prices p where not exists (select 1 from public.universe_etfs u where u.etf_key = p.etf_key)");
+    expect(orphan.rows[0].n).toBe(0);
+    // The live-database sync empties the public tables and loads the seed again in one transaction.
+    const { PUBLIC_DATA_TABLES, buildSeedSql } = await import("@/lib/db/seed-sql");
+    await db.exec(`truncate ${PUBLIC_DATA_TABLES.map((t) => `public.${t}`).join(", ")} restart identity cascade`);
+    await db.exec(buildSeedSql(process.cwd()));
+    const after = await db.query<{ n: number; etfs: number }>("select count(*)::int n, (select count(*)::int from public.etf_directory) etfs from public.universe_prices");
+    expect(after.rows[0]).toEqual(before.rows[0]);
+  }, 120_000);
+
+  it("converts sizes in any currency the central bank publishes", async () => {
+    const { rows } = await db.query<{ n: number }>("select count(*)::int n from public.fx_rates");
+    expect(rows[0].n).toBeGreaterThanOrEqual(25);
+  });
+
   it("marks SIX listings from issuer files", async () => {
     const { rows } = await db.query<{ six: boolean }>("select listed_on_six six from public.etf_directory where isin = 'IE00BD4TXV59'");
     expect(rows[0].six).toBe(true);

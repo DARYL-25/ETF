@@ -78,6 +78,12 @@ describe("screener queries", () => {
     expect(desc.rows.at(-1)!.headline_fee_pct).toBeNull();
   });
 
+  it("filters to SIX listings and to funds with a fee", async () => {
+    const six = await run({ six: "1", hasFee: "1", pageSize: "50" });
+    expect(six.total).toBeGreaterThan(300);
+    for (const r of six.rows) { expect(r.listed_on_six).toBe(true); expect(r.headline_fee_pct).not.toBeNull(); }
+  });
+
   it("paginates", async () => {
     const first = await run({ pageSize: "10" });
     const second = await run({ pageSize: "10", page: "2" });

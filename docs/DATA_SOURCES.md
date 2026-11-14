@@ -54,10 +54,10 @@ Decided 5 Nov 2026: build without paying for data. The site is meant to be comme
 | Fund facts, fees | Issuer pages and factsheets | Working |
 | Official NAV returns, top holdings | Issuer factsheets | Working, 5 ETFs loaded so far. Better than price-derived returns |
 | Latest NAV | Issuer product pages | Working for iShares, 1 ETF loaded |
-| Daily market prices, charts | Yahoo Finance via `scripts/ingest-yahoo.ts` and a nightly GitHub Action | Written, **never run against Yahoo**, because this build environment cannot reach it. Yahoo's robots rules also blocked the assistant's own reader |
+| Daily prices, charts | Issuer NAV collected daily by `scripts/universe/daily.py`, plus exchange closes published as open data | Working for about 2,250 ETFs. See [DATA_UPDATES.md](DATA_UPDATES.md) |
 | Live exchange quotes | Euronext and LSE pages show no values without running their scripts; SIX did not load | Not working, not built |
 
-Risk accepted knowingly: [yfinance's README](https://github.com/ranaroussi/yfinance) says the Yahoo API is intended for personal use only, and it can change or block without notice. Fine for building and private testing. If the site charges money, replace Yahoo first: only `src/lib/etfs/yahoo.ts` and the script need changing. Prices live in the database, not in this public repository.
+Yahoo Finance was considered and dropped: its data is for personal use, and its robots rules refuse automated readers. The ingestion code was removed.
 
 ## Limits to plan around
 
@@ -87,7 +87,7 @@ Official sources to start from, to be confirmed when that work begins:
 - Germany: the Investment Tax Act (InvStG) and the Federal Central Tax Office
 - United Kingdom: HMRC, including its list of reporting funds
 
-Rules change, and need a dated source and a review by a qualified person. Until then the product shows structural facts only and no rates.
+Rules change, and need a dated source and a review by a qualified person. Switzerland and France are written, in `src/lib/tax/content.ts`, with each rule quoted from the official source and the date it was read. They show a notice that no tax adviser has reviewed them.
 
 ## Issuer product files
 
