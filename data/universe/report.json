@@ -1,33 +1,33 @@
 {
  "esma": {
   "ok": true,
-  "rows": 114955,
-  "distinct_isin": 8173,
-  "on": "2026-11-13"
+  "rows": 115005,
+  "distinct_isin": 8204,
+  "on": "2026-11-14"
  },
  "fca": {
   "ok": true,
   "rows": 193065,
   "distinct_isin": 10395,
-  "on": "2026-11-13"
+  "on": "2026-11-14"
  },
  "us": {
   "ok": true,
   "rows": 5787,
   "distinct_isin": 0,
-  "on": "2026-11-13"
+  "on": "2026-11-14"
  },
  "japan": {
   "ok": true,
   "rows": 488,
   "distinct_isin": 0,
-  "on": "2026-11-13"
+  "on": "2026-11-14"
  },
  "hongkong": {
   "ok": true,
   "rows": 453,
   "distinct_isin": 283,
-  "on": "2026-11-13"
+  "on": "2026-11-14"
  },
  "india": {
   "ok": false,
@@ -41,19 +41,19 @@
   "ok": true,
   "rows": 320,
   "distinct_isin": 0,
-  "on": "2026-11-13"
+  "on": "2026-11-14"
  },
  "singapore": {
   "ok": true,
   "rows": 108,
   "distinct_isin": 0,
-  "on": "2026-11-13"
+  "on": "2026-11-14"
  },
  "china_sh": {
   "ok": true,
   "rows": 948,
   "distinct_isin": 0,
-  "on": "2026-11-13"
+  "on": "2026-11-14"
  },
  "china_sz": {
   "ok": false,
@@ -64,23 +64,24 @@
   "ok": true,
   "rows": 1188,
   "distinct_isin": 0,
-  "on": "2026-11-13"
+  "on": "2026-11-14"
  },
  "taiwan": {
   "ok": true,
   "rows": 242,
   "distinct_isin": 0,
-  "on": "2026-11-13"
+  "on": "2026-11-14"
  },
  "australia": {
-  "ok": false,
-  "error": "RuntimeError: Source returned no ETFs",
-  "trace": "Traceback (most recent call last):\n  File \"/home/runner/work/ETF/ETF/scripts/universe/fetch.py\", line 218, in main\n    if not rows: raise RuntimeError(\"Source returned no ETFs\")\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Source returned no ETFs\n"
+  "ok": true,
+  "rows": 481,
+  "distinct_isin": 0,
+  "on": "2026-11-14"
  },
  "gleif": {
   "ok": true,
-  "rows": 6908,
-  "wanted": 6908
+  "rows": 6925,
+  "wanted": 6925
  },
  "ishares_details": {
   "ok": false,
