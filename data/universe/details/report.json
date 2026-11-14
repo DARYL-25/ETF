@@ -1,7 +1,7 @@
 {
  "ssga_us": {
   "ok": true,
-  "result": 160
+  "result": 186
  },
  "amundi": {
   "ok": true,
@@ -40,11 +40,11 @@
  "spdr_eu": {
   "ok": true,
   "result": {
-   "found": 179,
-   "not_in_universe": 1
+   "found": 180,
+   "not_in_universe": 0
   }
  },
- "fees": 1748,
- "fund_size": 1748,
- "on": "2026-11-13"
+ "fees": 1775,
+ "fund_size": 1775,
+ "on": "2026-11-14"
 }
