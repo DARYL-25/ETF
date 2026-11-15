@@ -1,0 +1,335 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { IssuerLogo } from "@/components/issuer-logo";
+import { SaveToWatchlist } from "@/components/my-lists";
+import { CompareToggle } from "@/components/compare-tray";
+import { AsOf, Change, EtfName, Fee } from "@/components/etf-bits";
+import { FeeRuler } from "@/components/fee-ruler";
+import { PriceChart } from "@/components/price-chart";
+import { getBondMetrics, getDailyPoints, getEtf, getExposures, getFeePoints, getListings, getPriceSeries, getSimilarEtfs, getTopHoldings, type EtfRow } from "@/lib/etfs/queries";
+import { getLens } from "@/lib/lens-server";
+import { TAX_CHECKED_ON, taxCountry, taxNotes } from "@/lib/tax/content";
+import { MISSING, exchangeName, assetClassLabel, countryName, distributionLabel, formatDate, formatMoney, formatPct, frequencyLabel, productLabel, replicationLabel, styleLabel, yesNoUnknown } from "@/lib/format";
+
+export const dynamic = "force-dynamic";
+
+type Props = { params: Promise<{ isin: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const row = await getEtf((await params).isin);
+  return { title: row?.name ?? "ETF not found" };
+}
+
+function Facts({ items }: { items: [string, React.ReactNode][] }) {
+  return (
+    <dl className="grid gap-x-8 sm:grid-cols-2">
+      {items.map(([term, value]) => (
+        <div key={term} className="flex justify-between gap-4 border-b border-line py-2">
+          <dt className="text-muted">{term}</dt>
+          <dd className="data text-right">{value ?? MISSING}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function Bars({ rows }: { rows: { label: string; weight_pct: number }[] }) {
+  const top = Math.max(...rows.map((r) => r.weight_pct));
+  return (
+    <ul>
+      {rows.map((r) => (
+        <li key={r.label} className="py-1.5">
+          <div className="flex justify-between gap-3"><span>{r.label}</span><span className="data">{r.weight_pct.toFixed(2)}%</span></div>
+          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-sunken"><div className="h-full rounded-full bg-pine" style={{ width: `${(r.weight_pct / top) * 100}%` }} /></div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
+  return (
+    <section id={id} className="scroll-mt-24">
+      <h2 className="mb-3 text-[1.3rem]">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+const Note = ({ children }: { children: React.ReactNode }) => <p className="max-w-[68ch] text-muted">{children}</p>;
+
+function Stat({ label, value, note }: { label: string; value: React.ReactNode; note?: React.ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[0.85rem] text-muted">{label}</p>
+      <p className="stat-value mt-1">{value}</p>
+      {note ? <p className="mt-1 text-[0.82rem] text-muted">{note}</p> : null}
+    </div>
+  );
+}
+
+async function LensCard({ row }: { row: EtfRow }) {
+  const lens = await getLens();
+  const country = taxCountry(lens?.code);
+  if (!lens) {
+    return (
+      <section className="panel p-4">
+        <h2 className="text-[1.05rem]">Where do you live?</h2>
+        <p className="mt-1.5 text-muted">Choose your country at the top of the page, and this panel shows what matters there for this fund. Tax notes cover Switzerland and France so far.</p>
+      </section>
+    );
+  }
+  if (!country) {
+    return (
+      <section className="panel p-4">
+        <h2 className="text-[1.05rem]">For an investor in {lens.name}</h2>
+        <ul className="mt-2 space-y-1.5">
+          <li>{row.ucits ? "UCITS fund, the kind brokers in Europe can generally offer to private investors." : lens.code === "US" ? "Check that your broker offers this fund." : "Not marked UCITS, so check that your broker can offer it to you."}</li>
+          <li>Fund currency {row.currency ?? "not known"}. Your home currency is {lens.currency}.</li>
+        </ul>
+        <p className="mt-2 text-[0.85rem] text-muted">Tax notes are written for Switzerland and France so far.</p>
+      </section>
+    );
+  }
+  const notes = taxNotes(row, country.code);
+  return (
+    <section className="panel p-4" id="tax">
+      <h2 className="text-[1.05rem]">For an investor in {country.name}</h2>
+      <ul className="mt-2.5 space-y-2.5">
+        {notes.map((n) => (
+          <li key={n.text} className="flex gap-2.5">
+            <span aria-hidden className={`mt-[0.55rem] size-1.5 flex-none rounded-full ${n.kind === "fact" ? "bg-pine" : "bg-saffron"}`} />
+            <span>{n.text}{n.source ? <> <a className="prose-link text-[0.85rem]" href={n.source.url} target="_blank" rel="noreferrer" title={n.source.label}>Source</a></> : null}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-[0.85rem] text-muted">General rules read from official sources on {formatDate(TAX_CHECKED_ON)}. No tax adviser has reviewed them, and they are not advice for your situation. <Link className="prose-link" href={`/tax/${country.slug}`}>All {country.name} notes</Link></p>
+    </section>
+  );
+}
+
+export default async function EtfPage({ params }: Props) {
+  const row = await getEtf((await params).isin);
+  if (!row) notFound();
+  const researched = Boolean(row.fund_key);
+  const key = row.etf_key ?? row.isin!;
+  const isin = row.isin;
+
+  const [listings, exposures, bond, series, similar, feePoints, topHoldings, daily] = await Promise.all([
+    researched ? getListings(isin!) : [], researched ? getExposures(row.fund_key!) : [], researched ? getBondMetrics(row.fund_key!) : [],
+    researched ? getPriceSeries(isin) : null, getSimilarEtfs(row), researched ? getFeePoints() : [], researched ? getTopHoldings(row.fund_key!) : [], getDailyPoints(key),
+  ]);
+  const sectors = exposures.filter((x) => x.dimension === "sector");
+  const countries = exposures.filter((x) => x.dimension === "country");
+  const metric = (name: string) => bond.find((b) => b.metric === name);
+  const retrieved = row.source_retrieved_on;
+  const size = row.fund_aum ?? row.class_aum;
+  const sizeCurrency = row.fund_aum_currency ?? row.class_aum_currency;
+  const sizeIsClass = row.aum_level === "share_class" || (row.fund_aum === null && row.class_aum !== null);
+  const returnCurrency = row.nav_currency ?? row.currency;
+  const exchange = listings.find((l) => l.is_display_ticker)?.exchange_name ?? exchangeName(row.ticker_exchange);
+  const kind = daily.at(-1)?.kind === "close" ? "closing price" : "NAV";
+  const inferred = researched ? "" : ", inferred from its name";
+
+  return (
+    <article className="flex flex-col gap-8">
+      <header>
+        <div className="flex items-center gap-2.5"><IssuerLogo name={row.name} /><p className="text-muted">{row.issuer_name === "Not identified" ? "Issuer not identified" : row.issuer_name}</p></div>
+        <h1 className="mt-2 max-w-[32ch] text-[clamp(1.8rem,3.2vw,2.6rem)]">{row.name}</h1>
+        <p className="data mt-2 text-muted">{[row.ticker ? `${row.ticker}${exchange ? ` on ${exchange}` : ""}` : null, isin ? `ISIN ${isin}` : null].filter(Boolean).join(", ") || MISSING}</p>
+        <div className="mt-4 flex flex-wrap gap-2"><CompareToggle isin={key} wide /><SaveToWatchlist etfKey={key} /><Link className="btn btn-quiet" href={`/assistant?q=${encodeURIComponent(`Find ETFs similar to ${row.name}`)}`}>Find similar</Link></div>
+      </header>
+
+      <section className="panel grid grid-cols-2 gap-x-6 gap-y-5 p-5 lg:grid-cols-4" aria-label="Key figures">
+        <Stat label="Yearly fee" value={<Fee row={row} />} note={row.ter_as_of ?? row.ocf_as_of ? `As of ${formatDate(row.ter_as_of ?? row.ocf_as_of)}` : row.headline_fee_pct === null ? "No fee on file yet" : undefined} />
+        <Stat label={sizeIsClass ? "Share class size" : "Fund size"} value={formatMoney(size, sizeCurrency)} note={row.fund_aum_as_of ?? row.class_aum_as_of ? `As of ${formatDate(row.fund_aum_as_of ?? row.class_aum_as_of)}` : undefined} />
+        <Stat label="NAV return, 1 year" value={<Change value={row.nav_return_1y} />} note={row.nav_return_1y !== null ? `In ${returnCurrency ?? "fund currency"}, to ${formatDate(row.nav_return_as_of)}` : "Not loaded yet"} />
+        <Stat label="Latest NAV" value={row.nav !== null ? <>{row.nav.toFixed(2)} <span className="text-[0.6em] font-medium text-muted">{row.nav_currency}</span></> : MISSING} note={row.nav_as_of ? `On ${formatDate(row.nav_as_of)}` : undefined} />
+      </section>
+
+      {row.verification !== "reviewed" ? (
+        <p className="max-w-[76ch] rounded-xl bg-warn-bg px-3.5 py-2.5 text-warn-ink">
+          {researched
+            ? <>These figures were read automatically from the issuer&apos;s {row.source_kind === "issuer_factsheet" ? "factsheet" : "website"} and have not yet been checked by a person.{" "}</>
+            : row.headline_fee_pct !== null || size !== null
+              ? <>This ETF&apos;s identity comes from an official list, and its figures were read automatically from the issuer. No person has checked them yet.{" "}</>
+              : <>This is a basic record from an official list. It confirms that the ETF exists. Fees and returns are not loaded for it yet.{" "}</>}
+          {row.source_url ? <a className="underline" href={row.source_url} rel="noreferrer" target="_blank">Open the source</a> : null}
+        </p>
+      ) : null}
+
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start">
+        <div className="flex min-w-0 flex-col gap-10">
+          <Section id="chart" title="Price history">
+            {series ? (
+              <>
+                <PriceChart series={[{ label: `${series.ticker} (${series.currency})`, currency: series.currency, points: series.points }]} />
+                <p className="mt-2 max-w-[72ch] text-[0.85rem] text-muted">Market price of {series.ticker} on {series.exchange}, one point per month, last point {formatDate(series.points.at(-1)!.date)}. Not NAV, and delayed. Source: {series.source}.</p>
+              </>
+            ) : daily.length >= 5 ? (
+              <>
+                <PriceChart series={[{ label: `${row.ticker ?? "NAV"} (${daily.at(-1)!.currency ?? ""})`, currency: daily.at(-1)!.currency, points: daily.map((d) => ({ date: d.date, close: d.value })) }]} />
+                <p className="mt-2 max-w-[72ch] text-[0.85rem] text-muted">Daily {kind} from {daily.at(-1)!.source}, collected by us since {formatDate(daily[0].date)}. Last point {formatDate(daily.at(-1)!.date)}. End of day, never real time.</p>
+              </>
+            ) : daily.length ? (
+              <Note>We started collecting this fund&apos;s daily {kind} on {formatDate(daily[0].date)}, and hold {daily.length} {daily.length === 1 ? "point" : "points"} so far. A chart appears once there are five.</Note>
+            ) : (
+              <Note>We have no price history for this ETF yet. Prices are loaded only from a source we can name, so this space stays empty until then.</Note>
+            )}
+          </Section>
+
+          {row.nav_return_1y !== null || row.market_return_1y !== null ? (
+            <Section id="performance" title="Performance">
+              {row.nav_return_1y !== null ? (
+                <>
+                  <Facts items={[
+                    ["1 year", <Change key="1" value={row.nav_return_1y} />],
+                    ["3 years, per year", <Change key="3" value={row.nav_return_3y} />],
+                    ["5 years, per year", <Change key="5" value={row.nav_return_5y} />],
+                    ["Since launch, per year", <Change key="s" value={row.nav_return_si} />],
+                    ...(row.volatility_3y ? [["Volatility, 3 years", formatPct(row.volatility_3y)] as [string, string]] : []),
+                    ...(row.tracking_error_3y ? [["Tracking error, 3 years", formatPct(row.tracking_error_3y)] as [string, string]] : []),
+                  ]} />
+                  <p className="mt-2 max-w-[72ch] text-[0.85rem] text-muted">
+                    Official NAV returns in {returnCurrency ?? "the fund's currency"}, income reinvested, to {formatDate(row.nav_return_as_of)}. Funds report in different currencies and to different dates, so compare like with like.{" "}
+                    {row.nav_return_source_url ? <a className="prose-link" href={row.nav_return_source_url} target="_blank" rel="noreferrer">Issuer source</a> : null} Past performance does not predict future returns.
+                  </p>
+                </>
+              ) : null}
+              {row.market_return_1y !== null ? (
+                <div className="mt-5">
+                  <Facts items={[
+                    ["Market price, 1 year", <Change key="1" value={row.market_return_1y} />],
+                    ["Market price, 3 years per year", <Change key="3" value={row.market_return_3y} />],
+                    ["Market price, 5 years per year", <Change key="5" value={row.market_return_5y} />],
+                  ]} />
+                  <p className="mt-2 max-w-[72ch] text-[0.85rem] text-muted">Change in market price between monthly closes, to {formatDate(row.market_return_as_of)}. Not an official NAV total return.</p>
+                </div>
+              ) : null}
+            </Section>
+          ) : null}
+
+          <Section id="overview" title="Fund facts">
+            <Facts items={[
+              [`Index${inferred}`, row.index_slug ? <Link className="prose-link" href={`/indices/${row.index_slug}`}>{row.index_name}</Link> : MISSING],
+              ["Benchmark as published", row.benchmark_as_published ?? MISSING],
+              [`Asset class${inferred}`, assetClassLabel(row.asset_class)],
+              ["Replication", replicationLabel(row.replication)],
+              ["Income", distributionLabel(row.distribution_policy)],
+              ["Payment frequency", row.distribution_policy === "distributing" ? frequencyLabel(row.distribution_frequency) : row.distribution_policy ? "Not applicable" : MISSING],
+              [researched ? "Domicile" : "Domicile, or issuer's country", countryName(row.domicile)],
+              ["UCITS", researched ? yesNoUnknown(row.ucits) : row.ucits ? "Yes, by its name" : MISSING],
+              ["Fund launched", formatDate(row.fund_launch_date)],
+              ["Share class currency", row.currency ?? MISSING],
+              ["Currency hedged", yesNoUnknown(row.hedged)],
+              ...(researched ? [["Product type", productLabel(row.product_type)] as [string, string], ["Approach", styleLabel(row.management_style)] as [string, string], ["Share class launched", formatDate(row.share_class_launch_date)] as [string, string]] : []),
+              ...(!researched ? [["Trading venues on official lists", row.venues ? String(row.venues) : MISSING] as [string, string], ["Labels, inferred from its name", row.category_slugs.length ? row.category_slugs.join(", ").replaceAll("-", " ") : MISSING] as [string, string]] : []),
+            ]} />
+            <p className="mt-2 max-w-[68ch] text-[0.85rem] text-muted">Share class currency is the fund&apos;s accounting currency for this class. It is not your currency risk, which comes from what the fund holds.</p>
+          </Section>
+
+          {researched ? (
+            <Section id="fees" title="Fees">
+              <Facts items={[
+                ["TER", row.ter_pct !== null ? <span key="t">{formatPct(row.ter_pct)}</span> : "Not published on the source"],
+                ["OCF", row.ocf_pct !== null ? <span key="o">{formatPct(row.ocf_pct)}</span> : "Not published on the source"],
+              ]} />
+              <p className="mb-5 mt-2"><AsOf date={row.ter_as_of ?? row.ocf_as_of} retrieved={retrieved} /></p>
+              {row.headline_fee_pct !== null ? <FeeRuler points={feePoints} highlight={isin!} /> : null}
+            </Section>
+          ) : null}
+
+          {researched && (row.holdings_count !== null || topHoldings.length || bond.length) ? (
+            <Section id="holdings" title="Holdings">
+              <Facts items={[
+                ["Number of holdings", row.holdings_count?.toLocaleString("en-GB") ?? MISSING],
+                ...(metric("effective_duration") ? [["Effective duration", `${metric("effective_duration")!.value.toFixed(2)} years`] as [string, string]] : []),
+                ...(metric("weighted_avg_maturity") ? [["Weighted average maturity", `${metric("weighted_avg_maturity")!.value.toFixed(2)} years`] as [string, string]] : []),
+                ...(metric("yield_to_maturity") ? [["Yield to maturity", formatPct(metric("yield_to_maturity")!.value)] as [string, string]] : []),
+                ...(row.trailing_yield_pct !== null ? [["Trailing 12-month yield", formatPct(row.trailing_yield_pct)] as [string, string]] : []),
+              ]} />
+              <p className="mt-2"><AsOf date={row.holdings_as_of} retrieved={retrieved} /></p>
+              {topHoldings.length ? (
+                <div className="mt-4 max-w-xl">
+                  <h3 className="mb-1 text-[1.05rem]">Largest holdings</h3>
+                  <Bars rows={topHoldings.map((h) => ({ label: h.name, weight_pct: h.weight_pct }))} />
+                  <p className="mt-1"><AsOf date={topHoldings[0].as_of} /></p>
+                </div>
+              ) : null}
+            </Section>
+          ) : null}
+
+          {sectors.length || countries.length ? (
+            <div className="grid gap-10 md:grid-cols-2">
+              {sectors.length ? (
+                <Section id="sectors" title="Sectors">
+                  <Bars rows={sectors} />
+                  <p className="mt-1"><AsOf date={sectors[0].as_of} retrieved={sectors[0].observed_on} /></p>
+                  <p className="text-[0.85rem] text-muted">Largest {sectors.length} only.</p>
+                </Section>
+              ) : null}
+              {countries.length ? (
+                <Section id="countries" title="Countries">
+                  <Bars rows={countries} />
+                  <p className="mt-1"><AsOf date={countries[0].as_of} retrieved={countries[0].observed_on} /></p>
+                  <p className="text-[0.85rem] text-muted">Largest {countries.length} only.</p>
+                </Section>
+              ) : null}
+            </div>
+          ) : null}
+
+          {listings.length ? (
+            <Section id="listings" title="Where it trades">
+              <p className="mb-2 max-w-[68ch] text-muted">These are listings of one share class, not separate ETFs. The trading currency is how you pay for it on that exchange.</p>
+              <div className="overflow-x-auto">
+                <table className="table-data">
+                  <thead><tr><th>Exchange</th><th>Ticker</th><th>Trading currency</th></tr></thead>
+                  <tbody>
+                    {listings.map((l) => (
+                      <tr key={`${l.exchange_mic}-${l.ticker}`}><td>{l.exchange_name}</td><td className="data">{l.ticker}</td><td>{l.trading_currency ?? MISSING}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Section>
+          ) : null}
+
+          {similar.length ? (
+            <Section id="similar" title="Similar ETFs">
+              <div className="overflow-x-auto">
+                <table className="table-data">
+                  <thead><tr><th>ETF</th><th>Index</th><th className="num">Yearly fee</th><th className="num">Size</th></tr></thead>
+                  <tbody>
+                    {similar.map((s) => (
+                      <tr key={s.etf_key ?? s.isin}>
+                        <td className="min-w-[14rem]"><EtfName row={s} /></td>
+                        <td className="min-w-[9rem]">{s.index_name ?? MISSING}</td>
+                        <td className="num"><Fee row={s} /></td>
+                        <td className="num whitespace-nowrap">{formatMoney(s.fund_aum ?? s.class_aum, s.fund_aum_currency ?? s.class_aum_currency)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Section>
+          ) : null}
+        </div>
+
+        <aside className="flex flex-col gap-3 lg:sticky lg:top-20">
+          <LensCard row={row} />
+          <section className="panel p-4" id="documents">
+            <h2 className="text-[1.05rem]">Where these figures come from</h2>
+            <dl className="mt-2 space-y-1.5">
+              <div className="flex justify-between gap-3"><dt className="text-muted">Source</dt><dd className="text-right">{row.source_url ? <a className="prose-link" href={row.source_url} rel="noreferrer" target="_blank">{researched ? (row.source_kind === "issuer_factsheet" ? "Issuer factsheet" : "Issuer website") : row.headline_fee_pct !== null ? "Issuer or regulator file" : "Official list"}</a> : MISSING}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-muted">Read on</dt><dd className="data">{formatDate(retrieved)}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-muted">Checked by a person</dt><dd>{row.verification === "reviewed" ? "Yes" : "Not yet"}</dd></div>
+            </dl>
+            <p className="mt-2"><AsOf date={row.fund_aum_as_of ?? row.class_aum_as_of ?? row.ter_as_of} retrieved={retrieved} /></p>
+            <p className="mt-2 text-[0.85rem] text-muted">Read the fund&apos;s KID and prospectus from the issuer before investing. <Link href="/data" className="prose-link">How we update data</Link></p>
+          </section>
+        </aside>
+      </div>
+    </article>
+  );
+}

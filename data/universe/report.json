@@ -1,0 +1,90 @@
+{
+ "esma": {
+  "ok": true,
+  "rows": 115005,
+  "distinct_isin": 8204,
+  "on": "2026-11-14"
+ },
+ "fca": {
+  "ok": true,
+  "rows": 193065,
+  "distinct_isin": 10395,
+  "on": "2026-11-14"
+ },
+ "us": {
+  "ok": true,
+  "rows": 5787,
+  "distinct_isin": 0,
+  "on": "2026-11-14"
+ },
+ "japan": {
+  "ok": true,
+  "rows": 488,
+  "distinct_isin": 0,
+  "on": "2026-11-14"
+ },
+ "hongkong": {
+  "ok": true,
+  "rows": 453,
+  "distinct_isin": 283,
+  "on": "2026-11-14"
+ },
+ "india": {
+  "ok": false,
+  "rows": 359,
+  "distinct_isin": 359,
+  "on": "2026-11-05",
+  "error": "TimeoutError: The read operation timed out",
+  "trace": "hon3.12/socket.py\", line 720, in readinto\n    return self._sock.recv_into(b)\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/ssl.py\", line 1264, in recv_into\n    return self.read(nbytes, buffer)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/ssl.py\", line 1116, in read\n    return self._sslobj.read(len, buffer)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTimeoutError: The read operation timed out\n"
+ },
+ "canada": {
+  "ok": true,
+  "rows": 320,
+  "distinct_isin": 0,
+  "on": "2026-11-14"
+ },
+ "singapore": {
+  "ok": true,
+  "rows": 108,
+  "distinct_isin": 0,
+  "on": "2026-11-14"
+ },
+ "china_sh": {
+  "ok": true,
+  "rows": 948,
+  "distinct_isin": 0,
+  "on": "2026-11-14"
+ },
+ "china_sz": {
+  "ok": false,
+  "error": "URLError: <urlopen error [Errno 104] Connection reset by peer>",
+  "trace": " 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/urllib/request.py\", line 1405, in https_open\n    return self.do_open(http.client.HTTPSConnection, req,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/urllib/request.py\", line 1360, in do_open\n    raise URLError(err)\nurllib.error.URLError: <urlopen error [Errno 104] Connection reset by peer>\n"
+ },
+ "korea": {
+  "ok": true,
+  "rows": 1188,
+  "distinct_isin": 0,
+  "on": "2026-11-14"
+ },
+ "taiwan": {
+  "ok": true,
+  "rows": 242,
+  "distinct_isin": 0,
+  "on": "2026-11-14"
+ },
+ "australia": {
+  "ok": true,
+  "rows": 481,
+  "distinct_isin": 0,
+  "on": "2026-11-14"
+ },
+ "gleif": {
+  "ok": true,
+  "rows": 6925,
+  "wanted": 6925
+ },
+ "ishares_details": {
+  "ok": false,
+  "error": "HTTPError: HTTP Error 404: Not Found"
+ }
+}

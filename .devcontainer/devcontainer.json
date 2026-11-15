@@ -1,0 +1,8 @@
+{
+  "name": "ETF Intelligence",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "postCreateCommand": "npm ci && npm run build",
+  "postAttachCommand": { "app": "npm start" },
+  "forwardPorts": [3000],
+  "portsAttributes": { "3000": { "label": "ETF Intelligence", "onAutoForward": "openBrowser" } }
+}

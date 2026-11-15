@@ -1,0 +1,32 @@
+/** Maps a fund to its brand. A logo file is used if the logo job found one, otherwise initials. */
+export const BRANDS: { slug: string; label: string; match: RegExp; domain: string }[] = [
+  { slug: "ishares", label: "iShares", match: /\bishares|\bishs\b/i, domain: "ishares.com" },
+  { slug: "vanguard", label: "Vanguard", match: /vanguard/i, domain: "vanguard.com" },
+  { slug: "amundi", label: "Amundi", match: /amundi|lyxor/i, domain: "amundi.com" },
+  { slug: "xtrackers", label: "Xtrackers", match: /xtrackers|\bdb x-/i, domain: "etf.dws.com" },
+  { slug: "invesco", label: "Invesco", match: /invesco/i, domain: "invesco.com" },
+  { slug: "ubs", label: "UBS", match: /\bubs\b/i, domain: "ubs.com" },
+  { slug: "spdr", label: "State Street", match: /\bspdr\b|state street/i, domain: "ssga.com" },
+  { slug: "hsbc", label: "HSBC", match: /\bhsbc\b/i, domain: "hsbc.com" },
+  { slug: "wisdomtree", label: "WisdomTree", match: /wisdomtree/i, domain: "wisdomtree.com" },
+  { slug: "vaneck", label: "VanEck", match: /vaneck/i, domain: "vaneck.com" },
+  { slug: "jpmorgan", label: "J.P. Morgan", match: /jp ?morgan|j\.p\. ?morgan/i, domain: "jpmorgan.com" },
+  { slug: "bnp", label: "BNP Paribas", match: /\bbnp\b/i, domain: "bnpparibas.com" },
+  { slug: "fidelity", label: "Fidelity", match: /fidelity/i, domain: "fidelity.com" },
+  { slug: "franklin", label: "Franklin Templeton", match: /franklin/i, domain: "franklintempleton.com" },
+  { slug: "first-trust", label: "First Trust", match: /first trust|\bft\b/i, domain: "ftportfolios.com" },
+  { slug: "proshares", label: "ProShares", match: /proshares/i, domain: "proshares.com" },
+  { slug: "direxion", label: "Direxion", match: /direxion/i, domain: "direxion.com" },
+  { slug: "schwab", label: "Schwab", match: /schwab/i, domain: "schwab.com" },
+  { slug: "global-x", label: "Global X", match: /global ?x\b/i, domain: "globalxetfs.com" },
+  { slug: "ark", label: "ARK", match: /^ark\b/i, domain: "ark-funds.com" },
+  { slug: "dimensional", label: "Dimensional", match: /dimensional/i, domain: "dimensional.com" },
+  { slug: "pimco", label: "PIMCO", match: /pimco/i, domain: "pimco.com" },
+  { slug: "deka", label: "Deka", match: /\bdeka\b/i, domain: "deka.de" },
+  { slug: "ossiam", label: "Ossiam", match: /ossiam/i, domain: "ossiam.com" },
+  { slug: "legal-general", label: "L&G", match: /l&g|legal & general/i, domain: "landg.com" },
+  { slug: "kodex", label: "KODEX", match: /kodex/i, domain: "samsungfund.com" },
+  { slug: "tiger", label: "TIGER", match: /\btiger\b/i, domain: "miraeasset.com" },
+];
+
+export const brandOf = (name: string) => BRANDS.find((b) => b.match.test(name));

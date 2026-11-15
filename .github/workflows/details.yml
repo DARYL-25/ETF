@@ -1,0 +1,28 @@
+# Monthly: fees, fund size and returns from issuer files and factsheets. Factsheets are monthly.
+name: Monthly ETF details
+on:
+  schedule:
+    - cron: "43 5 8 * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: data
+jobs:
+  details:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install pdfplumber openpyxl
+      - run: python3 scripts/universe/details.py
+      - name: Commit results
+        run: |
+          git config user.name "etf-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || git commit -m "$MESSAGE"
+          git pull --rebase -X theirs origin "$GITHUB_REF_NAME"
+          git push
+        env:
+          MESSAGE: Update ETF details

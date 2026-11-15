@@ -1,0 +1,29 @@
+# Quarterly: US fees from SEC prospectus data sets, which the SEC publishes each quarter.
+name: Quarterly SEC fees
+on:
+  schedule:
+    - cron: "11 6 15 2,5,8,11 *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: data
+jobs:
+  sec:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/universe/sec.py
+        env:
+          SEC_CONTACT_EMAIL: ${{ secrets.SEC_CONTACT_EMAIL }}
+      - name: Commit results
+        run: |
+          git config user.name "etf-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || git commit -m "$MESSAGE"
+          git pull --rebase -X theirs origin "$GITHUB_REF_NAME"
+          git push
+        env:
+          MESSAGE: Update SEC fees
