@@ -112,7 +112,7 @@
    "dcml"
   ]
  },
- "after_2026q3_rr1.zip": 0,
+ "after_2026q3_rr1.zip": 1260,
  "probe_2026q2_rr1.zip": {
   "files": [
    "sub.tsv",
@@ -207,7 +207,7 @@
    "dcml"
   ]
  },
- "after_2026q2_rr1.zip": 0,
+ "after_2026q2_rr1.zip": 2145,
  "probe_2026q1_rr1.zip": {
   "files": [
    "sub.tsv",
@@ -302,7 +302,7 @@
    "dcml"
   ]
  },
- "after_2026q1_rr1.zip": 0,
+ "after_2026q1_rr1.zip": 3441,
  "probe_026-10_rr1.zip": {
   "files": [
    "sub.tsv",
@@ -397,7 +397,7 @@
    "dcml"
   ]
  },
- "after_026-10_rr1.zip": 0,
+ "after_026-10_rr1.zip": 3799,
  "probe_2025q4_rr1.zip": {
   "files": [
    "sub.tsv",
@@ -492,7 +492,7 @@
    "dcml"
   ]
  },
- "after_2025q4_rr1.zip": 0,
+ "after_2025q4_rr1.zip": 4464,
  "probe_2025q3_rr1.zip": {
   "files": [
    "sub.tsv",
@@ -587,7 +587,7 @@
    "dcml"
   ]
  },
- "after_2025q3_rr1.zip": 0,
+ "after_2025q3_rr1.zip": 4495,
  "probe_2025q2_rr1.zip": {
   "files": [
    "sub.tsv",
@@ -682,7 +682,7 @@
    "dcml"
   ]
  },
- "after_2025q2_rr1.zip": 0,
+ "after_2025q2_rr1.zip": 4496,
  "probe_2025q1_rr1.zip": {
   "files": [
    "sub.tsv",
@@ -777,7 +777,7 @@
    "dcml"
   ]
  },
- "after_2025q1_rr1.zip": 0,
- "us_etfs_with_fee": 0,
+ "after_2025q1_rr1.zip": 4498,
+ "us_etfs_with_fee": 4498,
  "us_etfs_total": 5617
 }
