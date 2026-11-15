@@ -4,7 +4,9 @@ import { notFound } from "next/navigation";
 import { CompareToggle } from "@/components/compare-tray";
 import { EtfName, Fee, PageTitle } from "@/components/etf-bits";
 import { getIndex } from "@/lib/etfs/queries";
-import { assetClassLabel, countryName, distributionLabel, formatMoney, replicationLabel } from "@/lib/format";
+import { returnGaps } from "@/lib/etfs/cost";
+import { Change } from "@/components/etf-bits";
+import { assetClassLabel, countryName, distributionLabel, formatDate, formatMoney, replicationLabel } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +22,7 @@ export default async function IndexPage({ params }: Props) {
   if (!data) notFound();
   const { index, etfs } = data;
   const compareAll = etfs.slice(0, 5).map((e) => e.etf_key).join(",");
+  const gaps = returnGaps(etfs);
 
   return (
     <div>
@@ -30,14 +33,14 @@ export default async function IndexPage({ params }: Props) {
         <div><dt className="inline text-muted">Covers: </dt><dd className="inline">{index.geography}</dd></div>
       </dl>
       <p className="mb-3 max-w-[68ch] text-muted">For most funds, the link to this index is inferred from the fund&apos;s name. Check the factsheet before relying on it.</p>
-      <h2 className="mb-3 text-[1.5rem]">{etfs.length === 0 ? "No ETFs loaded yet" : `${etfs.length} ${etfs.length === 1 ? "ETF follows" : "ETFs follow"} this index`}</h2>
+      <h2 className="mb-3 text-[1.3rem]">{etfs.length === 0 ? "No ETFs loaded yet" : `${etfs.length} ${etfs.length === 1 ? "ETF follows" : "ETFs follow"} this index`}</h2>
       {etfs.length === 0 ? (
         <p className="max-w-[68ch] text-muted">We have not loaded an ETF on this index yet. That does not mean none exists. <Link className="prose-link" href="/screener">Search the screener</Link> for other funds.</p>
       ) : (
         <>
           <div className="overflow-x-auto">
             <table className="table-data">
-              <thead><tr><th aria-label="Compare" /><th>ETF</th><th>Domicile</th><th>Replication</th><th>Income</th><th className="num">Yearly fee</th><th className="num">Fund size</th></tr></thead>
+              <thead><tr><th aria-label="Compare" /><th>ETF</th><th>Domicile</th><th>Replication</th><th>Income</th><th className="num">Yearly fee</th><th className="num">Size</th></tr></thead>
               <tbody>
                 {etfs.map((row) => (
                   <tr key={row.etf_key}>
@@ -47,12 +50,36 @@ export default async function IndexPage({ params }: Props) {
                     <td className="whitespace-nowrap">{replicationLabel(row.replication)}</td>
                     <td>{distributionLabel(row.distribution_policy)}</td>
                     <td className="num"><Fee row={row} /></td>
-                    <td className="num whitespace-nowrap">{formatMoney(row.fund_aum, row.fund_aum_currency)}</td>
+                    <td className="num whitespace-nowrap">{formatMoney(row.fund_aum ?? row.class_aum, row.fund_aum_currency ?? row.class_aum_currency)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          {gaps ? (
+            <section className="mt-10">
+              <h2 className="text-[1.3rem]">What each fund actually delivered</h2>
+              <p className="mb-3 mt-1.5 max-w-[74ch] text-muted">These {gaps.rows.length} funds follow the same index and report official NAV returns in {gaps.currency} to {formatDate(gaps.asOf)}, so their returns can be compared directly. The gap to the best fund is the real difference in cost: fees, tax on dividends inside the fund, and how closely it tracks. A fund with a higher fee can still come out ahead.</p>
+              <div className="overflow-x-auto">
+                <table className="table-data">
+                  <thead><tr><th>ETF</th><th className="num">Yearly fee</th><th className="num">1 year</th><th className="num">Behind the best</th><th className="num">3 years, per year</th><th className="num">Behind the best</th></tr></thead>
+                  <tbody>
+                    {gaps.rows.map(({ row, r1, r3, behind1, behind3 }) => (
+                      <tr key={row.etf_key}>
+                        <td className="min-w-[16rem]"><EtfName row={row} /></td>
+                        <td className="num"><Fee row={row} /></td>
+                        <td className="num"><Change value={r1} /></td>
+                        <td className="num">{behind1 < 0.005 ? <span className="font-semibold text-pine">Best</span> : `${behind1.toFixed(2)} pts`}</td>
+                        <td className="num"><Change value={r3} /></td>
+                        <td className="num">{behind3 === null ? "—" : behind3 < 0.005 ? <span className="font-semibold text-pine">Best</span> : `${behind3.toFixed(2)} pts`}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-2 max-w-[74ch] text-[0.85rem] text-muted">Currency-hedged share classes and funds reporting in another currency or to another date are left out, because their returns are not comparable. Past differences can change. Past performance does not predict future returns.</p>
+            </section>
+          ) : null}
           {etfs.length >= 2 ? (
             <p className="mt-4"><Link className="btn btn-primary" href={`/compare?isins=${compareAll}`}>Compare {etfs.length > 5 ? "the first 5" : `these ${etfs.length}`} side by side</Link></p>
           ) : null}

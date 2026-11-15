@@ -24,7 +24,7 @@ def get(url, timeout=60, referer=None):
         with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=timeout) as r:
             return r.read()
     except urllib.error.HTTPError as e:
-        if PROBE and "error_body" not in probe: probe["error_body"] = {"url": url, "code": e.code, "headers": dict(e.headers.items()), "body": e.read()[:600].decode("utf-8", "replace")}
+        if PROBE and "error_body" not in probe: probe["error_body"] = {"url": url, "code": e.code, "headers": dict(e.headers.items()), "body": (lambda b: (gzip.decompress(b) if b[:2] == b"\x1f\x8b" else b)[:600].decode("utf-8", "replace"))(e.read())}
         raise
 
 def num(v):

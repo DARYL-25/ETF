@@ -9,6 +9,7 @@ import { FeeRuler } from "@/components/fee-ruler";
 import { PriceChart } from "@/components/price-chart";
 import { getBondMetrics, getDailyPoints, getEtf, getExposures, getFeePoints, getListings, getPriceSeries, getSimilarEtfs, getTopHoldings, type EtfRow } from "@/lib/etfs/queries";
 import { getLens } from "@/lib/lens-server";
+import { CostCalculator } from "@/components/cost-calculator";
 import { getBreakdown, getHoldingsSummary, getTopHoldingsFull } from "@/lib/etfs/holdings";
 import { TAX_CHECKED_ON, taxCountry, taxNotes } from "@/lib/tax/content";
 import { MISSING, exchangeName, assetClassLabel, countryName, distributionLabel, formatDate, formatMoney, formatPct, frequencyLabel, productLabel, replicationLabel, styleLabel, yesNoUnknown } from "@/lib/format";
@@ -134,6 +135,9 @@ export default async function EtfPage({ params }: Props) {
   const exchange = listings.find((l) => l.is_display_ticker)?.exchange_name ?? exchangeName(row.ticker_exchange);
   const kind = daily.at(-1)?.kind === "close" ? "closing price" : "NAV";
   const inferred = researched ? "" : ", inferred from its name";
+  const sameIndexFees = similar.filter((x) => x.index_slug && x.index_slug === row.index_slug && x.headline_fee_pct !== null).map((x) => x.headline_fee_pct!);
+  const cheapest = sameIndexFees.length ? Math.min(...sameIndexFees) : null;
+  const lensCurrency = (await getLens())?.currency ?? "EUR";
 
   return (
     <article className="flex flex-col gap-8">
@@ -232,14 +236,25 @@ export default async function EtfPage({ params }: Props) {
             <p className="mt-2 max-w-[68ch] text-[0.85rem] text-muted">Share class currency is the fund&apos;s accounting currency for this class. It is not your currency risk, which comes from what the fund holds.</p>
           </Section>
 
-          {researched ? (
+          {row.headline_fee_pct !== null ? (
             <Section id="fees" title="Fees">
-              <Facts items={[
-                ["TER", row.ter_pct !== null ? <span key="t">{formatPct(row.ter_pct)}</span> : "Not published on the source"],
-                ["OCF", row.ocf_pct !== null ? <span key="o">{formatPct(row.ocf_pct)}</span> : "Not published on the source"],
-              ]} />
-              <p className="mb-5 mt-2"><AsOf date={row.ter_as_of ?? row.ocf_as_of} retrieved={retrieved} /></p>
-              {row.headline_fee_pct !== null ? <FeeRuler points={feePoints} highlight={isin!} /> : null}
+              {researched ? (
+                <>
+                  <Facts items={[
+                    ["TER", row.ter_pct !== null ? <span key="t">{formatPct(row.ter_pct)}</span> : "Not published on the source"],
+                    ["OCF", row.ocf_pct !== null ? <span key="o">{formatPct(row.ocf_pct)}</span> : "Not published on the source"],
+                  ]} />
+                  <p className="mb-5 mt-2"><AsOf date={row.ter_as_of ?? row.ocf_as_of} retrieved={retrieved} /></p>
+                </>
+              ) : null}
+              <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
+                <CostCalculator feePct={row.headline_fee_pct} cheapestPct={cheapest} currency={lensCurrency} />
+                {researched ? <div className="min-w-0"><FeeRuler points={feePoints} highlight={isin!} /></div> : row.index_slug ? <p className="text-muted">{cheapest !== null && cheapest < row.headline_fee_pct ? `Funds on the same index charge from ${formatPct(cheapest)} a year.` : "No fund on the same index charges less, among those with a fee on file."} <Link className="prose-link" href={`/indices/${row.index_slug}`}>See how they actually compared</Link></p> : null}
+              </div>
+            </Section>
+          ) : researched ? (
+            <Section id="fees" title="Fees">
+              <Facts items={[["TER", "Not published on the source"], ["OCF", "Not published on the source"]]} />
             </Section>
           ) : null}
 
