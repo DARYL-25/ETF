@@ -168,7 +168,7 @@ def from_sheet(url, source, label, cols, aum_scale=1, aum_currency=None):
         if fee != "" and fee > 3: fee = ""
         income = str(cell(r, "income") or "").lower()
         policy = "accumulating" if income.startswith(("acc", "capital", "reinvest")) else "distributing" if income.startswith(("dis", "inc")) else ""
-        text = lambda k: str(cell(r, k) or "").strip()
+        text = lambda k: re.sub(r"<[^>]+>", "", str(cell(r, k) or "")).strip()
         home = {"ireland": "IE", "luxembourg": "LU", "germany": "DE", "france": "FR", "switzerland": "CH", "united kingdom": "GB"}.get(text("domicile").lower(), "")
         method = text("replication").lower()
         how = "synthetic_swap" if "synth" in method or "swap" in method else "physical_sampling" if re.search("sampl|optimi", method) else "physical_full" if re.search("replicat|physical|full", method) else ""

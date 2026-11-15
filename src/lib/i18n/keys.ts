@@ -17,6 +17,7 @@ export function collectKeys(root: string): string[] {
       else if (/\.tsx?$/.test(name) && !path.includes("i18n")) {
         const text = readFileSync(path, "utf8");
         for (const m of text.matchAll(/\bt\(\s*"((?:[^"\\]|\\.)*)"/g)) add(JSON.parse(`"${m[1]}"`));
+        for (const m of text.matchAll(/\b(?:hint=|const DEVICE_NOTE = )"((?:[^"\\]|\\.)*)"/g)) add(JSON.parse(`"${m[1]}"`));
         // Label tables that are translated where they are rendered.
         if (/components\/(shell|palette|assistant)\.tsx$|app\/(pricing|compare|data)\/page\.tsx$|etfs\/screener-params\.ts$|lib\/format\.ts$|components\/etf-bits\.tsx$/.test(path)) {
           for (const m of text.matchAll(/(?:label|title): "((?:[^"\\]|\\.)*)"/g)) add(JSON.parse(`"${m[1]}"`));
@@ -30,9 +31,14 @@ export function collectKeys(root: string): string[] {
   walk(join(root, "src"));
   // Tax notes shown on ETF pages.
   for (const m of readFileSync(join(root, "src/lib/tax/content.ts"), "utf8").matchAll(/\btext: "((?:[^"\\]|\\.)*)"/g)) add(JSON.parse(`"${m[1]}"`));
-  for (const d of DATASETS) { add(d.name); add(d.what); add(d.cadence); add(d.schedule); for (const s of d.sources) { add(s.covers); add(s.note); } }
+  // Reference data: category labels, index descriptions and coverage.
+  const reference = JSON.parse(readFileSync(join(root, "data/seed/reference.json"), "utf8")) as { categories: { label: string }[]; indices: { geography?: string; description?: string }[] };
+  for (const c of reference.categories) add(c.label);
+  for (const i of reference.indices) { add(i.geography); add(i.description); }
+  for (const text of ["Not updating on the last run: {markets}", "Owner files read {date}", "{n} ETFs, latest price dated {date}", "Rates of {date}", "Not yet reviewed by a tax adviser"]) add(text);
+  for (const d of DATASETS) { add(d.name); for (const src of d.sources) if (!/[a-z]\.[a-z]|^[A-Z]{2,}\b|iShares|State Street|Amundi|Naver|OpenFIGI|Nasdaq|Xtrackers|Taiwan|European Central/.test(src.name)) add(src.name); add(d.what); add(d.cadence); add(d.schedule); for (const s of d.sources) { add(s.covers); add(s.note); } }
   for (const c of TAX_COUNTRIES) {
-    add(c.summary);
+    add(c.summary); add(c.authority);
     for (const r of c.rules) { add(r.title); add(r.body); add(r.why); }
     for (const w of c.wrappers) { add(w.name); add(w.body); }
     for (const x of c.compare) { add(x.fact); add(x.matters); }

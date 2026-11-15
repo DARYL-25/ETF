@@ -194,3 +194,37 @@ test("the AI search answers a Swiss Nasdaq-100 request", async ({ page }) => {
   await expect(page.getByText(/Tax is not scored in this ranking/)).toBeVisible();
   await expect(page.getByRole("link", { name: "Read the tax notes" })).toHaveAttribute("href", "/tax/switzerland");
 });
+
+test("the site switches to French and back, and French questions work", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Passer en français" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Décrivez l'ETF qu'il vous faut");
+  await expect(page.locator("html")).toHaveAttribute("lang", "fr");
+  await page.getByRole("button", { name: "ETF Nasdaq-100 pour un investisseur suisse" }).click();
+  await expect(page.getByRole("heading", { name: "Meilleures correspondances" })).toBeVisible();
+  await expect(page.getByText(/La fiscalité n'entre pas dans ce classement/)).toBeVisible();
+  await expect(page.getByText(/Frais 0,\d\d %/).first()).toBeVisible();
+  await page.goto("/tax/france");
+  await expect(page.getByRole("heading", { name: /Le prélèvement forfaitaire sur les plus-values est de 31,4 %/ })).toBeVisible();
+  await page.getByRole("button", { name: "Switch to English" }).click();
+  await expect(page.getByRole("heading", { name: /The flat tax on gains is 31\.4%/ })).toBeVisible();
+});
+
+test("overlap and holders come from issuers' holdings files", async ({ page }) => {
+  await page.goto("/compare?isins=ARCX-SPY,ARCX-XLK");
+  await expect(page.getByRole("heading", { name: "Overlap" })).toBeVisible();
+  await expect(page.getByText(/shared holdings/).first()).toBeVisible();
+  await page.goto("/holdings?q=nvidia");
+  await page.getByRole("link", { name: /NVIDIA/i }).first().click();
+  await expect(page.getByRole("columnheader", { name: "Weight in the fund" })).toBeVisible();
+  expect(await page.getByRole("row").count()).toBeGreaterThan(10);
+});
+
+test("an ETF page turns its fee into money and shows what the fund holds", async ({ page }) => {
+  await page.goto("/etfs/ARCX-SPY");
+  await expect(page.getByRole("heading", { name: "What this fee costs in money" })).toBeVisible();
+  await page.getByLabel(/^Years/).fill("20");
+  await expect(page.getByText(/Over 20 years, a 0\.\d\d% fee takes about/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What it holds" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sectors" })).toBeVisible();
+});

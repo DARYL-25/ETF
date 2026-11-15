@@ -21,7 +21,17 @@ type Props = { params: Promise<{ isin: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const row = await getEtf((await params).isin);
-  return { title: row?.name ?? "ETF not found" };
+  if (!row) return { title: "ETF not found" };
+  const facts = [
+    row.ticker ? `Ticker ${row.ticker}` : null, row.isin ? `ISIN ${row.isin}` : null,
+    row.headline_fee_pct !== null ? `yearly fee ${row.headline_fee_pct.toFixed(2)}%` : null,
+    row.index_name ? `tracks ${row.index_name}` : null,
+  ].filter(Boolean).join(", ");
+  return {
+    title: [row.name, row.ticker].filter(Boolean).join(" "),
+    description: `${row.name}: ${facts}. Fees, size, holdings and returns with their source and date.`.slice(0, 300),
+    alternates: { canonical: `/etfs/${row.etf_key}` },
+  };
 }
 
 function Facts({ items }: { items: [string, React.ReactNode][] }) {
@@ -136,7 +146,7 @@ export default async function EtfPage({ params }: Props) {
   const sizeIsClass = row.aum_level === "share_class" || (row.fund_aum === null && row.class_aum !== null);
   const returnCurrency = row.nav_currency ?? row.currency;
   const exchange = listings.find((l) => l.is_display_ticker)?.exchange_name ?? exchangeName(row.ticker_exchange);
-  const kind = daily.at(-1)?.kind === "close" ? t("closing price") : "NAV";
+  const kind = daily.at(-1)?.kind === "close" ? t("closing price") : t("NAV");
   const inferred = researched ? "" : t(", inferred from its name");
   const sameIndexFees = similar.filter((x) => x.index_slug && x.index_slug === row.index_slug && x.headline_fee_pct !== null).map((x) => x.headline_fee_pct!);
   const cheapest = sameIndexFees.length ? Math.min(...sameIndexFees) : null;
@@ -144,6 +154,11 @@ export default async function EtfPage({ params }: Props) {
 
   return (
     <article className="flex flex-col gap-8">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org", "@type": "InvestmentFund", name: row.name, identifier: row.isin ?? row.ticker ?? key,
+        ...(row.ticker ? { tickerSymbol: row.ticker } : {}), ...(row.issuer_name && row.issuer_name !== "Not identified" ? { provider: { "@type": "Organization", name: row.issuer_name } } : {}),
+        ...(row.headline_fee_pct !== null ? { feesAndCommissionsSpecification: `Yearly fee ${row.headline_fee_pct.toFixed(2)}%` } : {}),
+      }).replace(/</g, "\\u003c") }} />
       <header>
         <div className="flex items-center gap-2.5"><IssuerLogo name={row.name} /><p className="text-muted">{row.issuer_name === "Not identified" ? t("Issuer not identified") : row.issuer_name}</p></div>
         <h1 className="mt-2 max-w-[32ch] text-[clamp(1.8rem,3.2vw,2.6rem)]">{row.name}</h1>

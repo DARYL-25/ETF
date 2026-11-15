@@ -7,8 +7,10 @@ import { LangProvider } from "@/lib/i18n/client";
 import { getT } from "@/lib/i18n/server";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: { default: "ETF Intelligence", template: "%s, ETF Intelligence" },
-  description: "Find, compare and understand UCITS ETFs, with a source and a date behind every figure.",
+  description: "Find, compare and understand ETFs from every major market, with a source and a date behind every figure. In English and French.",
+  openGraph: { siteName: "ETF Intelligence", type: "website" },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };

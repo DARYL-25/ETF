@@ -3,13 +3,16 @@ import Link from "next/link";
 import { DoneMark, PathProgress } from "@/components/academy";
 import { PageTitle } from "@/components/etf-bits";
 import { LESSONS, PATHS } from "@/lib/academy/content";
+import { getT } from "@/lib/i18n/server";
 
 export const metadata: Metadata = { title: "ETF Academy" };
 
-export default function AcademyPage() {
+export default async function AcademyPage() {
+  const t = await getT();
   const byLevel = ["Beginner", "Intermediate", "Advanced", "Tax"] as const;
   return (
     <div className="flex flex-col gap-10">
+      {t.lang === "fr" ? <p className="max-w-[70ch] rounded-xl bg-warn-bg px-3.5 py-2.5 text-warn-ink" lang="fr">Les leçons, le glossaire et les calculateurs sont pour l&apos;instant en anglais. Leur traduction est prévue.</p> : null}
       <PageTitle title="ETF Academy">
         Learn how ETFs work, from your first fund to reading risk. Your progress is saved on this device. See also the <Link className="prose-link" href="/academy/glossary">glossary</Link> and <Link className="prose-link" href="/academy/calculators">calculators</Link>.
       </PageTitle>

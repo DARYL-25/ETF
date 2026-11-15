@@ -1,3 +1,4 @@
+import type { T } from "@/lib/i18n";
 import { getT } from "@/lib/i18n/server";
 import { use } from "react";
 import type { Metadata } from "next";
@@ -27,7 +28,7 @@ function CheckGroup({ title, name, options, selected, label, open, hideCounts }:
         {options.map((o) => (
           <label key={o.value} className="flex cursor-pointer items-start gap-2 rounded px-0.5 py-1 hover:bg-sunken">
             <input type="checkbox" className="mt-1 accent-(--pine)" name={name} value={o.value} defaultChecked={selected.includes(o.value)} />
-            <span className="min-w-0 flex-1">{label ? label(o.value, o.label) : t(o.label)}</span>
+            <span className="min-w-0 flex-1">{t(label ? label(o.value, o.label) : o.label)}</span>
             {hideCounts ? null : <span className="data text-[0.85rem] text-muted">{o.count}</span>}
           </label>
         ))}
@@ -44,7 +45,7 @@ function RangeGroup({ title, hint, minName, maxName, min, max, step }: {
     <fieldset className="border-b border-line py-3">
       <legend className="sr-only">{title}</legend>
       <p className="font-semibold" aria-hidden>{title}</p>
-      <p className="mb-1.5 text-[0.85rem] text-muted">{hint}</p>
+      <p className="mb-1.5 text-[0.85rem] text-muted">{t(hint)}</p>
       <div className="flex gap-2">
         <label className="flex-1 text-[0.85rem]">{t("Minimum")}
           <input key={`${minName}-${min}`} className="field mt-0.5" type="number" min="0" step={step} name={minName} defaultValue={min} inputMode="decimal" />
@@ -72,8 +73,8 @@ function SortHeader({ params, sort, label, numeric, className }: { params: Scree
 }
 
 /** Returns differ in date and currency between funds, so each cell says which it is. */
-const returnNote = (row: { nav_return_1y: number | null; nav_return_as_of: string | null; nav_currency: string | null; currency: string | null; market_return_as_of?: string | null }) =>
-  row.nav_return_1y !== null ? `NAV return in ${row.nav_currency ?? row.currency ?? "fund currency"}, to ${formatDate(row.nav_return_as_of)}` : row.market_return_as_of ? `Market price change, to ${formatDate(row.market_return_as_of)}` : "";
+const returnNote = (row: { nav_return_1y: number | null; nav_return_as_of: string | null; nav_currency: string | null; currency: string | null; market_return_as_of?: string | null }, t: T) =>
+  row.nav_return_1y !== null ? t("NAV return in {currency}, to {date}", { currency: row.nav_currency ?? row.currency ?? "", date: formatDate(row.nav_return_as_of, t.lang) }) : row.market_return_as_of ? t("Market price change, to {date}", { date: formatDate(row.market_return_as_of, t.lang) }) : "";
 
 export default async function ScreenerPage({ searchParams }: { searchParams: Promise<RawParams> }) {
   const t = await getT();
@@ -199,8 +200,8 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
                       {show("replication") ? <td className="whitespace-nowrap">{t(replicationLabel(row.replication))}</td> : null}
                       <td className="num"><Fee row={row} /></td>
                       <td className="num whitespace-nowrap">{formatMoney(row.fund_aum ?? row.class_aum, row.fund_aum_currency ?? row.class_aum_currency, t.lang)}{row.aum_level === "share_class" || row.fund_aum === null && row.class_aum !== null ? <span className="block text-[0.75rem] text-muted">{t("Share class")}</span> : null}</td>
-                      {show("return1y") ? <td className={`num ${phoneHide}`} title={returnNote(row)}><Change value={row.return_1y} />{row.return_1y !== null && returnNote(row) ? <span className="block text-[0.75rem] text-muted">{row.nav_return_1y !== null ? row.nav_currency ?? row.currency ?? "" : "price"}</span> : null}</td> : null}
-                      {show("return3y") ? <td className={`num ${phoneHide}`} title={returnNote(row)}><Change value={row.return_3y} /></td> : null}
+                      {show("return1y") ? <td className={`num ${phoneHide}`} title={returnNote(row, t)}><Change value={row.return_1y} />{row.return_1y !== null && returnNote(row, t) ? <span className="block text-[0.75rem] text-muted">{row.nav_return_1y !== null ? row.nav_currency ?? row.currency ?? "" : "price"}</span> : null}</td> : null}
+                      {show("return3y") ? <td className={`num ${phoneHide}`} title={returnNote(row, t)}><Change value={row.return_3y} /></td> : null}
                       {show("yield") ? <td className="num">{formatPct(row.trailing_yield_pct)}</td> : null}
                       {show("currency") ? <td>{row.currency ?? "—"}</td> : null}
                     </tr>

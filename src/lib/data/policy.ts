@@ -71,7 +71,7 @@ export const DATASETS: Dataset[] = [
   },
 ];
 
-export type Freshness = { id: string; lastRun: string | null; detail: string | null };
+export type Freshness = { id: string; lastRun: string | null; detail: { text: string; vars?: Record<string, string | number> } | null };
 
 function read(path: string): Record<string, unknown> | null {
   const full = join(process.cwd(), path);
@@ -88,13 +88,12 @@ export function getFreshness(): Freshness[] {
   const listDates = list ? Object.values(list).filter((s) => s?.ok && s.on).map((s) => s.on as string).sort() : [];
   const LABEL: Record<string, string> = { india: "India", china_sz: "Shenzhen", china_sh: "Shanghai", australia: "Australia", korea: "Korea", japan: "Japan", hongkong: "Hong Kong", taiwan: "Taiwan", canada: "Canada", singapore: "Singapore", us: "United States", esma: "EU register", fca: "UK register", gleif: "GLEIF" };
   const failing = list ? Object.entries(list).filter(([k, s]) => s && s.ok === false && LABEL[k]).map(([k]) => LABEL[k]) : [];
-  const day = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   return [
-    { id: "list", lastRun: listDates.at(-1) ?? null, detail: failing.length ? `Not updating on the last run: ${failing.join(", ")}` : null },
-    { id: "facts", lastRun: details?.on ?? null, detail: files?.retrieved_on ? `Owner files read ${day(files.retrieved_on)}` : null },
+    { id: "list", lastRun: listDates.at(-1) ?? null, detail: failing.length ? { text: "Not updating on the last run: {markets}", vars: { markets: failing.join(", ") } } : null },
+    { id: "facts", lastRun: details?.on ?? null, detail: files?.retrieved_on ? { text: "Owner files read {date}", vars: { date: files.retrieved_on } } : null },
     { id: "size", lastRun: details?.on ?? null, detail: null },
-    { id: "prices", lastRun: prices?.on ?? null, detail: prices?.latest_date ? `${prices.etfs_priced?.toLocaleString("en-GB")} ETFs, latest price dated ${day(prices.latest_date)}` : null },
-    { id: "fx", lastRun: prices?.fx?.ok ? prices.on ?? null : null, detail: prices?.fx?.rate_date ? `Rates of ${day(prices.fx.rate_date)}` : null },
-    { id: "tax", lastRun: "2026-11-14", detail: "Not yet reviewed by a tax adviser" },
+    { id: "prices", lastRun: prices?.on ?? null, detail: prices?.latest_date ? { text: "{n} ETFs, latest price dated {date}", vars: { n: prices.etfs_priced ?? 0, date: prices.latest_date } } : null },
+    { id: "fx", lastRun: prices?.fx?.ok ? prices.on ?? null : null, detail: prices?.fx?.rate_date ? { text: "Rates of {date}", vars: { date: prices.fx.rate_date } } : null },
+    { id: "tax", lastRun: "2026-11-14", detail: { text: "Not yet reviewed by a tax adviser" } },
   ];
 }

@@ -14,6 +14,9 @@ export default async function Page() {
   const t = await getT();
   const [coverage, sources] = await Promise.all([getCoverage(), getDataSources()]);
   const fresh = Object.fromEntries(getFreshness().map((f) => [f.id, f]));
+  // Dates inside a job's detail are shown in the reader's language.
+  const detail = (d: { text: string; vars?: Record<string, string | number> } | null | undefined) =>
+    d ? `. ${t(d.text, Object.fromEntries(Object.entries(d.vars ?? {}).map(([k, v]) => [k, k === "date" ? formatDate(String(v), t.lang) : typeof v === "number" ? v.toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB") : v])))}` : "";
   const n = (v: number) => v.toLocaleString("en-GB");
   const pct = (v: number) => `${Math.round((v / coverage.all_etfs) * 100)}%`;
   return (
@@ -21,7 +24,7 @@ export default async function Page() {
       <PageTitle title={t("Data and updates")}>{t("Where each figure comes from, how often it is refreshed, and when that last happened.")}</PageTitle>
 
       <section className="panel grid grid-cols-2 gap-x-6 gap-y-5 p-5 lg:grid-cols-4" aria-label={t("Coverage")}>
-        {[[n(coverage.all_etfs), "ETFs listed", ""], [n(coverage.with_fee), "with a fee", pct(coverage.with_fee)], [n(coverage.with_size), "with a size", pct(coverage.with_size)], [n(coverage.with_price), "with a daily price", pct(coverage.with_price)]].map(([v, l, share]) => (
+        {[[n(coverage.all_etfs), t("ETFs listed"), ""], [n(coverage.with_fee), t("with a fee"), pct(coverage.with_fee)], [n(coverage.with_size), t("with a size"), pct(coverage.with_size)], [n(coverage.with_price), t("with a daily price"), pct(coverage.with_price)]].map(([v, l, share]) => (
           <div key={l}><p className="stat-value">{v}</p><p className="mt-1">{l}{share ? <span className="text-muted"> ({share})</span> : null}</p></div>
         ))}
       </section>
@@ -37,11 +40,11 @@ export default async function Page() {
                 <p className="data"><span className="rounded-full bg-sunken px-2.5 py-0.5 font-medium text-pine">{t(d.cadence)}</span></p>
               </div>
               <p className="mt-1.5 max-w-[72ch]">{t(d.what)}</p>
-              <p className="mt-1.5 text-[0.9rem] text-muted">{t("When: ")}{t(d.schedule).replace(/\.$/, "")}{t(". Last run: ")}{formatDate(fresh[d.id]?.lastRun, t.lang)}{fresh[d.id]?.detail ? `. ${fresh[d.id]!.detail}` : ""}.</p>
+              <p className="mt-1.5 text-[0.9rem] text-muted">{t("When: ")}{t(d.schedule).replace(/\.$/, "")}{t(". Last run: ")}{formatDate(fresh[d.id]?.lastRun, t.lang)}{detail(fresh[d.id]?.detail)}.</p>
               <ul className="mt-3 divide-y divide-line border-t border-line">
                 {d.sources.map((s) => (
                   <li key={s.name} className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-0.5 py-2">
-                    <span className="min-w-0 flex-1"><a className="prose-link" href={s.url} target="_blank" rel="noreferrer">{s.name}</a><span className="block text-[0.9rem] text-muted">{t(s.covers)}</span>{s.note ? <span className="block text-[0.85rem] text-muted">{t(s.note)}</span> : null}</span>
+                    <span className="min-w-0 flex-1"><a className="prose-link" href={s.url} target="_blank" rel="noreferrer">{t(s.name)}</a><span className="block text-[0.9rem] text-muted">{t(s.covers)}</span>{s.note ? <span className="block text-[0.85rem] text-muted">{t(s.note)}</span> : null}</span>
                     <span className={`text-[0.85rem] ${s.state === "automatic" ? "text-up" : s.state === "owner file" ? "text-muted" : "text-down"}`}>{t(STATE[s.state])}</span>
                   </li>
                 ))}

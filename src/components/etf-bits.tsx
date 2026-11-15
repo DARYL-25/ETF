@@ -14,7 +14,7 @@ export function Fee({ row }: { row: Pick<EtfRow, "headline_fee_pct" | "headline_
   return (
     <span className="whitespace-nowrap">
       {formatPct(row.headline_fee_pct)}
-      <span className="ml-1 text-[0.75rem] text-muted">{FEE_LABEL[row.headline_fee_type ?? ""] ?? row.headline_fee_type}</span>
+      <span className="ml-1 text-[0.75rem] text-muted">{t(FEE_LABEL[row.headline_fee_type ?? ""] ?? row.headline_fee_type ?? "")}</span>
     </span>
   );
 }

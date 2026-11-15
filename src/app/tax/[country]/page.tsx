@@ -33,7 +33,7 @@ export default async function Page({ params }: Props) {
       <p className="mb-2"><Link href="/tax" className="prose-link">{t("Tax")}</Link></p>
       <PageTitle title={t("ETFs for a private investor in {country}", { country: countryName(c.code, t.lang) })}>{t(c.summary)}</PageTitle>
       <p className="mb-8 max-w-[76ch] rounded-xl bg-warn-bg px-3.5 py-2.5 text-warn-ink">
-        {t("General rules, read from official sources on ")}{formatDate(TAX_CHECKED_ON, t.lang)}{t(". No tax adviser has reviewed this page. It is not advice, and it does not replace the ")}{c.authority}{t(" or a qualified adviser.")}
+        {t("General rules, read from official sources on ")}{formatDate(TAX_CHECKED_ON, t.lang)}{t(". No tax adviser has reviewed this page. It is not advice, and it does not replace the ")}{t(c.authority)}{t(" or a qualified adviser.")}
       </p>
 
       <section>

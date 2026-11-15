@@ -64,7 +64,7 @@ export function Watchlists() {
   };
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-muted">{DEVICE_NOTE}</p>
+      <p className="text-muted">{t(DEVICE_NOTE)}</p>
       <div><button type="button" className="btn btn-primary" onClick={() => save([...lists, { id: newId(), name: `Watchlist ${lists.length + 1}`, items: [] }])}>{t("Create watchlist")}</button></div>
       {lists.length === 0 ? <p>{t("You have no watchlists yet. Create one here, or use Add to watchlist on any ETF page.")}</p> : null}
       {lists.map((list, index) => (
@@ -128,7 +128,7 @@ export function PortfolioTracker() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-muted">{t("These are hypothetical portfolios you enter yourself, and they are not linked to any brokerage account. ")}{DEVICE_NOTE}</p>
+      <p className="text-muted">{t("These are hypothetical portfolios you enter yourself, and they are not linked to any brokerage account. ")}{t(DEVICE_NOTE)}</p>
       <div><button type="button" className="btn btn-primary" onClick={() => save([...portfolios, { id: newId(), name: `Portfolio ${portfolios.length + 1}`, positions: [] }])}>{t("Create portfolio")}</button></div>
       {portfolios.length === 0 ? <p>{t("You have no portfolios yet.")}</p> : null}
       {portfolios.map((p) => {

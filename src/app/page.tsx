@@ -56,10 +56,10 @@ export default async function HomePage() {
 
       <section className="panel grid gap-x-8 gap-y-5 p-5 sm:grid-cols-2 lg:grid-cols-4 lg:p-6" aria-label={t("How current the data is")}>
         {[
-          [n(coverage.all_etfs), "ETFs listed", t("List checked {date}", { date: formatDate(fresh.list?.lastRun, t.lang) })],
-          [n(coverage.with_fee), "with a published fee", t("Read {date}", { date: formatDate(fresh.facts?.lastRun, t.lang) })],
-          [n(coverage.with_price), "with a daily price", coverage.latest_price ? t("Latest {date}", { date: formatDate(coverage.latest_price, t.lang) }) : t("Not loaded yet")],
-          [n(coverage.with_return), "with official returns", t("Dated on each fund")],
+          [n(coverage.all_etfs), t("ETFs listed"), t("List checked {date}", { date: formatDate(fresh.list?.lastRun, t.lang) })],
+          [n(coverage.with_fee), t("with a published fee"), t("Read {date}", { date: formatDate(fresh.facts?.lastRun, t.lang) })],
+          [n(coverage.with_price), t("with a daily price"), coverage.latest_price ? t("Latest {date}", { date: formatDate(coverage.latest_price, t.lang) }) : t("Not loaded yet")],
+          [n(coverage.with_return), t("with official returns"), t("Dated on each fund")],
         ].map(([value, label, when]) => (
           <div key={label}>
             <p className="stat-value">{value}</p>

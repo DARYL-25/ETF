@@ -22,11 +22,11 @@ export default async function IndicesPage() {
               <tr key={index.slug}>
                 <td className="min-w-[14rem]">
                   <Link className="font-medium no-underline hover:underline" href={`/indices/${index.slug}`}>{index.name}</Link>
-                  <span className="block max-w-[52ch] text-[0.85rem] text-muted">{index.description}</span>
+                  <span className="block max-w-[52ch] text-[0.85rem] text-muted">{t(index.description ?? "")}</span>
                 </td>
                 <td className="whitespace-nowrap">{index.provider}</td>
                 <td>{t(assetClassLabel(index.asset_class))}</td>
-                <td className="whitespace-nowrap">{index.geography}</td>
+                <td className="whitespace-nowrap">{t(index.geography ?? "")}</td>
                 <td className="num">{index.etf_count}</td>
               </tr>
             ))}

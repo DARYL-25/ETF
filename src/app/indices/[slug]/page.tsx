@@ -28,11 +28,11 @@ export default async function IndexPage({ params }: Props) {
 
   return (
     <div>
-      <PageTitle title={index.name}>{index.description}</PageTitle>
+      <PageTitle title={index.name}>{t(index.description ?? "")}</PageTitle>
       <dl className="mb-6 flex flex-wrap gap-x-8 gap-y-1">
         <div><dt className="inline text-muted">{t("Provider: ")}</dt><dd className="inline">{index.provider}</dd></div>
         <div><dt className="inline text-muted">{t("Asset class: ")}</dt><dd className="inline">{t(assetClassLabel(index.asset_class))}</dd></div>
-        <div><dt className="inline text-muted">{t("Covers: ")}</dt><dd className="inline">{index.geography}</dd></div>
+        <div><dt className="inline text-muted">{t("Covers: ")}</dt><dd className="inline">{t(index.geography ?? "")}</dd></div>
       </dl>
       <p className="mb-3 max-w-[68ch] text-muted">{t("For most funds, the link to this index is inferred from the fund's name. Check the factsheet before relying on it.")}</p>
       <h2 className="mb-3 text-[1.3rem]">{etfs.length === 0 ? t("No ETFs loaded yet") : etfs.length === 1 ? t("1 ETF follows this index") : t("{n} ETFs follow this index", { n: etfs.length })}</h2>
