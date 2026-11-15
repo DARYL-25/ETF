@@ -21,6 +21,7 @@ const ICTAX: Source = { label: "ICTax, the Federal Tax Administration's price li
 const FR_PV: Source = { label: "impots.gouv.fr, how a gain on securities is taxed", url: "https://www.impots.gouv.fr/particulier/questions/jai-realise-une-plus-value-mobiliere-comment-est-elle-imposee" };
 const FR_SP: Source = { label: "service-public.gouv.fr, income tax on savings and investment income, verified 12 March 2026", url: "https://www.service-public.gouv.fr/particuliers/vosdroits/F2613" };
 const FR_PEA: Source = { label: "service-public.gouv.fr, plan d'épargne en actions, verified 22 May 2026", url: "https://www.service-public.gouv.fr/particuliers/vosdroits/F2385" };
+const FR_AV: Source = { label: "service-public.gouv.fr, how income from a life insurance contract is taxed, verified 1 January 2026", url: "https://www.service-public.gouv.fr/particuliers/vosdroits/F22414" };
 const FR_PEA_ECO: Source = { label: "economie.gouv.fr, what is a PEA", url: "https://www.economie.gouv.fr/particuliers/plan-epargne-actions-pea" };
 
 export const TAX_COUNTRIES: TaxCountry[] = [
@@ -54,6 +55,7 @@ export const TAX_COUNTRIES: TaxCountry[] = [
     ],
     wrappers: [
       { name: "PEA", body: "Deposits are capped at €150,000. It holds European company shares, and funds that keep at least 75% in eligible European securities. After five years, gains are exempt from income tax. Social levies apply whatever the withdrawal date. A withdrawal before five years normally closes the plan, and the net gain is then taxed at 12.8% unless you opt for the scale.", sources: [FR_PEA, FR_PEA_ECO] },
+      { name: "Assurance-vie", body: "ETFs are held as units inside the contract, when the insurer offers them. For premiums paid since 27 September 2017, gains withdrawn before the contract is eight years old are taxed at 12.8%. After eight years, a yearly allowance of €4,600, or €9,200 for a couple, applies across all contracts, then 7.5% on gains from premiums up to €150,000 and 12.8% above. You can opt for the income tax scale. Social levies on life insurance are stated at 17.2%. The page warns that the 2026 Finance Law may change these rules.", sources: [FR_AV] },
       { name: "Compte-titres ordinaire", body: "No limit on deposits or on which ETFs you can hold. Dividends and gains follow the flat tax or, on option, the income tax scale.", sources: [FR_PV, FR_SP] },
     ],
     compare: [
@@ -61,7 +63,7 @@ export const TAX_COUNTRIES: TaxCountry[] = [
       { fact: "Income treatment", matters: "In a compte-titres, an accumulating fund has no dividend to tax each year. In a PEA the difference matters little." },
       { fact: "Replication", matters: "ETFs on non-European indices that qualify for a PEA typically use synthetic replication, which adds swap counterparty risk." },
     ],
-    open: ["Assurance-vie, which has its own rules and is not covered yet.", "Reporting duties for accounts held with brokers outside France.", "Withholding tax on dividends inside the fund."],
+    open: ["Which ETFs an assurance-vie contract offers and what the contract charges each year, which depend on the insurer.", "Reporting duties for accounts held with brokers outside France.", "Withholding tax on dividends inside the fund."],
   },
 ];
 

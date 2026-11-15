@@ -155,7 +155,7 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
         </aside>
         <section className="min-w-0" aria-label={t("Results")}>
           <div className="mb-3 flex flex-wrap gap-1.5" aria-label={t("Quick filters")}>
-            {quick.map((q) => <Link key={q.label} href={q.href} scroll={false} aria-pressed={q.on} className="chip">{q.label}</Link>)}
+            {quick.map((q) => <Link key={q.label} href={q.href} scroll={false} aria-current={q.on ? "true" : undefined} className={q.on ? "chip chip-on" : "chip"}>{q.label}</Link>)}
           </div>
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
             <p className="font-semibold" role="status">{result.total.toLocaleString("en-GB")} {result.total === 1 ? "ETF" : "ETFs"}</p>

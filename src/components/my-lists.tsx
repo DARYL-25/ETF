@@ -28,7 +28,8 @@ function useRows(keys: string[]) {
   return rows;
 }
 
-const DEVICE_NOTE = "Saved on this device only, until accounts are switched on.";
+const DEVICE_NOTE = "Saved on this device only. Sign in to keep them on every device.";
+const ACCOUNT_NOTE = "Saved to your account.";
 
 export function SaveToWatchlist({ etfKey }: { etfKey: string }) {
   const t = useT();
@@ -52,7 +53,7 @@ export function SaveToWatchlist({ etfKey }: { etfKey: string }) {
 
 export function Watchlists() {
   const t = useT();
-  const [lists, save] = useLocal<Watchlist[]>("watchlists", []);
+  const [lists, save, inAccount] = useLocal<Watchlist[]>("watchlists", []);
   const keys = useMemo(() => [...new Set(lists.flatMap((l) => l.items.map((i) => i.key)))], [lists]);
   const rows = useRows(keys);
   const update = (id: string, change: Partial<Watchlist>) => save(lists.map((l) => (l.id === id ? { ...l, ...change } : l)));
@@ -64,7 +65,7 @@ export function Watchlists() {
   };
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-muted">{t(DEVICE_NOTE)}</p>
+      <p className="text-muted">{t(inAccount ? ACCOUNT_NOTE : DEVICE_NOTE)}</p>
       <div><button type="button" className="btn btn-primary" onClick={() => save([...lists, { id: newId(), name: `Watchlist ${lists.length + 1}`, items: [] }])}>{t("Create watchlist")}</button></div>
       {lists.length === 0 ? <p>{t("You have no watchlists yet. Create one here, or use Add to watchlist on any ETF page.")}</p> : null}
       {lists.map((list, index) => (
@@ -106,7 +107,7 @@ export function Watchlists() {
 
 export function PortfolioTracker() {
   const t = useT();
-  const [portfolios, save] = useLocal<Portfolio[]>("portfolios", []);
+  const [portfolios, save, inAccount] = useLocal<Portfolio[]>("portfolios", []);
   const keys = useMemo(() => [...new Set(portfolios.flatMap((p) => p.positions.map((x) => x.key)))], [portfolios]);
   const rows = useRows(keys);
   const [search, setSearch] = useState("");
@@ -128,7 +129,7 @@ export function PortfolioTracker() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-muted">{t("These are hypothetical portfolios you enter yourself, and they are not linked to any brokerage account. ")}{t(DEVICE_NOTE)}</p>
+      <p className="text-muted">{t("These are hypothetical portfolios you enter yourself, and they are not linked to any brokerage account. ")}{t(inAccount ? ACCOUNT_NOTE : DEVICE_NOTE)}</p>
       <div><button type="button" className="btn btn-primary" onClick={() => save([...portfolios, { id: newId(), name: `Portfolio ${portfolios.length + 1}`, positions: [] }])}>{t("Create portfolio")}</button></div>
       {portfolios.length === 0 ? <p>{t("You have no portfolios yet.")}</p> : null}
       {portfolios.map((p) => {

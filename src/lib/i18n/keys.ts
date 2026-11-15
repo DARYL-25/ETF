@@ -17,7 +17,7 @@ export function collectKeys(root: string): string[] {
       else if (/\.tsx?$/.test(name) && !path.includes("i18n")) {
         const text = readFileSync(path, "utf8");
         for (const m of text.matchAll(/\bt\(\s*"((?:[^"\\]|\\.)*)"/g)) add(JSON.parse(`"${m[1]}"`));
-        for (const m of text.matchAll(/\b(?:hint=|const DEVICE_NOTE = )"((?:[^"\\]|\\.)*)"/g)) add(JSON.parse(`"${m[1]}"`));
+        for (const m of text.matchAll(/\b(?:hint=|const (?:DEVICE|ACCOUNT)_NOTE = )"((?:[^"\\]|\\.)*)"/g)) add(JSON.parse(`"${m[1]}"`));
         // Label tables that are translated where they are rendered.
         if (/components\/(shell|palette|assistant)\.tsx$|app\/(pricing|compare|data)\/page\.tsx$|etfs\/screener-params\.ts$|lib\/format\.ts$|components\/etf-bits\.tsx$/.test(path)) {
           for (const m of text.matchAll(/(?:label|title): "((?:[^"\\]|\\.)*)"/g)) add(JSON.parse(`"${m[1]}"`));
