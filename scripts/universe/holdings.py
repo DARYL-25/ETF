@@ -148,7 +148,7 @@ def spdr_eu():
     ws.reset_dimensions()
     table = [[str(c).strip() if c is not None else "" for c in r] for r in ws.iter_rows(values_only=True)]
     head = next(i for i, r in enumerate(table[:12]) if "ISIN" in r)
-    probe["spdr_eu_head"] = table[head][:40]; probe["spdr_eu_first"] = table[head + 1][:40]
+    probe["spdr_eu_rows"] = [r[33:80] for r in table[max(0, head - 2):head + 5]]
     col = {n: i for i, n in enumerate(table[head])}
     tick = next((col[n] for n in col if re.search(r"ticker", n, re.I)), None)
     ok = failed = 0
@@ -178,7 +178,33 @@ def spdr_eu():
         if failed >= 6 and ok == 0: break  # The address pattern is wrong, so stop asking.
     report["spdr_eu"] = {"ok": ok, "failed": failed, "errors": tried}
 
-for fn in (ssga_us, spdr_eu):
+def probe_others():
+    """One request each to holdings files of other US issuers, to learn which answer a plain request."""
+    tries = {
+        "invesco_QQQ": "https://www.invesco.com/us/financial-products/etfs/holdings/main/holdings/0?audienceType=Investor&action=download&ticker=QQQ",
+        "proshares_SSO": "https://accounts.profunds.com/etfdata/ByFund/SSO-psdlyhld.csv",
+        "ark_ARKK": "https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_INNOVATION_ETF_ARKK_HOLDINGS.csv",
+        "vaneck_SMH": "https://www.vaneck.com/us/en/investments/semiconductor-etf-smh/downloads/holdings/",
+        "firsttrust_FDN": "https://www.ftportfolios.com/Retail/Etf/EtfHoldings.aspx?Ticker=FDN",
+        "wisdomtree_DGRW": "https://www.wisdomtree.com/investments/global/etf-details/modals/all-holdings?id={DGRW}",
+        "direxion_TQQQ": "https://www.direxion.com/holdings/SPXL.csv",
+        "jpm_JEPI": "https://am.jpmorgan.com/FundsMarketingHandler/excel?type=dailyETFHoldings&cusip=46641Q332&country=us&role=adv&fundType=N_ETF&locale=en-US&isUnderlyingHolding=false&isProxyHolding=false",
+        "schwab_SCHD": "https://www.schwabassetmanagement.com/sites/g/files/eyrktu361/files/product_files/SCHD/SCHD_FundHoldings.csv",
+        "vanguard_VOO": "https://investor.vanguard.com/investment-products/etfs/profile/api/VOO/portfolio-holding/stock",
+        "globalx_BOTZ": "https://www.globalxetfs.com/funds/botz/?download_full_holdings=true",
+    }
+    out = {}
+    for name, url in tries.items():
+        try:
+            time.sleep(1)
+            body = get(url, timeout=40)
+            text = (gzip.decompress(body) if body[:2] == b"\x1f\x8b" else body)[:500].decode("utf-8", "replace")
+            out[name] = {"bytes": len(body), "start": text[:400]}
+        except Exception as e:
+            out[name] = f"{type(e).__name__}: {e}"[:120]
+    probe["others"] = out
+
+for fn in (ssga_us, spdr_eu, probe_others):
     try: fn()
     except Exception as e: report[fn.__name__] = f"{type(e).__name__}: {e}"[:200]
 
