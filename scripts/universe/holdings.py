@@ -62,6 +62,8 @@ def parse_date(s):
     return ""
 
 def ishares():
+    """Not run. The holdings file answers \"Unknown site\" unless the request carries the site's entry cookies,
+    which are set when a visitor accepts its terms. We do not accept terms on a visitor's behalf."""
     ok = failed = 0
     for label, query in (("uk", "country=gb&language=en&siteName=ishares-uk&userType=individual"), ("us", "country=us&language=en&siteName=ishares&userType=individual")):
         try:
@@ -137,17 +139,51 @@ def ssga_us():
         except Exception as e:
             failed += 1
             if failed <= 3: report.setdefault("ssga_errors", []).append(f"{ticker}: {type(e).__name__}: {e}"[:160])
-        if PROBE and ok + failed >= 3: break
     report["ssga_us"] = {"ok": ok, "failed": failed}
 
-for fn in (ishares, ssga_us):
+def spdr_eu():
+    """State Street's European funds. The product list gives each fund's ticker, which names its holdings file."""
+    import openpyxl
+    ws = openpyxl.load_workbook(io.BytesIO(get("https://www.ssga.com/library-content/products/fund-data/etfs/emea/spdr-product-data-ie-en.xlsx")), read_only=True, data_only=True).worksheets[0]
+    ws.reset_dimensions()
+    table = [[str(c).strip() if c is not None else "" for c in r] for r in ws.iter_rows(values_only=True)]
+    head = next(i for i, r in enumerate(table[:12]) if "ISIN" in r)
+    probe["spdr_eu_head"] = table[head][:40]; probe["spdr_eu_first"] = table[head + 1][:40]
+    col = {n: i for i, n in enumerate(table[head])}
+    tick = next((col[n] for n in col if re.search(r"ticker", n, re.I)), None)
+    ok = failed = 0
+    tried = []
+    for r in table[head + 1:]:
+        u = by_isin.get(r[col["ISIN"]])
+        if not u or tick is None or not r[tick] or ok + failed >= LIMIT: continue
+        code = re.sub(r"[^a-z0-9]+", "-", r[tick].lower()).strip("-")
+        url = f"https://www.ssga.com/library-content/products/fund-data/etfs/emea/holdings-daily-emea-en-{code}.xlsx"
+        try:
+            time.sleep(0.8)
+            w2 = openpyxl.load_workbook(io.BytesIO(get(url)), read_only=True, data_only=True).worksheets[0]
+            w2.reset_dimensions()
+            t2 = [[str(c).strip() if c is not None else "" for c in x] for x in w2.iter_rows(values_only=True)]
+            if "spdr_eu_sample" not in probe: probe["spdr_eu_sample"] = [x[:12] for x in t2[:8]]
+            h2 = next(i for i, x in enumerate(t2[:15]) if any(c.startswith("Security Name") or c == "Name" for c in x))
+            c2 = {n: i for i, n in enumerate(t2[h2])}
+            pick = lambda *names: next((c2[n] for n in names if n in c2), None)
+            name, weight, isin, sector, country = pick("Security Name", "Name"), pick("Percent of Fund", "Weight"), pick("ISIN"), pick("Sector Classification", "Sector"), pick("Trade Country Name", "Country")
+            as_of = next((parse_date(re.sub(r"^As of\s*", "", c)) for x in t2[:h2] for c in x if c.startswith("As of")), "")
+            rows = [{"name": x[name], "ticker": "", "isin": x[isin] if isin is not None else "", "weight": num(x[weight]), "sector": x[sector] if sector is not None else "", "country": x[country] if country is not None else "", "asset_class": ""} for x in t2[h2 + 1:] if len(x) > weight and x[name] and num(x[weight]) is not None]
+            if store(u["etf_key"], as_of, rows, "State Street", url): ok += 1
+            else: failed += 1
+        except Exception as e:
+            failed += 1
+            if len(tried) < 4: tried.append(f"{code}: {type(e).__name__}: {e}"[:120])
+        if failed >= 6 and ok == 0: break  # The address pattern is wrong, so stop asking.
+    report["spdr_eu"] = {"ok": ok, "failed": failed, "errors": tried}
+
+for fn in (ssga_us, spdr_eu):
     try: fn()
     except Exception as e: report[fn.__name__] = f"{type(e).__name__}: {e}"[:200]
 
-if PROBE:
-    report["probe"] = probe
-    report["sample"] = {k: v[:3] for k, v in list(holdings.items())[:3]}
-else:
+report["probe"] = probe
+if True:
     # Keep the last good file for any fund that failed today.
     hp, sp = H / "holdings.csv.gz", H / "summary.csv.gz"
     if sp.exists():

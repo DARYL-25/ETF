@@ -1,5 +1,7 @@
 "use client";
 
+import { PortfolioInsight } from "./portfolio-insight";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Bookmark, Trash2 } from "lucide-react";
@@ -166,6 +168,7 @@ export function PortfolioTracker() {
                 </table>
               </div>
             ) : null}
+            <PortfolioInsight positions={p.positions.map((x) => ({ key: x.key, quantity: x.quantity }))} />
             <div className="mt-3 rounded-xl border border-line bg-surface p-3">
               <p className="mb-2 font-semibold">Add a position</p>
               <div className="grid gap-2 md:grid-cols-[2fr_1fr_1fr_1fr_auto]">
