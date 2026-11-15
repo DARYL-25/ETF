@@ -83,7 +83,9 @@ def ishares():
                 time.sleep(0.8)
                 text = get(url).decode("utf-8-sig", "replace")
                 lines = text.splitlines()
-                if PROBE and len(probe) < 6: probe[u["etf_key"]] = lines[:14]
+                if PROBE and len(probe) < 6:
+                    probe[u["etf_key"]] = {"url": url, "links": sorted(set(re.findall(r'["\'(]((?:https?:)?/[^"\')\s]*(?:csv|xls|holdings|ajax|download)[^"\')\s]*)', text, re.I)))[:40],
+                        "api": sorted(set(re.findall(r'["\']((?:https?:)?/[^"\']*(?:api|varnish)[^"\']*)["\']', text)))[:25], "near": [text[m.start() - 200:m.start() + 300] for m in list(re.finditer(r"[Hh]oldings", text))[:2]]}
                 head = next(i for i, l in enumerate(lines[:40]) if "Weight (%)" in l)
                 as_of = next((parse_date(l.split(",", 1)[1]) for l in lines[:head] if l.lower().startswith(("fund holdings as of", "holdings as of")) and "," in l), "")
                 rows = []
