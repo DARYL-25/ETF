@@ -1,3 +1,5 @@
+import { getT } from "@/lib/i18n/server";
+import { use } from "react";
 import type { Metadata } from "next";
 import { PageTitle } from "@/components/etf-bits";
 import { Watchlists } from "@/components/my-lists";
@@ -5,5 +7,6 @@ import { Watchlists } from "@/components/my-lists";
 export const metadata: Metadata = { title: "Watchlists" };
 
 export default function Page() {
-  return <div><PageTitle title="Watchlists">Keep lists of ETFs you follow, with your own notes.</PageTitle><Watchlists /></div>;
+  const t = use(getT());
+  return <div><PageTitle title={t("Watchlists")}>{t("Keep lists of ETFs you follow, with your own notes.")}</PageTitle><Watchlists /></div>;
 }

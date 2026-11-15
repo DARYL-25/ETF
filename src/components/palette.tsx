@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CornerDownLeft, Search, Sparkles } from "lucide-react";
@@ -24,6 +25,7 @@ const PAGES: [string, string, string][] = [
 
 /** One box for everything: find an ETF, jump to a page, or ask a question in plain words. */
 export function Palette() {
+  const t = useT();
   const router = useRouter();
   const dialog = useRef<HTMLDialogElement>(null);
   const [text, setText] = useState("");
@@ -68,12 +70,12 @@ export function Palette() {
 
   return (
     <>
-      <button type="button" onClick={open} aria-label="Search ETFs, pages or ask a question" className="flex h-10 w-full items-center gap-2 rounded-full border border-line bg-surface px-3.5 text-left text-muted transition-colors hover:border-pine">
+      <button type="button" onClick={open} aria-label={t("Search ETFs, pages or ask a question")} className="flex h-10 w-full items-center gap-2 rounded-full border border-line bg-surface px-3.5 text-left text-muted transition-colors hover:border-pine">
         <Search size={16} aria-hidden />
-        <span className="flex-1 truncate">Search or ask</span>
-        <kbd className="hidden rounded-md border border-line px-1.5 text-[0.75rem] sm:block">Ctrl K</kbd>
+        <span className="flex-1 truncate">{t("Search or ask")}</span>
+        <kbd className="hidden rounded-md border border-line px-1.5 text-[0.75rem] sm:block">{t("Ctrl K")}</kbd>
       </button>
-      <dialog ref={dialog} className="palette" aria-label="Search" onClose={() => { setText(""); setHits([]); }} onClick={(e) => { if (e.target === dialog.current) close(); }}>
+      <dialog ref={dialog} className="palette" aria-label={t("Search")} onClose={() => { setText(""); setHits([]); }} onClick={(e) => { if (e.target === dialog.current) close(); }}>
         <form onSubmit={(e) => { e.preventDefault(); go(items[active]); }}>
           <div className="flex items-center gap-2.5 border-b border-line px-4">
             <Search size={18} aria-hidden className="text-muted" />
@@ -83,11 +85,11 @@ export function Palette() {
                 if (e.key === "ArrowDown") { e.preventDefault(); setActive((i) => Math.min(i + 1, items.length - 1)); }
                 if (e.key === "ArrowUp") { e.preventDefault(); setActive((i) => Math.max(i - 1, 0)); }
               }}
-              role="combobox" aria-expanded="true" aria-controls="palette-list" aria-autocomplete="list" aria-label="Search ETFs by name, ISIN, ticker or index"
-              placeholder="Name, ISIN, ticker, or a question" autoComplete="off"
+              role="combobox" aria-expanded="true" aria-controls="palette-list" aria-autocomplete="list" aria-label={t("Search ETFs by name, ISIN, ticker or index")}
+              placeholder={t("Name, ISIN, ticker, or a question")} autoComplete="off"
               className="h-14 flex-1 bg-transparent text-[1.05rem] outline-none placeholder:text-muted"
             />
-            <button type="button" onClick={close} className="cursor-pointer rounded-md border border-line px-1.5 text-[0.75rem] text-muted">Esc</button>
+            <button type="button" onClick={close} className="cursor-pointer rounded-md border border-line px-1.5 text-[0.75rem] text-muted">{t("Esc")}</button>
           </div>
           <ul id="palette-list" role="listbox" className="max-h-[52vh] overflow-y-auto p-1.5">
             {items.map((item, i) => (
@@ -102,7 +104,7 @@ export function Palette() {
                 </button>
               </li>
             ))}
-            {term.length >= 2 && !hits.length ? <li className="px-3 py-2 text-[0.9rem] text-muted">No ETF matches that name yet. Try an ISIN, a ticker or an index.</li> : null}
+            {term.length >= 2 && !hits.length ? <li className="px-3 py-2 text-[0.9rem] text-muted">{t("No ETF matches that name yet. Try an ISIN, a ticker or an index.")}</li> : null}
           </ul>
         </form>
       </dialog>

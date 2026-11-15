@@ -3,6 +3,8 @@ import "./globals.css";
 import { Shell } from "@/components/shell";
 import { CompareTray } from "@/components/compare-tray";
 import { themeScript } from "@/components/theme-toggle";
+import { LangProvider } from "@/lib/i18n/client";
+import { getT } from "@/lib/i18n/server";
 
 export const metadata: Metadata = {
   title: { default: "ETF Intelligence", template: "%s, ETF Intelligence" },
@@ -11,15 +13,18 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const { lang } = await getT();
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={lang} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
-        <Shell>{children}</Shell>
-        <CompareTray />
+        <LangProvider lang={lang}>
+          <Shell>{children}</Shell>
+          <CompareTray />
+        </LangProvider>
       </body>
     </html>
   );

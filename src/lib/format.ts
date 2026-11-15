@@ -13,18 +13,29 @@ export function formatSignedPct(value: number | null | undefined, digits = 1): s
 
 const SYMBOLS: Record<string, string> = { EUR: "€", USD: "$", GBP: "£", CHF: "CHF " };
 
-export function formatMoney(value: number | null | undefined, currency: string | null | undefined): string {
+/** English: "$29.8bn". French: "29,8 Md $", with the unit after the number as French readers expect. */
+export function formatMoney(value: number | null | undefined, currency: string | null | undefined, lang: "en" | "fr" = "en"): string {
   if (value === null || value === undefined) return MISSING;
+  if (lang === "fr") {
+    const unit = currency ? ` ${(SYMBOLS[currency] ?? currency).trim()}` : "";
+    const n = (v: number, d: number) => v.toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d });
+    if (value >= 1e9) return `${n(value / 1e9, value >= 1e11 ? 0 : 1)} Md${unit}`;
+    if (value >= 1e6) return `${n(value / 1e6, 0)} M${unit}`;
+    return `${value.toLocaleString("fr-FR")}${unit}`;
+  }
   const prefix = currency ? SYMBOLS[currency] ?? `${currency} ` : "";
   if (value >= 1e9) return `${prefix}${(value / 1e9).toFixed(value >= 1e11 ? 0 : 1)}bn`;
   if (value >= 1e6) return `${prefix}${(value / 1e6).toFixed(0)}m`;
   return `${prefix}${value.toLocaleString("en-GB")}`;
 }
 
-const dateFormat = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+const dateFormats = {
+  en: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }),
+  fr: new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }),
+};
 
-export function formatDate(value: string | null | undefined): string {
-  return value ? dateFormat.format(new Date(`${value.slice(0, 10)}T00:00:00Z`)) : MISSING;
+export function formatDate(value: string | null | undefined, lang: "en" | "fr" = "en"): string {
+  return value ? dateFormats[lang].format(new Date(`${value.slice(0, 10)}T00:00:00Z`)) : MISSING;
 }
 
 /** A fact older than this gets a visible warning. */
@@ -35,10 +46,10 @@ export function isStale(asOf: string | null | undefined, today = new Date()): bo
   return (today.getTime() - new Date(`${asOf}T00:00:00Z`).getTime()) / 86_400_000 > STALE_AFTER_DAYS;
 }
 
-const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
-export const countryName = (code: string | null | undefined) => {
+const regionNames = { en: new Intl.DisplayNames(["en"], { type: "region" }), fr: new Intl.DisplayNames(["fr"], { type: "region" }) };
+export const countryName = (code: string | null | undefined, lang: "en" | "fr" = "en") => {
   if (!code) return MISSING;
-  try { return /^[A-Z]{2}$/.test(code) ? regionNames.of(code) ?? code : code; } catch { return code; }
+  try { return /^[A-Z]{2}$/.test(code) ? regionNames[lang].of(code) ?? code : code; } catch { return code; }
 };
 
 const REPLICATION: Record<string, string> = {

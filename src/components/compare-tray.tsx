@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Check, Plus } from "lucide-react";
@@ -74,15 +75,16 @@ export function CompareToggle({ isin, wide = false }: { isin: string; wide?: boo
 }
 
 export function CompareTray() {
+  const t = useT();
   const isins = useCompareList();
   if (!isins.length) return null;
   return (
     <div className="fixed inset-x-0 bottom-[3.6rem] z-40 border-t border-line bg-surface px-4 py-2.5 shadow-lg lg:bottom-0 lg:px-8">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p>{isins.length} of {MAX_COMPARE} ETFs selected{isins.length < 2 ? ". Add one more to compare." : "."}</p>
+        <p>{isins.length}{t(" of ")}{MAX_COMPARE}{t(" ETFs selected")}{isins.length < 2 ? ". Add one more to compare." : "."}</p>
         <div className="flex gap-2">
-          <button type="button" className="btn btn-quiet" onClick={() => write([])}>Clear</button>
-          {isins.length >= 2 ? <Link className="btn btn-primary" href={`/compare?isins=${isins.join(",")}`}>Compare {isins.length} ETFs</Link> : null}
+          <button type="button" className="btn btn-quiet" onClick={() => write([])}>{t("Clear")}</button>
+          {isins.length >= 2 ? <Link className="btn btn-primary" href={`/compare?isins=${isins.join(",")}`}>{t("Compare ")}{isins.length}{t(" ETFs")}</Link> : null}
         </div>
       </div>
     </div>

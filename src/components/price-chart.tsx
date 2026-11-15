@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AreaSeries, ColorType, CrosshairMode, LineSeries, LineStyle, createChart, type IChartApi, type ISeriesApi, type UTCTimestamp } from "lightweight-charts";
 
@@ -32,6 +33,7 @@ export function rebase(points: { date: string; close: number }[]) {
 }
 
 export function PriceChart({ series }: { series: ChartSeries[] }) {
+  const t = useT();
   const holder = useRef<HTMLDivElement>(null);
   const [range, setRange] = useState<RangeKey>("5Y");
   const [view, setView] = useState<"price" | "rebased">(series.length > 1 ? "rebased" : "price");
@@ -113,19 +115,19 @@ export function PriceChart({ series }: { series: ChartSeries[] }) {
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <div role="group" aria-label="Time range" className="flex">
+        <div role="group" aria-label={t("Time range")} className="flex">
           {RANGES.map((r) => (
             <button key={r.key} type="button" className={segment} aria-pressed={range === r.key} onClick={() => setRange(r.key)}>{r.key}</button>
           ))}
         </div>
-        <div role="group" aria-label="Value shown" className="flex">
-          <button type="button" className={segment} aria-pressed={view === "price"} onClick={() => setView("price")}>Price</button>
-          <button type="button" className={segment} aria-pressed={view === "rebased"} onClick={() => setView("rebased")}>Start at 100</button>
+        <div role="group" aria-label={t("Value shown")} className="flex">
+          <button type="button" className={segment} aria-pressed={view === "price"} onClick={() => setView("price")}>{t("Price")}</button>
+          <button type="button" className={segment} aria-pressed={view === "rebased"} onClick={() => setView("rebased")}>{t("Start at 100")}</button>
         </div>
         {!multi ? (
-          <div role="group" aria-label="Chart type" className="flex">
-            <button type="button" className={segment} aria-pressed={kind === "area"} onClick={() => setKind("area")}>Area</button>
-            <button type="button" className={segment} aria-pressed={kind === "line"} onClick={() => setKind("line")}>Line</button>
+          <div role="group" aria-label={t("Chart type")} className="flex">
+            <button type="button" className={segment} aria-pressed={kind === "area"} onClick={() => setKind("area")}>{t("Area")}</button>
+            <button type="button" className={segment} aria-pressed={kind === "line"} onClick={() => setKind("line")}>{t("Line")}</button>
           </div>
         ) : null}
       </div>

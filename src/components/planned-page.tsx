@@ -1,3 +1,5 @@
+import { getT } from "@/lib/i18n/server";
+import { use } from "react";
 import Link from "next/link";
 import { PageTitle } from "./etf-bits";
 
@@ -5,10 +7,11 @@ import { PageTitle } from "./etf-bits";
 export function PlannedPage({ title, intro, phase, plans, now }: {
   title: string; intro: string; phase: string; plans: string[]; now: { href: string; label: string };
 }) {
+  const t = use(getT());
   return (
     <div className="max-w-[68ch]">
       <PageTitle title={title}>{intro}</PageTitle>
-      <p className="font-semibold">Not built yet. Planned for {phase}.</p>
+      <p className="font-semibold">{t("Not built yet. Planned for ")}{phase}.</p>
       <ul className="mt-3 list-disc space-y-1.5 pl-5">
         {plans.map((plan) => <li key={plan}>{plan}</li>)}
       </ul>

@@ -1,6 +1,7 @@
 // One-off tool: wraps user-visible text in .tsx files with t(), and prints the English strings it found.
 // Usage: node scripts/dev/i18n-codemod.mjs <file.tsx>...   (prints JSON list of keys to stdout)
-import ts from "typescript";
+import { createRequire } from "node:module";
+const ts = createRequire(import.meta.url)(process.env.TS5 ?? "typescript");
 import { readFileSync, writeFileSync } from "node:fs";
 
 const ATTRS = new Set(["placeholder", "aria-label", "title", "alt"]);

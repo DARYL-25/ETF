@@ -1,3 +1,5 @@
+import { getT } from "@/lib/i18n/server";
+import { use } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AutoSubmitForm } from "@/components/auto-submit-form";
@@ -36,16 +38,17 @@ function CheckGroup({ title, name, options, selected, label, open, hideCounts }:
 function RangeGroup({ title, hint, minName, maxName, min, max, step }: {
   title: string; hint: string; minName: string; maxName: string; min?: number; max?: number; step: string;
 }) {
+  const t = use(getT());
   return (
     <fieldset className="border-b border-line py-3">
       <legend className="sr-only">{title}</legend>
       <p className="font-semibold" aria-hidden>{title}</p>
       <p className="mb-1.5 text-[0.85rem] text-muted">{hint}</p>
       <div className="flex gap-2">
-        <label className="flex-1 text-[0.85rem]">Minimum
+        <label className="flex-1 text-[0.85rem]">{t("Minimum")}
           <input key={`${minName}-${min}`} className="field mt-0.5" type="number" min="0" step={step} name={minName} defaultValue={min} inputMode="decimal" />
         </label>
-        <label className="flex-1 text-[0.85rem]">Maximum
+        <label className="flex-1 text-[0.85rem]">{t("Maximum")}
           <input key={`${maxName}-${max}`} className="field mt-0.5" type="number" min="0" step={step} name={maxName} defaultValue={max} inputMode="decimal" />
         </label>
       </div>
@@ -71,6 +74,7 @@ const returnNote = (row: { nav_return_1y: number | null; nav_return_as_of: strin
   row.nav_return_1y !== null ? `NAV return in ${row.nav_currency ?? row.currency ?? "fund currency"}, to ${formatDate(row.nav_return_as_of)}` : row.market_return_as_of ? `Market price change, to ${formatDate(row.market_return_as_of)}` : "";
 
 export default async function ScreenerPage({ searchParams }: { searchParams: Promise<RawParams> }) {
+  const t = await getT();
   const params = parseScreenerParams(await searchParams);
   const [result, options] = await Promise.all([screenEtfs(params), screenerOptions()]);
 
@@ -105,66 +109,66 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
       {params.pea ? <input type="hidden" name="pea" value="1" /> : null}
       {params.hasFee ? <input type="hidden" name="hasFee" value="1" /> : null}
       {params.dir ? <input type="hidden" name="dir" value={params.dir} /> : null}
-      <label className="block pb-3 font-semibold">Name, ISIN or ticker
+      <label className="block pb-3 font-semibold">{t("Name, ISIN or ticker")}
         <input key={params.q} className="field mt-1 font-normal" type="search" name="q" defaultValue={params.q} />
       </label>
-      <CheckGroup title="Asset class" name="assetClass" options={options.assetClasses} selected={params.assetClass} label={assetClassLabel} open />
-      <CheckGroup title="Region" name="region" options={options.categories.filter((c) => c.kind === "region")} selected={params.region} open />
-      <CheckGroup title="Index" name="index" options={options.indices} selected={params.index} />
-      <CheckGroup title="Issuer" name="issuer" options={options.issuers} selected={params.issuer} />
-      <RangeGroup title="Yearly fee (%)" hint="Filters on TER, or OCF where that is what the issuer publishes." minName="feeMin" maxName="feeMax" min={params.feeMin} max={params.feeMax} step="0.01" />
-      <RangeGroup title="Fund size (€ million)" hint="Converted to euro with a stored rate, for comparison only." minName="aumMin" maxName="aumMax" min={params.aumMin} max={params.aumMax} step="100" />
-      <CheckGroup title="Income" name="distribution" options={options.distributions} selected={params.distribution} label={distributionLabel} />
-      <CheckGroup title="Replication" name="replication" options={options.replications} selected={params.replication} label={replicationLabel} />
-      <CheckGroup title="Domicile" name="domicile" options={options.domiciles} selected={params.domicile} label={countryName} />
-      <CheckGroup title="Approach" name="style" options={options.styles} selected={params.style} label={styleLabel} />
-      <CheckGroup title="Style" name="factor" options={options.categories.filter((c) => c.kind === "style")} selected={params.factor} />
-      <CheckGroup title="Theme" name="theme" options={options.categories.filter((c) => c.kind === "theme")} selected={params.theme} />
-      <CheckGroup title="Bond type" name="bondType" options={options.categories.filter((c) => c.kind === "bond_type")} selected={params.bondType} />
-      <CheckGroup title="Share class currency" name="currency" options={options.currencies} selected={params.currency} />
+      <CheckGroup title={t("Asset class")} name="assetClass" options={options.assetClasses} selected={params.assetClass} label={assetClassLabel} open />
+      <CheckGroup title={t("Region")} name="region" options={options.categories.filter((c) => c.kind === "region")} selected={params.region} open />
+      <CheckGroup title={t("Index")} name="index" options={options.indices} selected={params.index} />
+      <CheckGroup title={t("Issuer")} name="issuer" options={options.issuers} selected={params.issuer} />
+      <RangeGroup title={t("Yearly fee (%)")} hint="Filters on TER, or OCF where that is what the issuer publishes." minName="feeMin" maxName="feeMax" min={params.feeMin} max={params.feeMax} step="0.01" />
+      <RangeGroup title={t("Fund size (€ million)")} hint="Converted to euro with a stored rate, for comparison only." minName="aumMin" maxName="aumMax" min={params.aumMin} max={params.aumMax} step="100" />
+      <CheckGroup title={t("Income")} name="distribution" options={options.distributions} selected={params.distribution} label={distributionLabel} />
+      <CheckGroup title={t("Replication")} name="replication" options={options.replications} selected={params.replication} label={replicationLabel} />
+      <CheckGroup title={t("Domicile")} name="domicile" options={options.domiciles} selected={params.domicile} label={(v) => countryName(v, t.lang)} />
+      <CheckGroup title={t("Approach")} name="style" options={options.styles} selected={params.style} label={styleLabel} />
+      <CheckGroup title={t("Style")} name="factor" options={options.categories.filter((c) => c.kind === "style")} selected={params.factor} />
+      <CheckGroup title={t("Theme")} name="theme" options={options.categories.filter((c) => c.kind === "theme")} selected={params.theme} />
+      <CheckGroup title={t("Bond type")} name="bondType" options={options.categories.filter((c) => c.kind === "bond_type")} selected={params.bondType} />
+      <CheckGroup title={t("Share class currency")} name="currency" options={options.currencies} selected={params.currency} />
       <fieldset className="border-b border-line py-3">
-        <legend className="font-semibold">UCITS</legend>
-        <select className="field mt-1" name="ucits" defaultValue={params.ucits} aria-label="UCITS status">
-          <option value="">Any</option>
-          <option value="yes">UCITS only</option>
-          <option value="no">Not UCITS</option>
+        <legend className="font-semibold">{t("UCITS")}</legend>
+        <select className="field mt-1" name="ucits" defaultValue={params.ucits} aria-label={t("UCITS status")}>
+          <option value="">{t("Any")}</option>
+          <option value="yes">{t("UCITS only")}</option>
+          <option value="no">{t("Not UCITS")}</option>
         </select>
       </fieldset>
-      <CheckGroup title="Table columns" name="cols" options={OPTIONAL_COLUMNS.map((c) => ({ value: c.key, label: c.label, count: 0 }))} selected={columns} hideCounts />
-      <noscript><button className="btn btn-primary mt-3 w-full" type="submit">Apply filters</button></noscript>
+      <CheckGroup title={t("Table columns")} name="cols" options={OPTIONAL_COLUMNS.map((c) => ({ value: c.key, label: c.label, count: 0 }))} selected={columns} hideCounts />
+      <noscript><button className="btn btn-primary mt-3 w-full" type="submit">{t("Apply filters")}</button></noscript>
     </AutoSubmitForm>
   );
 
   return (
     <div>
-      <PageTitle title="Screener">Combine filters to narrow the list. The address updates as you go, so a search can be shared by copying the link.</PageTitle>
+      <PageTitle title={t("Screener")}>{t("Combine filters to narrow the list. The address updates as you go, so a search can be shared by copying the link.")}</PageTitle>
       <div className="grid gap-6 lg:grid-cols-[17rem_minmax(0,1fr)]">
         <aside className="min-w-0 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:self-start lg:overflow-y-auto lg:pr-2">
           <details className="lg:hidden">
-            <summary className="btn btn-quiet w-full list-none">Filters{activeFilters ? ` (${activeFilters} on)` : ""}</summary>
+            <summary className="btn btn-quiet w-full list-none">{t("Filters")}{activeFilters ? ` (${activeFilters} on)` : ""}</summary>
             <div className="pt-2">{form}</div>
           </details>
           <div className="hidden lg:block">{form}</div>
         </aside>
-        <section className="min-w-0" aria-label="Results">
-          <div className="mb-3 flex flex-wrap gap-1.5" aria-label="Quick filters">
+        <section className="min-w-0" aria-label={t("Results")}>
+          <div className="mb-3 flex flex-wrap gap-1.5" aria-label={t("Quick filters")}>
             {quick.map((q) => <Link key={q.label} href={q.href} scroll={false} aria-pressed={q.on} className="chip">{q.label}</Link>)}
           </div>
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
             <p className="font-semibold" role="status">{result.total.toLocaleString("en-GB")} {result.total === 1 ? "ETF" : "ETFs"}</p>
-            <span className="flex gap-4">{activeFilters ? <Link href="/screener" className="prose-link">Reset filters</Link> : null}<a href={screenerHref(params, {}).replace("/screener", "/api/v1/etfs/export")} className="prose-link" download>Export CSV</a></span>
+            <span className="flex gap-4">{activeFilters ? <Link href="/screener" className="prose-link">{t("Reset filters")}</Link> : null}<a href={screenerHref(params, {}).replace("/screener", "/api/v1/etfs/export")} className="prose-link" download>{t("Export CSV")}</a></span>
           </div>
           {result.rows.length === 0 ? (
             <div className="border-y border-line py-8">
-              <p className="font-semibold">No ETF matches these filters.</p>
-              <p className="mt-1 text-muted">Remove a filter, or <Link href="/screener" className="prose-link">reset them all</Link>. Funds with an unknown fee or size drop out as soon as you filter on that value.</p>
+              <p className="font-semibold">{t("No ETF matches these filters.")}</p>
+              <p className="mt-1 text-muted">{t("Remove a filter, or ")}<Link href="/screener" className="prose-link">{t("reset them all")}</Link>{t(". Funds with an unknown fee or size drop out as soon as you filter on that value.")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="table-data">
                 <thead>
                   <tr>
-                    <th aria-label="Compare" />
+                    <th aria-label={t("Compare")} />
                     <SortHeader params={params} sort="name" label="ETF" />
                     {show("issuer") ? <SortHeader params={params} sort="issuer" label="Issuer" /> : null}
                     {show("index") ? <SortHeader params={params} sort="index" label="Index" className={phoneHide} /> : null}
@@ -189,10 +193,10 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
                           {row.index_slug ? <Link href={`/indices/${row.index_slug}`} className="no-underline hover:underline">{row.index_name}</Link> : "—"}
                         </td>
                       ) : null}
-                      {show("domicile") ? <td>{countryName(row.domicile)}</td> : null}
-                      {show("replication") ? <td className="whitespace-nowrap">{replicationLabel(row.replication)}</td> : null}
+                      {show("domicile") ? <td>{countryName(row.domicile, t.lang)}</td> : null}
+                      {show("replication") ? <td className="whitespace-nowrap">{t(replicationLabel(row.replication))}</td> : null}
                       <td className="num"><Fee row={row} /></td>
-                      <td className="num whitespace-nowrap">{formatMoney(row.fund_aum ?? row.class_aum, row.fund_aum_currency ?? row.class_aum_currency)}{row.aum_level === "share_class" || row.fund_aum === null && row.class_aum !== null ? <span className="block text-[0.75rem] text-muted">Share class</span> : null}</td>
+                      <td className="num whitespace-nowrap">{formatMoney(row.fund_aum ?? row.class_aum, row.fund_aum_currency ?? row.class_aum_currency, t.lang)}{row.aum_level === "share_class" || row.fund_aum === null && row.class_aum !== null ? <span className="block text-[0.75rem] text-muted">{t("Share class")}</span> : null}</td>
                       {show("return1y") ? <td className={`num ${phoneHide}`} title={returnNote(row)}><Change value={row.return_1y} />{row.return_1y !== null && returnNote(row) ? <span className="block text-[0.75rem] text-muted">{row.nav_return_1y !== null ? row.nav_currency ?? row.currency ?? "" : "price"}</span> : null}</td> : null}
                       {show("return3y") ? <td className={`num ${phoneHide}`} title={returnNote(row)}><Change value={row.return_3y} /></td> : null}
                       {show("yield") ? <td className="num">{formatPct(row.trailing_yield_pct)}</td> : null}
@@ -204,14 +208,14 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
             </div>
           )}
           {result.pages > 1 ? (
-            <nav aria-label="Pages" className="mt-3 flex items-center justify-between gap-2">
-              {result.page > 1 ? <Link className="btn btn-quiet" scroll={false} href={screenerHref(params, { page: result.page - 1 })}>Previous</Link> : <span />}
-              <span className="data text-muted">Page {result.page} of {result.pages}</span>
-              {result.page < result.pages ? <Link className="btn btn-quiet" scroll={false} href={screenerHref(params, { page: result.page + 1 })}>Next</Link> : <span />}
+            <nav aria-label={t("Pages")} className="mt-3 flex items-center justify-between gap-2">
+              {result.page > 1 ? <Link className="btn btn-quiet" scroll={false} href={screenerHref(params, { page: result.page - 1 })}>{t("Previous")}</Link> : <span />}
+              <span className="data text-muted">{t("Page ")}{result.page}{t(" of ")}{result.pages}</span>
+              {result.page < result.pages ? <Link className="btn btn-quiet" scroll={false} href={screenerHref(params, { page: result.page + 1 })}>{t("Next")}</Link> : <span />}
             </nav>
           ) : null}
           <p className="mt-4 max-w-[72ch] text-[0.85rem] text-muted">
-            Most ETFs here are basic records from official lists. Region, theme, style, index and asset class on those records are inferred from the fund name, so check the factsheet. Size is the whole fund unless marked as a share class, in the currency shown. Returns are official NAV figures where we hold them, otherwise market price change. A dash means no verified figure yet.
+            {t("Most ETFs here are basic records from official lists. Region, theme, style, index and asset class on those records are inferred from the fund name, so check the factsheet. Size is the whole fund unless marked as a share class, in the currency shown. Returns are official NAV figures where we hold them, otherwise market price change. A dash means no verified figure yet.")}
           </p>
         </section>
       </div>

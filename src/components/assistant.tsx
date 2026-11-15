@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ArrowUp, RotateCcw } from "lucide-react";
@@ -16,6 +17,7 @@ const EXAMPLES = [
 
 /** The ask bar and its answer. Works without AI: the ranked list always comes from the database. */
 export function Assistant({ initial, hero = false, home }: { initial?: string; hero?: boolean; home?: string | null }) {
+  const t = useT();
   const [text, setText] = useState(initial ?? "");
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [asked, setAsked] = useState("");
@@ -58,11 +60,11 @@ export function Assistant({ initial, hero = false, home }: { initial?: string; h
     <div className="flex flex-col gap-8">
       <form className={hero ? "mx-auto w-full max-w-3xl" : "w-full max-w-3xl"} onSubmit={(e) => { e.preventDefault(); void ask(text); }}>
         <div className="ask">
-          <textarea id="ask" rows={1} maxLength={2000} value={text} aria-label="Describe what you are looking for"
+          <textarea id="ask" rows={1} maxLength={2000} value={text} aria-label={t("Describe what you are looking for")}
             onChange={(e) => { setText(e.target.value); e.target.style.height = "auto"; e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`; }}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void ask(text); } }}
             placeholder={history.length ? "Refine it: only accumulating, under 0.2%, physical…" : home ? `An ETF for an investor in ${home}…` : "An index, a theme, and where you live"} />
-          <button type="submit" disabled={busy || !text.trim()} aria-label="Search">{busy ? <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <ArrowUp size={19} aria-hidden />}</button>
+          <button type="submit" disabled={busy || !text.trim()} aria-label={t("Search")}>{busy ? <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <ArrowUp size={19} aria-hidden />}</button>
         </div>
         {!history.length ? (
           <div className={`mt-4 flex flex-wrap gap-2 ${hero ? "justify-center" : ""}`}>
@@ -76,11 +78,11 @@ export function Assistant({ initial, hero = false, home }: { initial?: string; h
           <section>
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <h2 className="text-[1.5rem]">{reply.etfs.length ? "Closest matches" : "No match"}</h2>
-              <button type="button" className="chip" onClick={() => { setHistory([]); setReply(null); setAsked(""); }}><RotateCcw size={13} aria-hidden />Start again</button>
+              <button type="button" className="chip" onClick={() => { setHistory([]); setReply(null); setAsked(""); }}><RotateCcw size={13} aria-hidden />{t("Start again")}</button>
             </div>
-            <p className="mt-1 text-muted">For “{asked}”</p>
+            <p className="mt-1 text-muted">{t("For “")}{asked}”</p>
             <p className="mt-3 max-w-[72ch] whitespace-pre-line leading-relaxed">{reply.text}</p>
-            <p className="mt-1.5 text-[0.85rem] text-muted">{reply.aiUsed ? "Written by AI from database results, and it can make mistakes." : "No AI was used for this answer."} Research support, not investment or tax advice.</p>
+            <p className="mt-1.5 text-[0.85rem] text-muted">{reply.aiUsed ? "Written by AI from database results, and it can make mistakes." : "No AI was used for this answer."}{t(" Research support, not investment or tax advice.")}</p>
           </section>
           {reply.etfs.length ? (
             <ol className="arrive flex flex-col gap-2.5">
@@ -96,27 +98,27 @@ export function Assistant({ initial, hero = false, home }: { initial?: string; h
                       </div>
                     </div>
                     <dl className="data flex gap-6 text-right">
-                      <div><dt className="text-[0.8rem] text-muted">Fee</dt><dd>{formatPct(row.headline_fee_pct)}</dd></div>
-                      <div><dt className="text-[0.8rem] text-muted">Size</dt><dd>{formatMoney(row.fund_aum ?? row.class_aum, row.fund_aum_currency ?? row.class_aum_currency)}</dd></div>
+                      <div><dt className="text-[0.8rem] text-muted">{t("Fee")}</dt><dd>{formatPct(row.headline_fee_pct)}</dd></div>
+                      <div><dt className="text-[0.8rem] text-muted">{t("Size")}</dt><dd>{formatMoney(row.fund_aum ?? row.class_aum, row.fund_aum_currency ?? row.class_aum_currency, t.lang)}</dd></div>
                       <div><dt className="text-[0.8rem] text-muted">1Y</dt><dd>{formatSignedPct(row.nav_return_1y ?? row.return_1y)}</dd></div>
-                      <div title="Our weighting of fee, size and data available. Not a recommendation."><dt className="text-[0.8rem] text-muted">Match</dt><dd className="font-semibold text-pine">{score}</dd></div>
+                      <div title={t("Our weighting of fee, size and data available. Not a recommendation.")}><dt className="text-[0.8rem] text-muted">{t("Match")}</dt><dd className="font-semibold text-pine">{score}</dd></div>
                     </dl>
                   </div>
                   <div className="mt-2.5 flex flex-wrap gap-1.5 pl-8">
                     {reasons.map((r) => <span key={r} className="rounded-full bg-sunken px-2.5 py-0.5 text-[0.82rem]">{r}</span>)}
-                    {cautions.map((c) => <span key={c} className="rounded-full border border-line px-2.5 py-0.5 text-[0.82rem] text-muted">Check: {c.charAt(0).toLowerCase() + c.slice(1)}</span>)}
+                    {cautions.map((c) => <span key={c} className="rounded-full border border-line px-2.5 py-0.5 text-[0.82rem] text-muted">{t("Check: ")}{c.charAt(0).toLowerCase() + c.slice(1)}</span>)}
                   </div>
                 </li>
               ))}
             </ol>
           ) : null}
           <div className="grid gap-3 md:grid-cols-2">
-            {reply.applied.length ? <section className="panel p-4"><h2 className="mb-2 text-[1.05rem]">What we took into account</h2><ul className="list-disc space-y-1 pl-5">{reply.applied.map((a) => <li key={a}>{a}</li>)}<li>Ranked by fee, size, UCITS status and data available</li></ul></section> : null}
-            <section className="panel p-4"><h2 className="mb-2 text-[1.05rem]">What we could not check</h2><ul className="list-disc space-y-1 pl-5">{reply.notChecked.map((a) => <li key={a}>{a}</li>)}</ul>
-              {country ? <p className="mt-2"><Link className="prose-link" href={country.includes("Switzerland") ? "/tax/switzerland" : "/tax/france"}>Read the tax notes</Link></p> : null}
+            {reply.applied.length ? <section className="panel p-4"><h2 className="mb-2 text-[1.05rem]">{t("What we took into account")}</h2><ul className="list-disc space-y-1 pl-5">{reply.applied.map((a) => <li key={a}>{a}</li>)}<li>{t("Ranked by fee, size, UCITS status and data available")}</li></ul></section> : null}
+            <section className="panel p-4"><h2 className="mb-2 text-[1.05rem]">{t("What we could not check")}</h2><ul className="list-disc space-y-1 pl-5">{reply.notChecked.map((a) => <li key={a}>{a}</li>)}</ul>
+              {country ? <p className="mt-2"><Link className="prose-link" href={country.includes("Switzerland") ? "/tax/switzerland" : "/tax/france"}>{t("Read the tax notes")}</Link></p> : null}
             </section>
           </div>
-          {reply.lessons.length ? <p>Learn more: {reply.lessons.map((l, i) => <span key={l.slug}>{i ? ", " : ""}<Link className="prose-link" href={`/academy/${l.slug}`}>{l.title}</Link></span>)}</p> : null}
+          {reply.lessons.length ? <p>{t("Learn more: ")}{reply.lessons.map((l, i) => <span key={l.slug}>{i ? ", " : ""}<Link className="prose-link" href={`/academy/${l.slug}`}>{l.title}</Link></span>)}</p> : null}
         </div>
       ) : null}
     </div>

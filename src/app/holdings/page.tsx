@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Search } from "lucide-react";
@@ -13,6 +14,7 @@ export const metadata: Metadata = { title: "Which ETFs hold a company" };
 const eur = (v: number | null) => (v === null ? MISSING : v >= 1e9 ? `€${(v / 1e9).toFixed(1)}bn` : `€${Math.round(v / 1e6)}m`);
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ q?: string; key?: string }> }) {
+  const t = await getT();
   const { q = "", key } = await searchParams;
   const [securities, holders, coverage] = await Promise.all([
     q && !key ? searchSecurities(q.slice(0, 60)) : [],
@@ -22,16 +24,16 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
   const security = holders[0];
   return (
     <div className="max-w-4xl">
-      <PageTitle title="Which ETFs hold it?">Type a company or a ticker to see every ETF that owns it, and how much of each fund it makes up.</PageTitle>
+      <PageTitle title={t("Which ETFs hold it?")}>{t("Type a company or a ticker to see every ETF that owns it, and how much of each fund it makes up.")}</PageTitle>
       <form action="/holdings" className="flex max-w-xl gap-2">
         <label className="relative flex-1">
-          <span className="sr-only">Company name or ticker</span>
+          <span className="sr-only">{t("Company name or ticker")}</span>
           <Search size={16} aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
-          <input name="q" defaultValue={q} placeholder="Nvidia, NESN, ASML…" className="field pl-10" autoComplete="off" />
+          <input name="q" defaultValue={q} placeholder={t("Nvidia, NESN, ASML…")} className="field pl-10" autoComplete="off" />
         </label>
-        <button className="btn btn-primary" type="submit">Search</button>
+        <button className="btn btn-primary" type="submit">{t("Search")}</button>
       </form>
-      <p className="mt-2 text-[0.85rem] text-muted">Covers the {coverage[0].etfs.toLocaleString("en-GB")} ETFs whose issuers publish a holdings file, and {coverage[0].securities.toLocaleString("en-GB")} securities. Other ETFs may hold it too.</p>
+      <p className="mt-2 text-[0.85rem] text-muted">{t("Covers the ")}{coverage[0].etfs.toLocaleString("en-GB")}{t(" ETFs whose issuers publish a holdings file, and ")}{coverage[0].securities.toLocaleString("en-GB")}{t(" securities. Other ETFs may hold it too.")}</p>
 
       {q && !key ? (
         <section className="mt-8">
@@ -42,12 +44,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
                 <li key={s.holding_key}>
                   <Link href={`/holdings?key=${encodeURIComponent(s.holding_key)}`} className="panel flex items-center justify-between gap-4 px-4 py-3 no-underline transition-colors hover:border-pine">
                     <span><span className="font-semibold">{s.name}</span>{s.ticker ? <span className="data ml-2 text-muted">{s.ticker}</span> : null}</span>
-                    <span className="data whitespace-nowrap text-muted">{s.etfs} {s.etfs === 1 ? "ETF" : "ETFs"}, up to {s.max_weight.toFixed(1)}%</span>
+                    <span className="data whitespace-nowrap text-muted">{s.etfs} {s.etfs === 1 ? "ETF" : "ETFs"}{t(", up to ")}{s.max_weight.toFixed(1)}%</span>
                   </Link>
                 </li>
               ))}
             </ul>
-          ) : <p className="text-muted">Try the start of the company&apos;s name as issuers write it, or its exchange ticker.</p>}
+          ) : <p className="text-muted">{t("Try the start of the company's name as issuers write it, or its exchange ticker.")}</p>}
         </section>
       ) : null}
 
@@ -56,10 +58,10 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
           {security ? (
             <>
               <h2 className="text-[1.3rem]">{security.security}{security.security_ticker ? <span className="data ml-2 text-[1rem] font-normal text-muted">{security.security_ticker}</span> : null}</h2>
-              <p className="mb-3 mt-1 text-muted">Held by {holders.length}{holders.length === 100 ? " or more" : ""} ETFs, heaviest weight first.</p>
+              <p className="mb-3 mt-1 text-muted">{t("Held by ")}{holders.length}{holders.length === 100 ? " or more" : ""}{t(" ETFs, heaviest weight first.")}</p>
               <div className="overflow-x-auto">
                 <table className="table-data">
-                  <thead><tr><th>ETF</th><th className="num">Weight in the fund</th><th className="num">Yearly fee</th><th className="num">Size</th></tr></thead>
+                  <thead><tr><th>{t("ETF")}</th><th className="num">{t("Weight in the fund")}</th><th className="num">{t("Yearly fee")}</th><th className="num">{t("Size")}</th></tr></thead>
                   <tbody>
                     {holders.map((h) => (
                       <tr key={h.etf_key}>
@@ -73,7 +75,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
                 </table>
               </div>
             </>
-          ) : <p className="text-muted">No ETF on file holds that security.</p>}
+          ) : <p className="text-muted">{t("No ETF on file holds that security.")}</p>}
         </section>
       ) : null}
     </div>

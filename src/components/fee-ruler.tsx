@@ -1,3 +1,5 @@
+import { getT } from "@/lib/i18n/server";
+import { use } from "react";
 import Link from "next/link";
 import type { FeePoint } from "@/lib/etfs/queries";
 
@@ -6,6 +8,7 @@ import type { FeePoint } from "@/lib/etfs/queries";
  * TER and hollow dots are OCF, because the two are different measures. `highlight` marks one fund.
  */
 export function FeeRuler({ points, highlight, animate = false }: { points: FeePoint[]; highlight?: string; animate?: boolean }) {
+  const t = use(getT());
   const top = Math.max(0.5, Math.ceil((Math.max(...points.map((p) => p.fee)) + 0.02) * 10) / 10);
   const ticks = Array.from({ length: Math.round(top * 10) + 1 }, (_, i) => i / 10);
 
@@ -55,10 +58,10 @@ export function FeeRuler({ points, highlight, animate = false }: { points: FeePo
         ))}
       </div>
       <figcaption className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-1 text-[0.85rem] text-muted">
-        <span className="inline-flex items-center gap-1.5"><span className="block size-3 rounded-full border-2 border-pine bg-pine" aria-hidden />TER</span>
-        <span className="inline-flex items-center gap-1.5"><span className="block size-3 rounded-full border-2 border-pine" aria-hidden />OCF</span>
-        {highlight ? <span className="inline-flex items-center gap-1.5"><span className="block size-3 rounded-full border-2 border-saffron bg-saffron" aria-hidden />This fund</span> : null}
-        <span>Yearly fee as published by the issuer. Funds with no fee on file are left out.</span>
+        <span className="inline-flex items-center gap-1.5"><span className="block size-3 rounded-full border-2 border-pine bg-pine" aria-hidden />{t("TER")}</span>
+        <span className="inline-flex items-center gap-1.5"><span className="block size-3 rounded-full border-2 border-pine" aria-hidden />{t("OCF")}</span>
+        {highlight ? <span className="inline-flex items-center gap-1.5"><span className="block size-3 rounded-full border-2 border-saffron bg-saffron" aria-hidden />{t("This fund")}</span> : null}
+        <span>{t("Yearly fee as published by the issuer. Funds with no fee on file are left out.")}</span>
       </figcaption>
     </figure>
   );

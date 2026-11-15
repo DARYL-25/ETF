@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Change, Fee, PageTitle } from "@/components/etf-bits";
@@ -66,6 +67,7 @@ const topLines = (items: Exposure[]) =>
   ) : MISSING;
 
 export default async function ComparePage({ searchParams }: { searchParams: Promise<{ isins?: string }> }) {
+  const t = await getT();
   const requested = ((await searchParams).isins ?? "").split(",").map((s) => s.trim()).filter(Boolean).slice(0, 5);
   const { plan, locked } = await currentPlan();
   const limit = PLANS[plan].compare;
@@ -84,13 +86,13 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
   if (etfs.length < 2) {
     return (
       <div>
-        <PageTitle title="Compare">Put 2 to 5 ETFs side by side.</PageTitle>
-        <p className="max-w-[68ch]">Select at least two ETFs with the plus button in the <Link className="prose-link" href="/screener">screener</Link> or on an <Link className="prose-link" href="/indices">index page</Link>, then choose Compare.</p>
-        <h2 className="mb-2 mt-8 text-[1.3rem]">Or start from a common question</h2>
+        <PageTitle title={t("Compare")}>{t("Put 2 to 5 ETFs side by side.")}</PageTitle>
+        <p className="max-w-[68ch]">{t("Select at least two ETFs with the plus button in the ")}<Link className="prose-link" href="/screener">{t("screener")}</Link>{t(" or on an ")}<Link className="prose-link" href="/indices">{t("index page")}</Link>{t(", then choose Compare.")}</p>
+        <h2 className="mb-2 mt-8 text-[1.3rem]">{t("Or start from a common question")}</h2>
         <ul className="flex flex-col gap-1.5">
-          <li><Link className="prose-link" href="/compare?isins=IE00B5BMR087,IE00BFMXXD54,IE00B3YCGJ38">Physical or synthetic S&amp;P 500</Link></li>
-          <li><Link className="prose-link" href="/compare?isins=IE00B4L5Y983,IE00BK5BQT80">MSCI World or FTSE All-World</Link></li>
-          <li><Link className="prose-link" href="/compare?isins=IE00BK5BQT80,IE00B3RBWM25">Accumulating or distributing share class of one fund</Link></li>
+          <li><Link className="prose-link" href="/compare?isins=IE00B5BMR087,IE00BFMXXD54,IE00B3YCGJ38">{t("Physical or synthetic S&P 500")}</Link></li>
+          <li><Link className="prose-link" href="/compare?isins=IE00B4L5Y983,IE00BK5BQT80">{t("MSCI World or FTSE All-World")}</Link></li>
+          <li><Link className="prose-link" href="/compare?isins=IE00BK5BQT80,IE00B3RBWM25">{t("Accumulating or distributing share class of one fund")}</Link></li>
         </ul>
       </div>
     );
@@ -109,13 +111,13 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
 
   return (
     <div>
-      <PageTitle title="Compare">A dash means we hold no figure, not that the value is zero. The lowest yearly fee is marked.</PageTitle>
-      {cut ? <p className="mb-4 max-w-[70ch] rounded-xl bg-warn-bg px-3.5 py-2.5 text-warn-ink">Showing the first {limit} of {requested.length} ETFs. <Link className="underline" href="/pricing">Premium compares up to 5</Link>.</p> : null}
+      <PageTitle title={t("Compare")}>{t("A dash means we hold no figure, not that the value is zero. The lowest yearly fee is marked.")}</PageTitle>
+      {cut ? <p className="mb-4 max-w-[70ch] rounded-xl bg-warn-bg px-3.5 py-2.5 text-warn-ink">{t("Showing the first ")}{limit}{t(" of ")}{requested.length}{t(" ETFs. ")}<Link className="underline" href="/pricing">{t("Premium compares up to 5")}</Link>.</p> : null}
       <div className="overflow-x-auto">
         <table className="table-data">
           <thead>
             <tr>
-              <th className="sticky left-0 z-10 bg-surface" aria-label="Attribute" />
+              <th className="sticky left-0 z-10 bg-surface" aria-label={t("Attribute")} />
               {etfs.map((e) => (
                 <th key={e.etf_key} className="min-w-[11rem] whitespace-normal align-bottom text-ink">
                   <Link href={`/etfs/${e.etf_key}`} className="no-underline hover:underline">{e.name}</Link>
@@ -139,20 +141,20 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
 
       {etfs.length >= 2 ? (
         <section className="mt-10">
-          <h2 className="mb-2 text-[1.3rem]">Overlap</h2>
+          <h2 className="mb-2 text-[1.3rem]">{t("Overlap")}</h2>
           {hasHoldings.size >= 2 ? (
             <>
-              <p className="mb-4 max-w-[72ch] text-muted">How much of two funds is the same investment: for every security both hold, we add the smaller of the two weights. 100% means identical funds, so owning both adds little.</p>
+              <p className="mb-4 max-w-[72ch] text-muted">{t("How much of two funds is the same investment: for every security both hold, we add the smaller of the two weights. 100% means identical funds, so owning both adds little.")}</p>
               <ul className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
                 {keys.flatMap((a, i) => keys.slice(i + 1).map((b) => [a, b] as const)).filter(([a, b]) => hasHoldings.has(a) && hasHoldings.has(b)).map(([a, b]) => {
                   const o = overlaps.find((x) => (x.a === a && x.b === b) || (x.a === b && x.b === a));
                   const pct = Math.min(100, o?.overlap_pct ?? 0);
                   return (
                     <li key={`${a}-${b}`} className="panel p-4">
-                      <p className="data text-[0.9rem] text-muted">{label(a)} and {label(b)}</p>
+                      <p className="data text-[0.9rem] text-muted">{label(a)}{t(" and ")}{label(b)}</p>
                       <p className="stat-value mt-1">{pct.toFixed(0)}%</p>
                       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-sunken"><div className="h-full rounded-full bg-pine" style={{ width: `${pct}%` }} /></div>
-                      <p className="mt-2 text-[0.85rem] text-muted">{o?.shared ?? 0} shared holdings</p>
+                      <p className="mt-2 text-[0.85rem] text-muted">{o?.shared ?? 0}{t(" shared holdings")}</p>
                     </li>
                   );
                 })}
@@ -160,7 +162,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
               {shared.length ? (
                 <div className="mt-5 overflow-x-auto">
                   <table className="table-data">
-                    <thead><tr><th>Largest shared holdings</th>{keys.filter((k) => hasHoldings.has(k)).map((k) => <th key={k} className="num">{label(k)}</th>)}</tr></thead>
+                    <thead><tr><th>{t("Largest shared holdings")}</th>{keys.filter((k) => hasHoldings.has(k)).map((k) => <th key={k} className="num">{label(k)}</th>)}</tr></thead>
                     <tbody>
                       {shared.map((h) => (
                         <tr key={h.name}><td>{h.name}</td>{keys.filter((k) => hasHoldings.has(k)).map((k) => <td key={k} className="num">{h.weights[k] !== undefined ? `${Number(h.weights[k]).toFixed(2)}%` : MISSING}</td>)}</tr>
@@ -169,26 +171,26 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
                   </table>
                 </div>
               ) : null}
-              {hasHoldings.size < keys.length ? <p className="mt-3 text-[0.85rem] text-muted">No holdings file on record for {keys.filter((k) => !hasHoldings.has(k)).map(label).join(", ")}, so it is left out.</p> : null}
-              <p className="mt-3 max-w-[72ch] text-[0.85rem] text-muted">Based on issuers&apos; holdings files. Securities are matched by ISIN, or by ticker and name where the file has no ISIN, so a few matches can be missed.</p>
+              {hasHoldings.size < keys.length ? <p className="mt-3 text-[0.85rem] text-muted">{t("No holdings file on record for ")}{keys.filter((k) => !hasHoldings.has(k)).map(label).join(", ")}{t(", so it is left out.")}</p> : null}
+              <p className="mt-3 max-w-[72ch] text-[0.85rem] text-muted">{t("Based on issuers' holdings files. Securities are matched by ISIN, or by ticker and name where the file has no ISIN, so a few matches can be missed.")}</p>
             </>
           ) : (
-            <p className="max-w-[72ch] text-muted">Overlap needs a holdings file for at least two of these funds. We hold them for iShares and State Street funds so far{hasHoldings.size ? `, here only for ${[...hasHoldings].map(label).join(", ")}` : ""}.</p>
+            <p className="max-w-[72ch] text-muted">{t("Overlap needs a holdings file for at least two of these funds. We hold them for iShares and State Street funds so far")}{hasHoldings.size ? `, here only for ${[...hasHoldings].map(label).join(", ")}` : ""}.</p>
           )}
         </section>
       ) : null}
 
       <section className="mt-10 max-w-5xl">
-        <h2 className="mb-3 text-[1.3rem]">Price history</h2>
+        <h2 className="mb-3 text-[1.3rem]">{t("Price history")}</h2>
         {charted.length ? (
           <>
             <PriceChart series={charted.map((s) => ({ label: s.ticker, currency: s.currency, points: s.points }))} />
             <p className="mt-2 max-w-[72ch] text-[0.85rem] text-muted">
-              Monthly market closes from {charted[0].source}, in each listing&apos;s trading currency: {charted.map((s) => `${s.ticker} in ${s.currency}`).join(", ")}. With several funds, the chart starts when all of them have data.
+              {t("Monthly market closes from ")}{charted[0].source}{t(", in each listing's trading currency: ")}{charted.map((s) => `${s.ticker} in ${s.currency}`).join(", ")}{t(". With several funds, the chart starts when all of them have data.")}
               {unpriced.length ? ` No price history yet for: ${unpriced.map((e) => e.ticker ?? e.isin).join(", ")}.` : ""}
             </p>
           </>
-        ) : <p className="max-w-[68ch] text-muted">We have no price history for these ETFs yet.</p>}
+        ) : <p className="max-w-[68ch] text-muted">{t("We have no price history for these ETFs yet.")}</p>}
       </section>
     </div>
   );
