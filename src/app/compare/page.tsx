@@ -173,7 +173,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
                 </div>
               ) : null}
               {hasHoldings.size < keys.length ? <p className="mt-3 text-[0.85rem] text-muted">{t("No holdings file on record for ")}{keys.filter((k) => !hasHoldings.has(k)).map(label).join(", ")}{t(", so it is left out.")}</p> : null}
-              <p className="mt-3 max-w-[72ch] text-[0.85rem] text-muted">{t("Based on issuers' holdings files. Securities are matched by ISIN, or by ticker and name where the file has no ISIN, so a few matches can be missed.")}</p>
+              <p className="mt-3 max-w-[72ch] text-[0.85rem] text-muted">{t("Based on issuers' holdings files. Issuers identify securities differently, so we match them by name; a few matches can be missed.")}</p>
             </>
           ) : (
             <p className="max-w-[72ch] text-muted">{t("Overlap needs a holdings file for at least two of these funds. We hold them for State Street funds so far")}{hasHoldings.size ? t(", here only for {funds}", { funds: [...hasHoldings].map(label).join(", ") }) : ""}.</p>

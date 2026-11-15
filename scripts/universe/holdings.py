@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Full holdings for ETFs whose issuer publishes them as a file: iShares (UCITS and US) and State Street (US).
+"""Full holdings for ETFs whose issuer publishes them as a file to any plain request: State Street (US and Europe), ARK and Direxion.
 Writes data/holdings/holdings.csv.gz (one row per ETF and holding) and summary.csv.gz (one row per ETF).
 Holdings under 0.02% of the fund are dropped and at most 800 are kept per fund, largest first; the summary
 records how many the fund has and what share of it the kept rows cover. One request at a time."""
@@ -181,33 +181,60 @@ def spdr_eu():
         if failed >= 6 and ok == 0: break  # The address pattern is wrong, so stop asking.
     report["spdr_eu"] = {"ok": ok, "failed": failed, "errors": tried}
 
-def probe_others():
-    """One request each to holdings files of other US issuers, to learn which answer a plain request."""
-    tries = {
-        "invesco_QQQ": "https://www.invesco.com/us/financial-products/etfs/holdings/main/holdings/0?audienceType=Investor&action=download&ticker=QQQ",
-        "proshares_SSO": "https://accounts.profunds.com/etfdata/ByFund/SSO-psdlyhld.csv",
-        "ark_ARKK": "https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_INNOVATION_ETF_ARKK_HOLDINGS.csv",
-        "vaneck_SMH": "https://www.vaneck.com/us/en/investments/semiconductor-etf-smh/downloads/holdings/",
-        "firsttrust_FDN": "https://www.ftportfolios.com/Retail/Etf/EtfHoldings.aspx?Ticker=FDN",
-        "wisdomtree_DGRW": "https://www.wisdomtree.com/investments/global/etf-details/modals/all-holdings?id={DGRW}",
-        "direxion_TQQQ": "https://www.direxion.com/holdings/SPXL.csv",
-        "jpm_JEPI": "https://am.jpmorgan.com/FundsMarketingHandler/excel?type=dailyETFHoldings&cusip=46641Q332&country=us&role=adv&fundType=N_ETF&locale=en-US&isUnderlyingHolding=false&isProxyHolding=false",
-        "schwab_SCHD": "https://www.schwabassetmanagement.com/sites/g/files/eyrktu361/files/product_files/SCHD/SCHD_FundHoldings.csv",
-        "vanguard_VOO": "https://investor.vanguard.com/investment-products/etfs/profile/api/VOO/portfolio-holding/stock",
-        "globalx_BOTZ": "https://www.globalxetfs.com/funds/botz/?download_full_holdings=true",
-    }
-    out = {}
-    for name, url in tries.items():
+def csv_fund(key, text, source, url, name_col, weight_col, ticker_col, date_col, scale=1.0):
+    """Reads one fund's holdings from a CSV whose header row contains the given column names."""
+    lines = text.splitlines()
+    head = next(i for i, l in enumerate(lines[:20]) if name_col in l and weight_col in l)
+    rows, as_of = [], ""
+    for r in csv.DictReader(io.StringIO("\n".join(lines[head:]))):
+        r = {(k or "").strip(): (v or "").strip() for k, v in r.items() if isinstance(v, str)}
+        w = num(r.get(weight_col, ""))
+        if not r.get(name_col) or w is None: continue
+        as_of = as_of or parse_date(r.get(date_col, "").split(" ")[0])
+        rows.append({"name": r[name_col], "ticker": r.get(ticker_col, ""), "isin": "", "weight": w * scale, "sector": "", "country": "", "asset_class": ""})
+    return store(key, as_of, rows, source, url)
+
+ARK_FILES = {"ARKK": "ARK_INNOVATION_ETF_ARKK", "ARKQ": "ARK_AUTONOMOUS_TECH._&_ROBOTICS_ETF_ARKQ", "ARKW": "ARK_NEXT_GENERATION_INTERNET_ETF_ARKW", "ARKG": "ARK_GENOMIC_REVOLUTION_ETF_ARKG",
+             "ARKF": "ARK_FINTECH_INNOVATION_ETF_ARKF", "ARKX": "ARK_SPACE_EXPLORATION_&_INNOVATION_ETF_ARKX", "PRNT": "THE_3D_PRINTING_ETF_PRNT", "IZRL": "ARK_ISRAEL_INNOVATIVE_TECHNOLOGY_ETF_IZRL"}
+
+def ark():
+    """ARK publishes one CSV per fund, named after the fund."""
+    ok = failed = 0; errors = []
+    for ticker, stem in ARK_FILES.items():
+        u = by_us_ticker.get(ticker)
+        if not u or not u["name"].upper().startswith(("ARK ", "THE 3D")): continue
+        url = f"https://assets.ark-funds.com/fund-documents/funds-etf-csv/{stem}_HOLDINGS.csv"
         try:
             time.sleep(1)
-            body = get(url, timeout=40)
-            text = (gzip.decompress(body) if body[:2] == b"\x1f\x8b" else body)[:500].decode("utf-8", "replace")
-            out[name] = {"bytes": len(body), "start": text[:400]}
+            if csv_fund(u["etf_key"], get(url).decode("utf-8-sig", "replace"), "ARK Invest", url, "company", "weight (%)", "ticker", "date"): ok += 1
+            else: failed += 1
         except Exception as e:
-            out[name] = f"{type(e).__name__}: {e}"[:120]
-    probe["others"] = out
+            failed += 1; errors.append(f"{ticker}: {type(e).__name__}: {e}"[:100])
+    report["ark"] = {"ok": ok, "failed": failed, "errors": errors[:4]}
 
-for fn in (ssga_us, spdr_eu):
+def direxion():
+    """Direxion publishes one CSV per fund, named after its ticker. Weights there are the securities the fund
+    holds directly; a leveraged fund's swaps are not in it, so funds whose weights do not add up are skipped."""
+    ok = failed = 0; errors = []
+    for u in universe:
+        if u["source"] != "us" or not u["name"].startswith("Direxion") or not u["ticker"] or ok + failed >= LIMIT: continue
+        url = f"https://www.direxion.com/holdings/{u['ticker']}.csv"
+        try:
+            time.sleep(1)
+            text = get(url).decode("utf-8-sig", "replace")
+            # The file gives weights either as a share of one or as a percentage; the largest value tells which.
+            vals = [num(r.get("HoldingsPercent", "")) for r in csv.DictReader(io.StringIO(text[text.index('"TradeDate"'):]))]
+            vals = [v for v in vals if v is not None]
+            scale = 100.0 if vals and sum(vals) <= 3 else 1.0
+            if csv_fund(u["etf_key"], text, "Direxion", url, "SecurityDescription", "HoldingsPercent", "StockTicker", "TradeDate", scale): ok += 1
+            else: failed += 1
+        except Exception as e:
+            failed += 1
+            if len(errors) < 4: errors.append(f"{u['ticker']}: {type(e).__name__}: {e}"[:100])
+        if failed >= 8 and ok == 0: break
+    report["direxion"] = {"ok": ok, "failed": failed, "errors": errors}
+
+for fn in (ssga_us, spdr_eu, ark, direxion):
     try: fn()
     except Exception as e: report[fn.__name__] = f"{type(e).__name__}: {e}"[:200]
 

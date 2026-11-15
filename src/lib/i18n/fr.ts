@@ -97,7 +97,7 @@ export const FR: Record<string, string> = {
   "Assurance-vie, which has its own rules and is not covered yet.": "L'assurance-vie, qui a ses propres règles et n'est pas encore traitée.",
   "Attribute": "Caractéristique",
   "Automatic": "Automatique",
-  "Based on issuers' holdings files. Securities are matched by ISIN, or by ticker and name where the file has no ISIN, so a few matches can be missed.": "D'après les fichiers de positions des émetteurs. Les titres sont rapprochés par ISIN, ou par symbole et nom quand le fichier n'a pas d'ISIN : quelques correspondances peuvent manquer.",
+  "Based on issuers' holdings files. Issuers identify securities differently, so we match them by name; a few matches can be missed.": "D'après les fichiers de positions des émetteurs. Chaque émetteur identifie les titres à sa façon : nous les rapprochons par nom, et quelques correspondances peuvent manquer.",
   "Behind the best": "Écart avec le meilleur",
   "Benchmark as published": "Indice de référence publié",
   "Best": "Meilleur",
