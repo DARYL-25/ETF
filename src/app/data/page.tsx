@@ -33,16 +33,16 @@ export default async function Page() {
           {DATASETS.map((d) => (
             <article key={d.id} className="panel p-5" id={d.id}>
               <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-                <h3 className="text-[1.1rem]">{d.name}</h3>
-                <p className="data"><span className="rounded-full bg-sunken px-2.5 py-0.5 font-medium text-pine">{d.cadence}</span></p>
+                <h3 className="text-[1.1rem]">{t(d.name)}</h3>
+                <p className="data"><span className="rounded-full bg-sunken px-2.5 py-0.5 font-medium text-pine">{t(d.cadence)}</span></p>
               </div>
-              <p className="mt-1.5 max-w-[72ch]">{d.what}</p>
-              <p className="mt-1.5 text-[0.9rem] text-muted">{t("When: ")}{d.schedule.replace(/\.$/, "")}{t(". Last run: ")}{formatDate(fresh[d.id]?.lastRun, t.lang)}{fresh[d.id]?.detail ? `. ${fresh[d.id]!.detail}` : ""}.</p>
+              <p className="mt-1.5 max-w-[72ch]">{t(d.what)}</p>
+              <p className="mt-1.5 text-[0.9rem] text-muted">{t("When: ")}{t(d.schedule).replace(/\.$/, "")}{t(". Last run: ")}{formatDate(fresh[d.id]?.lastRun, t.lang)}{fresh[d.id]?.detail ? `. ${fresh[d.id]!.detail}` : ""}.</p>
               <ul className="mt-3 divide-y divide-line border-t border-line">
                 {d.sources.map((s) => (
                   <li key={s.name} className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-0.5 py-2">
-                    <span className="min-w-0 flex-1"><a className="prose-link" href={s.url} target="_blank" rel="noreferrer">{s.name}</a><span className="block text-[0.9rem] text-muted">{s.covers}</span>{s.note ? <span className="block text-[0.85rem] text-muted">{s.note}</span> : null}</span>
-                    <span className={`text-[0.85rem] ${s.state === "automatic" ? "text-up" : s.state === "owner file" ? "text-muted" : "text-down"}`}>{STATE[s.state]}</span>
+                    <span className="min-w-0 flex-1"><a className="prose-link" href={s.url} target="_blank" rel="noreferrer">{s.name}</a><span className="block text-[0.9rem] text-muted">{t(s.covers)}</span>{s.note ? <span className="block text-[0.85rem] text-muted">{t(s.note)}</span> : null}</span>
+                    <span className={`text-[0.85rem] ${s.state === "automatic" ? "text-up" : s.state === "owner file" ? "text-muted" : "text-down"}`}>{t(STATE[s.state])}</span>
                   </li>
                 ))}
               </ul>

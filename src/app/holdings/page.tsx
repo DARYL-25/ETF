@@ -37,7 +37,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
 
       {q && !key ? (
         <section className="mt-8">
-          <h2 className="mb-2 text-[1.3rem]">{securities.length ? "Pick the security" : "No security starts with that"}</h2>
+          <h2 className="mb-2 text-[1.3rem]">{securities.length ? t("Pick the security") : t("No security starts with that")}</h2>
           {securities.length ? (
             <ul className="flex flex-col gap-2">
               {securities.map((s) => (
@@ -58,7 +58,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
           {security ? (
             <>
               <h2 className="text-[1.3rem]">{security.security}{security.security_ticker ? <span className="data ml-2 text-[1rem] font-normal text-muted">{security.security_ticker}</span> : null}</h2>
-              <p className="mb-3 mt-1 text-muted">{t("Held by ")}{holders.length}{holders.length === 100 ? " or more" : ""}{t(" ETFs, heaviest weight first.")}</p>
+              <p className="mb-3 mt-1 text-muted">{t("Held by ")}{holders.length}{holders.length === 100 ? t(" or more") : ""}{t(" ETFs, heaviest weight first.")}</p>
               <div className="overflow-x-auto">
                 <table className="table-data">
                   <thead><tr><th>{t("ETF")}</th><th className="num">{t("Weight in the fund")}</th><th className="num">{t("Yearly fee")}</th><th className="num">{t("Size")}</th></tr></thead>

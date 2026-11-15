@@ -40,7 +40,7 @@ export function EtfName({ row }: { row: Pick<EtfRow, "etf_key" | "isin" | "name"
 export function AsOf({ date, retrieved }: { date: string | null | undefined; retrieved?: string | null }) {
   const t = use(getT());
   if (!date) {
-    return <span className="text-[0.85rem] text-muted">{retrieved ? `Date not published, read ${formatDate(retrieved, t.lang)}` : "Date not published"}</span>;
+    return <span className="text-[0.85rem] text-muted">{retrieved ? t("Date not published, read {date}", { date: formatDate(retrieved, t.lang) }) : t("Date not published")}</span>;
   }
   return (
     <span className="text-[0.85rem] text-muted">

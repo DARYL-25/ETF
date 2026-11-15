@@ -59,12 +59,12 @@ export function Palette() {
   }, [text]);
 
   const term = text.trim();
-  const pages = PAGES.filter(([label, , detail]) => !term || `${label} ${detail}`.toLowerCase().includes(term.toLowerCase()));
+  const pages = PAGES.filter(([label, , detail]) => !term || `${label} ${detail} ${t(label)} ${t(detail)}`.toLowerCase().includes(term.toLowerCase()));
   const items: Item[] = [
     ...hits.map((h): Item => ({ key: h.etf_key, label: h.name, detail: [h.ticker, h.isin].filter(Boolean).join(", "), href: `/etfs/${h.etf_key}`, kind: "etf" })),
-    ...(term.length >= 6 ? [{ key: "ask", label: `Ask: ${term}`, detail: "Ranked matches with reasons", href: `/assistant?q=${encodeURIComponent(term)}`, kind: "ask" } as Item] : []),
-    ...pages.slice(0, term ? 4 : 11).map(([label, href, detail]): Item => ({ key: href, label, detail, href, kind: "page" })),
-    ...(term.length >= 2 ? [{ key: "all", label: `See all ETFs matching "${term}"`, href: `/screener?q=${encodeURIComponent(term)}`, kind: "page" } as Item] : []),
+    ...(term.length >= 6 ? [{ key: "ask", label: t("Ask: {term}", { term }), detail: t("Ranked matches with reasons"), href: `/assistant?q=${encodeURIComponent(term)}`, kind: "ask" } as Item] : []),
+    ...pages.slice(0, term ? 4 : 11).map(([label, href, detail]): Item => ({ key: href, label: t(label), detail: t(detail), href, kind: "page" })),
+    ...(term.length >= 2 ? [{ key: "all", label: t("See all ETFs matching “{term}”", { term }), href: `/screener?q=${encodeURIComponent(term)}`, kind: "page" } as Item] : []),
   ];
   const go = (item: Item | undefined) => { if (!item) return; close(); router.push(item.href); };
 

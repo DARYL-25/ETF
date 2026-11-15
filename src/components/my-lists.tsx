@@ -37,7 +37,7 @@ export function SaveToWatchlist({ etfKey }: { etfKey: string }) {
   const toggle = (id: string) => save(lists.map((l) => l.id !== id ? l : { ...l, items: l.items.some((i) => i.key === etfKey) ? l.items.filter((i) => i.key !== etfKey) : [...l.items, { key: etfKey, note: "" }] }));
   return (
     <details className="relative">
-      <summary className="btn btn-quiet cursor-pointer list-none"><Bookmark size={16} aria-hidden /> {inList.length ? `In ${inList.length} watchlist${inList.length > 1 ? "s" : ""}` : "Add to watchlist"}</summary>
+      <summary className="btn btn-quiet cursor-pointer list-none"><Bookmark size={16} aria-hidden /> {inList.length ? `In ${inList.length} watchlist${inList.length > 1 ? "s" : ""}` : t("Add to watchlist")}</summary>
       <div className="absolute z-20 mt-1 w-64 rounded-xl border border-line bg-surface p-3 shadow-lg">
         {lists.map((l) => (
           <label key={l.id} className="flex cursor-pointer items-center gap-2 py-1">
@@ -150,7 +150,7 @@ export function PortfolioTracker() {
               <button type="button" className="btn btn-quiet" onClick={() => save(portfolios.filter((o) => o.id !== p.id))}>{t("Delete portfolio")}</button>
             </div>
             {priced.length && single ? (
-              <p className="data mb-2 font-semibold" role="status">{t("Value ")}{totalValue.toLocaleString("en-GB", { maximumFractionDigits: 0 })} {single}, {totalValue - totalCost >= 0 ? "up" : "down"} {Math.abs(totalValue - totalCost).toLocaleString("en-GB", { maximumFractionDigits: 0 })} {single} ({formatSignedPct(((totalValue - totalCost) / totalCost) * 100)}){priced.length < lines.length ? `, for the ${priced.length} of ${lines.length} positions with a NAV` : ""}</p>
+              <p className="data mb-2 font-semibold" role="status">{t("Value ")}{totalValue.toLocaleString("en-GB", { maximumFractionDigits: 0 })} {single}, {totalValue - totalCost >= 0 ? "up" : "down"} {Math.abs(totalValue - totalCost).toLocaleString("en-GB", { maximumFractionDigits: 0 })} {single} ({formatSignedPct(((totalValue - totalCost) / totalCost) * 100)}){priced.length < lines.length ? t(", for the {n} of {total} positions with a NAV", { n: priced.length, total: lines.length }) : ""}</p>
             ) : priced.length ? <p className="mb-2 text-muted">{t("This portfolio mixes currencies, so no total is shown yet.")}</p> : null}
             {lines.length ? (
               <div className="overflow-x-auto">

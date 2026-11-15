@@ -96,7 +96,7 @@ export function PriceChart({ series }: { series: ChartSeries[] }) {
         date,
         values: apis.map((api, i) => {
           const item = param.seriesData.get(api) as { value?: number } | undefined;
-          if (item?.value === undefined) return `${inView[i].label}: no data`;
+          if (item?.value === undefined) return t("{label}: no data", { label: inView[i].label });
           return `${inView[i].label}: ${item.value.toFixed(2)}${view === "price" && inView[i].currency ? ` ${inView[i].currency}` : ""}`;
         }),
       });
@@ -134,7 +134,7 @@ export function PriceChart({ series }: { series: ChartSeries[] }) {
       <p className="data min-h-[1.5em] text-[0.9rem]" aria-live="off">
         {readout
           ? `${readout.date}: ${readout.values.join(", ")}`
-          : inView.map((s, i) => `${s.label} ${change[i] === null ? "no data" : `${change[i]! >= 0 ? "+" : "−"}${Math.abs(change[i]!).toFixed(1)}%`}`).join(", ") + ` over ${range === "MAX" ? "the full history" : range}`}
+          : inView.map((s, i) => `${s.label} ${change[i] === null ? t("no data") : `${change[i]! >= 0 ? "+" : "−"}${Math.abs(change[i]!).toFixed(1)}%`}`).join(", ") + ` over ${range === "MAX" ? t("the full history") : range}`}
       </p>
       <div ref={holder} className="h-[20rem] w-full lg:h-[24rem]" role="img" aria-label={`Price history chart: ${series.map((s) => s.label).join(", ")}`} />
     </div>

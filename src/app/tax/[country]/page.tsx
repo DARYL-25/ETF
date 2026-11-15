@@ -1,3 +1,4 @@
+import { countryName } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import { use } from "react";
 import type { Metadata } from "next";
@@ -30,7 +31,7 @@ export default async function Page({ params }: Props) {
   return (
     <article className="max-w-4xl">
       <p className="mb-2"><Link href="/tax" className="prose-link">{t("Tax")}</Link></p>
-      <PageTitle title={`ETFs for a private investor in ${c.name}`}>{c.summary}</PageTitle>
+      <PageTitle title={t("ETFs for a private investor in {country}", { country: countryName(c.code, t.lang) })}>{t(c.summary)}</PageTitle>
       <p className="mb-8 max-w-[76ch] rounded-xl bg-warn-bg px-3.5 py-2.5 text-warn-ink">
         {t("General rules, read from official sources on ")}{formatDate(TAX_CHECKED_ON, t.lang)}{t(". No tax adviser has reviewed this page. It is not advice, and it does not replace the ")}{c.authority}{t(" or a qualified adviser.")}
       </p>
@@ -40,9 +41,9 @@ export default async function Page({ params }: Props) {
         <ol className="flex flex-col gap-3">
           {c.rules.map((r) => (
             <li key={r.title} className="panel p-5">
-              <h3 className="text-[1.1rem]">{r.title}</h3>
-              <p className="mt-2 max-w-[70ch]">{r.body}</p>
-              <p className="mt-2 max-w-[70ch] text-muted"><span className="font-medium text-ink">{t("What it means for an ETF. ")}</span>{r.why}</p>
+              <h3 className="text-[1.1rem]">{t(r.title)}</h3>
+              <p className="mt-2 max-w-[70ch]">{t(r.body)}</p>
+              <p className="mt-2 max-w-[70ch] text-muted"><span className="font-medium text-ink">{t("What it means for an ETF. ")}</span>{t(r.why)}</p>
               <Sources sources={r.sources} />
             </li>
           ))}
@@ -55,8 +56,8 @@ export default async function Page({ params }: Props) {
           <div className="grid gap-3 md:grid-cols-2">
             {c.wrappers.map((w) => (
               <div key={w.name} className="panel p-5">
-                <h3 className="text-[1.1rem]">{w.name}</h3>
-                <p className="mt-2">{w.body}</p>
+                <h3 className="text-[1.1rem]">{t(w.name)}</h3>
+                <p className="mt-2">{t(w.body)}</p>
                 <Sources sources={w.sources} />
               </div>
             ))}
@@ -68,8 +69,8 @@ export default async function Page({ params }: Props) {
         <h2 className="mb-3 text-[1.3rem]">{t("What to compare between two ETFs")}</h2>
         <div className="overflow-x-auto">
           <table className="table-data">
-            <thead><tr><th>{t("Fact on the ETF page")}</th><th>{t("Why it matters in ")}{c.name}</th></tr></thead>
-            <tbody>{c.compare.map((x) => <tr key={x.fact}><td className="whitespace-nowrap font-medium">{x.fact}</td><td>{x.matters}</td></tr>)}</tbody>
+            <thead><tr><th>{t("Fact on the ETF page")}</th><th>{t("Why it matters in ")}{countryName(c.code, t.lang)}</th></tr></thead>
+            <tbody>{c.compare.map((x) => <tr key={x.fact}><td className="whitespace-nowrap font-medium">{t(x.fact)}</td><td>{t(x.matters)}</td></tr>)}</tbody>
           </table>
         </div>
         <p className="mt-3 flex flex-wrap gap-2">
@@ -80,7 +81,7 @@ export default async function Page({ params }: Props) {
 
       <section className="mt-10 max-w-[70ch]">
         <h2 className="mb-2 text-[1.3rem]">{t("Not covered yet")}</h2>
-        <ul className="list-disc space-y-1.5 pl-5">{c.open.map((o) => <li key={o}>{o}</li>)}</ul>
+        <ul className="list-disc space-y-1.5 pl-5">{c.open.map((o) => <li key={o}>{t(o)}</li>)}</ul>
       </section>
     </article>
   );

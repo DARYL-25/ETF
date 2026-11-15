@@ -35,7 +35,7 @@ export default async function IndexPage({ params }: Props) {
         <div><dt className="inline text-muted">{t("Covers: ")}</dt><dd className="inline">{index.geography}</dd></div>
       </dl>
       <p className="mb-3 max-w-[68ch] text-muted">{t("For most funds, the link to this index is inferred from the fund's name. Check the factsheet before relying on it.")}</p>
-      <h2 className="mb-3 text-[1.3rem]">{etfs.length === 0 ? "No ETFs loaded yet" : `${etfs.length} ${etfs.length === 1 ? "ETF follows" : "ETFs follow"} this index`}</h2>
+      <h2 className="mb-3 text-[1.3rem]">{etfs.length === 0 ? t("No ETFs loaded yet") : etfs.length === 1 ? t("1 ETF follows this index") : t("{n} ETFs follow this index", { n: etfs.length })}</h2>
       {etfs.length === 0 ? (
         <p className="max-w-[68ch] text-muted">{t("We have not loaded an ETF on this index yet. That does not mean none exists. ")}<Link className="prose-link" href="/screener">{t("Search the screener")}</Link>{t(" for other funds.")}</p>
       ) : (
@@ -83,7 +83,7 @@ export default async function IndexPage({ params }: Props) {
             </section>
           ) : null}
           {etfs.length >= 2 ? (
-            <p className="mt-4"><Link className="btn btn-primary" href={`/compare?isins=${compareAll}`}>{t("Compare ")}{etfs.length > 5 ? "the first 5" : `these ${etfs.length}`}{t(" side by side")}</Link></p>
+            <p className="mt-4"><Link className="btn btn-primary" href={`/compare?isins=${compareAll}`}>{t("Compare ")}{etfs.length > 5 ? t("the first 5") : `these ${etfs.length}`}{t(" side by side")}</Link></p>
           ) : null}
         </>
       )}

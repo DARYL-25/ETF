@@ -1,5 +1,6 @@
 "use client";
 
+import { countryName } from "@/lib/format";
 import { useT } from "@/lib/i18n/client";
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -19,10 +20,10 @@ export function LensPicker({ current }: { current: string | null }) {
   };
   return (
     <details ref={details} className="relative">
-      <summary className="chip list-none" aria-label={country ? `You invest from ${country.name}. Change country` : "Choose the country you invest from"}>
+      <summary className="chip list-none" aria-label={country ? t("You invest from {country}. Change country", { country: countryName(country.code, t.lang) }) : t("Choose the country you invest from")}>
         <MapPin size={14} aria-hidden />
-        <span className="hidden sm:inline">{country ? country.name : "Your country"}</span>
-        <span className="sm:hidden">{country ? country.code : "Country"}</span>
+        <span className="hidden sm:inline">{country ? country.name : t("Your country")}</span>
+        <span className="sm:hidden">{country ? country.code : t("Country")}</span>
       </summary>
       <div className="panel absolute right-0 top-full z-50 mt-2 w-64 p-2 shadow-xl">
         <p className="px-2 pb-1.5 pt-1 text-[0.85rem] text-muted">{t("Pick where you live, and pages show what matters there. We never guess it from your location.")}</p>
@@ -30,7 +31,7 @@ export function LensPicker({ current }: { current: string | null }) {
           {LENS_COUNTRIES.map((c) => (
             <li key={c.code}>
               <button type="button" onClick={() => choose(c.code)} aria-pressed={c.code === country?.code} className={`flex w-full cursor-pointer items-center justify-between rounded-lg px-2 py-1.5 text-left hover:bg-sunken ${c.code === country?.code ? "font-semibold text-pine" : ""}`}>
-                {c.name}{c.tax ? <span className="text-[0.75rem] font-normal text-muted">{t("tax notes")}</span> : null}
+                {countryName(c.code, t.lang)}{c.tax ? <span className="text-[0.75rem] font-normal text-muted">{t("tax notes")}</span> : null}
               </button>
             </li>
           ))}

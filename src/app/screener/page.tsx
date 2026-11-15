@@ -16,6 +16,7 @@ export const metadata: Metadata = { title: "ETF Screener" };
 function CheckGroup({ title, name, options, selected, label, open, hideCounts }: {
   title: string; name: string; options: FilterOption[]; selected: string[]; label?: (v: string, fallback: string) => string; open?: boolean; hideCounts?: boolean;
 }) {
+  const t = use(getT());
   if (!options.length) return null;
   return (
     <details className="border-b border-line py-2" open={open || (!hideCounts && selected.length > 0)}>
@@ -26,7 +27,7 @@ function CheckGroup({ title, name, options, selected, label, open, hideCounts }:
         {options.map((o) => (
           <label key={o.value} className="flex cursor-pointer items-start gap-2 rounded px-0.5 py-1 hover:bg-sunken">
             <input type="checkbox" className="mt-1 accent-(--pine)" name={name} value={o.value} defaultChecked={selected.includes(o.value)} />
-            <span className="min-w-0 flex-1">{label ? label(o.value, o.label) : o.label}</span>
+            <span className="min-w-0 flex-1">{label ? label(o.value, o.label) : t(o.label)}</span>
             {hideCounts ? null : <span className="data text-[0.85rem] text-muted">{o.count}</span>}
           </label>
         ))}
@@ -57,13 +58,14 @@ function RangeGroup({ title, hint, minName, maxName, min, max, step }: {
 }
 
 function SortHeader({ params, sort, label, numeric, className }: { params: ScreenerParams; sort: SortKey; label: string; numeric?: boolean; className?: string }) {
+  const t = use(getT());
   const current = params.sort === sort;
   const dir = params.dir || defaultDirection(params.sort);
   const nextDir = current ? (dir === "asc" ? "desc" : "asc") : defaultDirection(sort);
   return (
     <th className={`${numeric ? "num" : ""} ${className ?? ""}`} aria-sort={current ? (dir === "asc" ? "ascending" : "descending") : "none"}>
       <Link href={screenerHref(params, { sort, dir: nextDir })} className={`no-underline hover:underline ${current ? "text-ink" : ""}`} scroll={false}>
-        {label}{current ? (dir === "asc" ? " ▲" : " ▼") : ""}
+        {t(label)}{current ? (dir === "asc" ? " ▲" : " ▼") : ""}
       </Link>
     </th>
   );
@@ -87,11 +89,11 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
   const flip = (list: string[], v: string) => (has(list, v) ? list.filter((x) => x !== v) : [...list, v]);
   const quick: { label: string; on: boolean; href: string }[] = [
     { label: "UCITS", on: params.ucits === "yes", href: screenerHref(params, { ucits: params.ucits === "yes" ? "" : "yes" }) },
-    { label: "Accumulating", on: has(params.distribution, "accumulating"), href: screenerHref(params, { distribution: flip(params.distribution, "accumulating") }) },
-    { label: "Distributing", on: has(params.distribution, "distributing"), href: screenerHref(params, { distribution: flip(params.distribution, "distributing") }) },
-    { label: "Fee known", on: Boolean(params.hasFee), href: screenerHref(params, { hasFee: params.hasFee ? "" : "1" }) },
-    { label: "Fee up to 0.10%", on: params.feeMax === 0.1, href: screenerHref(params, { feeMax: params.feeMax === 0.1 ? undefined : 0.1 }) },
-    { label: "Listed on SIX", on: Boolean(params.six), href: screenerHref(params, { six: params.six ? "" : "1" }) },
+    { label: t("Accumulating"), on: has(params.distribution, "accumulating"), href: screenerHref(params, { distribution: flip(params.distribution, "accumulating") }) },
+    { label: t("Distributing"), on: has(params.distribution, "distributing"), href: screenerHref(params, { distribution: flip(params.distribution, "distributing") }) },
+    { label: t("Fee known"), on: Boolean(params.hasFee), href: screenerHref(params, { hasFee: params.hasFee ? "" : "1" }) },
+    { label: t("Fee up to 0.10%"), on: params.feeMax === 0.1, href: screenerHref(params, { feeMax: params.feeMax === 0.1 ? undefined : 0.1 }) },
+    { label: t("Listed on SIX"), on: Boolean(params.six), href: screenerHref(params, { six: params.six ? "" : "1" }) },
   ];
   if (lens?.code === "CH") quick.unshift(quick.pop()!);
   if (lens?.code === "FR") quick.unshift({ label: "PEA", on: Boolean(params.pea), href: screenerHref(params, { pea: params.pea ? "" : "1" }) });
@@ -170,16 +172,16 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
                   <tr>
                     <th aria-label={t("Compare")} />
                     <SortHeader params={params} sort="name" label="ETF" />
-                    {show("issuer") ? <SortHeader params={params} sort="issuer" label="Issuer" /> : null}
-                    {show("index") ? <SortHeader params={params} sort="index" label="Index" className={phoneHide} /> : null}
-                    {show("domicile") ? <SortHeader params={params} sort="domicile" label="Domicile" /> : null}
-                    {show("replication") ? <SortHeader params={params} sort="replication" label="Replication" /> : null}
-                    <SortHeader params={params} sort="fee" label="Yearly fee" numeric />
-                    <SortHeader params={params} sort="aum" label="Size" numeric />
+                    {show("issuer") ? <SortHeader params={params} sort="issuer" label={t("Issuer")} /> : null}
+                    {show("index") ? <SortHeader params={params} sort="index" label={t("Index")} className={phoneHide} /> : null}
+                    {show("domicile") ? <SortHeader params={params} sort="domicile" label={t("Domicile")} /> : null}
+                    {show("replication") ? <SortHeader params={params} sort="replication" label={t("Replication")} /> : null}
+                    <SortHeader params={params} sort="fee" label={t("Yearly fee")} numeric />
+                    <SortHeader params={params} sort="aum" label={t("Size")} numeric />
                     {show("return1y") ? <SortHeader params={params} sort="return1y" label="1Y return" numeric className={phoneHide} /> : null}
                     {show("return3y") ? <SortHeader params={params} sort="return3y" label="3Y return p.a." numeric className={phoneHide} /> : null}
-                    {show("yield") ? <SortHeader params={params} sort="yield" label="Yield" numeric /> : null}
-                    {show("currency") ? <SortHeader params={params} sort="currency" label="Currency" /> : null}
+                    {show("yield") ? <SortHeader params={params} sort="yield" label={t("Yield")} numeric /> : null}
+                    {show("currency") ? <SortHeader params={params} sort="currency" label={t("Currency")} /> : null}
                   </tr>
                 </thead>
                 <tbody>

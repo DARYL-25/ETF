@@ -19,27 +19,27 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
   const { state } = await searchParams;
   return (
     <div className="max-w-4xl">
-      <PageTitle title={t("Pricing")}>{on ? "Start free. Upgrade when you want the extra tools, and cancel at any time." : "Everything is free while the product is being built, and no payment is taken. These are the plans that will apply at launch."}</PageTitle>
+      <PageTitle title={t("Pricing")}>{on ? t("Start free. Upgrade when you want the extra tools, and cancel at any time.") : t("Everything is free while the product is being built, and no payment is taken. These are the plans that will apply at launch.")}</PageTitle>
       {state === "error" ? <p role="alert" className="mb-4 rounded-xl bg-warn-bg px-3 py-2 text-warn-ink">{t("The payment page could not be opened. Nothing was charged. Try again in a moment.")}</p> : null}
       {state === "off" ? <p role="status" className="mb-4 rounded-xl bg-warn-bg px-3 py-2 text-warn-ink">{t("Payments are not switched on yet. Every feature is open to you for now.")}</p> : null}
       <div className="grid gap-3 md:grid-cols-2">
         <section className="panel flex flex-col p-6">
           <h2 className="text-[1.3rem]">{t("Free")}</h2>
           <p className="stat-value mt-3">€0</p>
-          <ul className="mt-5 space-y-2">{FREE.map((i) => <li key={i} className="flex gap-2.5"><Check size={17} aria-hidden className="mt-1 flex-none text-pine" />{i}</li>)}</ul>
+          <ul className="mt-5 space-y-2">{FREE.map((i) => <li key={i} className="flex gap-2.5"><Check size={17} aria-hidden className="mt-1 flex-none text-pine" />{t(i)}</li>)}</ul>
           <p className="mt-auto pt-6"><Link href="/screener" className="btn btn-quiet w-full">{t("Open the screener")}</Link></p>
         </section>
         <section className="panel flex flex-col border-pine p-6">
           <h2 className="text-[1.3rem]">{t("Premium")}</h2>
           <p className="stat-value mt-3">€9.90 <span className="text-[0.5em] font-medium text-muted">{t("a month, or €79.90 a year")}</span></p>
-          <ul className="mt-5 space-y-2">{PREMIUM.map((i) => <li key={i} className="flex gap-2.5"><Check size={17} aria-hidden className="mt-1 flex-none text-pine" />{i}</li>)}</ul>
+          <ul className="mt-5 space-y-2">{PREMIUM.map((i) => <li key={i} className="flex gap-2.5"><Check size={17} aria-hidden className="mt-1 flex-none text-pine" />{t(i)}</li>)}</ul>
           {on && plan !== "premium" ? (
             <form action="/api/billing/checkout" method="post" className="mt-auto flex gap-2 pt-6">
               <button className="btn btn-primary flex-1" name="interval" value="month">{t("Subscribe monthly")}</button>
               <button className="btn btn-quiet flex-1" name="interval" value="year">{t("Subscribe yearly")}</button>
             </form>
           ) : (
-            <p className="mt-auto pt-6 text-muted">{on ? "You are on Premium. Manage it from your account page." : "Not on sale yet. You have these features for free until launch."}</p>
+            <p className="mt-auto pt-6 text-muted">{on ? t("You are on Premium. Manage it from your account page.") : t("Not on sale yet. You have these features for free until launch.")}</p>
           )}
         </section>
       </div>

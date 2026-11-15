@@ -1,3 +1,4 @@
+import { countryName } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -21,7 +22,7 @@ async function OnThisDevice() {
   return (
     <div className="flex flex-col gap-3">
       <section className="panel flex flex-wrap items-center justify-between gap-3 p-5">
-        <div><h2 className="text-[1.1rem]">{t("Where you live")}</h2><p className="mt-1 max-w-[46ch] text-muted">{lens ? `Pages are tuned for an investor in ${lens.name}.` : "Choose your country and pages show what matters there."}{t(" Stored in this browser only.")}</p></div>
+        <div><h2 className="text-[1.1rem]">{t("Where you live")}</h2><p className="mt-1 max-w-[46ch] text-muted">{lens ? t("Pages are tuned for an investor in {country}.", { country: countryName(lens.code, t.lang) }) : t("Choose your country and pages show what matters there.")}{t(" Stored in this browser only.")}</p></div>
         <LensPicker current={lens?.code ?? null} />
       </section>
       <section className="panel flex flex-wrap items-center justify-between gap-3 p-5">
@@ -29,7 +30,7 @@ async function OnThisDevice() {
         <ThemeToggle />
       </section>
       <section className="panel flex flex-wrap items-center justify-between gap-3 p-5">
-        <div><h2 className="text-[1.1rem]">{t("Plan")}</h2><p className="mt-1 max-w-[46ch] text-muted">{!locked ? "Every feature is free while the product is being built." : plan === "premium" ? "Premium." : "Free."}</p></div>
+        <div><h2 className="text-[1.1rem]">{t("Plan")}</h2><p className="mt-1 max-w-[46ch] text-muted">{!locked ? t("Every feature is free while the product is being built.") : plan === "premium" ? t("Premium.") : t("Free.")}</p></div>
         {locked && customerId ? <form action="/api/billing/portal" method="post"><button className="btn btn-quiet">{t("Manage subscription")}</button></form> : <Link className="btn btn-quiet" href="/pricing">{t("See plans")}</Link>}
       </section>
       <section className="panel p-5">

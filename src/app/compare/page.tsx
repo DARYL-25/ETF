@@ -105,8 +105,8 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
   const charted = prices.filter((p): p is NonNullable<typeof p> => Boolean(p));
   const unpriced = etfs.filter((_, i) => !prices[i]);
   const allRenders: Row[] = [
-    { label: "Top sectors", render: (r) => topLines(exposures[etfs.indexOf(r)].filter((x) => x.dimension === "sector")) },
-    { label: "Top countries", render: (r) => topLines(exposures[etfs.indexOf(r)].filter((x) => x.dimension === "country")) },
+    { label: t("Top sectors"), render: (r) => topLines(exposures[etfs.indexOf(r)].filter((x) => x.dimension === "sector")) },
+    { label: t("Top countries"), render: (r) => topLines(exposures[etfs.indexOf(r)].filter((x) => x.dimension === "country")) },
   ];
 
   return (
@@ -125,12 +125,12 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
               ))}
             </tr>
           </thead>
-          {[...groups, { title: "Allocation", rows: allRenders }].map((group) => (
+          {[...groups, { title: t("Allocation"), rows: allRenders }].map((group) => (
             <tbody key={group.title}>
-              <tr><th colSpan={etfs.length + 1} className="sticky left-0 bg-surface pt-5 text-left text-[1.05rem] text-ink">{group.title}</th></tr>
+              <tr><th colSpan={etfs.length + 1} className="sticky left-0 bg-surface pt-5 text-left text-[1.05rem] text-ink">{t(group.title)}</th></tr>
               {group.rows.map((row) => (
                 <tr key={row.label}>
-                  <td className="sticky left-0 z-10 min-w-[8rem] bg-surface text-muted">{row.label}</td>
+                  <td className="sticky left-0 z-10 min-w-[8rem] bg-surface text-muted">{t(row.label)}</td>
                   {etfs.map((e) => <td key={e.etf_key} className={row.label === "Yearly fee" && lowest !== null && e.headline_fee_pct === lowest ? "bg-sunken font-semibold" : undefined}>{row.render(e)}</td>)}
                 </tr>
               ))}
@@ -175,7 +175,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
               <p className="mt-3 max-w-[72ch] text-[0.85rem] text-muted">{t("Based on issuers' holdings files. Securities are matched by ISIN, or by ticker and name where the file has no ISIN, so a few matches can be missed.")}</p>
             </>
           ) : (
-            <p className="max-w-[72ch] text-muted">{t("Overlap needs a holdings file for at least two of these funds. We hold them for iShares and State Street funds so far")}{hasHoldings.size ? `, here only for ${[...hasHoldings].map(label).join(", ")}` : ""}.</p>
+            <p className="max-w-[72ch] text-muted">{t("Overlap needs a holdings file for at least two of these funds. We hold them for iShares and State Street funds so far")}{hasHoldings.size ? t(", here only for {funds}", { funds: [...hasHoldings].map(label).join(", ") }) : ""}.</p>
           )}
         </section>
       ) : null}

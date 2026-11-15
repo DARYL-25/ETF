@@ -68,7 +68,7 @@ export const TAX_COUNTRIES: TaxCountry[] = [
 export const taxCountry = (codeOrSlug: string | null | undefined) =>
   TAX_COUNTRIES.find((c) => c.code === (codeOrSlug ?? "").toUpperCase() || c.slug === (codeOrSlug ?? "").toLowerCase()) ?? null;
 
-export type TaxNote = { text: string; source?: Source; kind: "fact" | "check" };
+export type TaxNote = { text: string; vars?: Record<string, string>; source?: Source; kind: "fact" | "check" };
 
 /** Notes for one ETF and one country of residence, built only from structural facts we hold. */
 export function taxNotes(row: Pick<EtfRow, "name" | "domicile" | "distribution_policy" | "replication" | "ucits" | "isin" | "listed_on_six" | "fund_key" | "pea_eligible">, code: string): TaxNote[] {
@@ -84,7 +84,7 @@ export function taxNotes(row: Pick<EtfRow, "name" | "domicile" | "distribution_p
     if (domicile === "CH") notes.push({ kind: "fact", text: "Swiss fund: 35% withholding tax on its income, reclaimed through your tax return, and the 1.5 per mille stamp duty rate at a Swiss dealer.", source: ESTV_TAXES });
     else if (domicile) notes.push({ kind: "fact", text: "Foreign fund: the 3 per mille stamp duty rate applies to trades through a Swiss dealer.", source: ESTV_TAXES });
     if (row.listed_on_six) notes.push({ kind: "fact", text: "Listed on SIX Swiss Exchange, according to the issuer." });
-    notes.push({ kind: "check", text: `Look up ${row.isin ?? "the ISIN"} in ICTax to see its taxable income and year-end value.`, source: ICTAX });
+    notes.push({ kind: "check", text: "Look up {isin} in ICTax to see its taxable income and year-end value.", vars: { isin: row.isin ?? "ISIN" }, source: ICTAX });
   }
   if (code === "FR") {
     if (row.pea_eligible === true) notes.push({ kind: "fact", text: "The issuer lists this fund as eligible for a PEA.", source: FR_PEA });

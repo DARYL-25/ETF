@@ -50,7 +50,7 @@ export async function Shell({ children }: { children: React.ReactNode }) {
           <details className="relative hidden lg:block">
             <summary className="chip list-none" aria-label={t("More pages")}><Menu size={15} aria-hidden /></summary>
             <div className="panel absolute right-0 top-full z-50 mt-2 w-56 p-2 shadow-xl">
-              <ul>{MORE.filter((m) => !MAIN.some((x) => x.href === m.href)).map((m) => <li key={m.href}><Link href={m.href} className="block rounded-lg px-2 py-1.5 no-underline hover:bg-sunken">{m.label}</Link></li>)}</ul>
+              <ul>{MORE.filter((m) => !MAIN.some((x) => x.href === m.href)).map((m) => <li key={m.href}><Link href={m.href} className="block rounded-lg px-2 py-1.5 no-underline hover:bg-sunken">{t(m.label)}</Link></li>)}</ul>
               <div className="mt-1 border-t border-line px-2 pt-2"><ThemeToggle /></div>
             </div>
           </details>
@@ -64,15 +64,15 @@ export async function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </footer>
       <nav aria-label={t("Main, phone")} className="fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-surface/95 backdrop-blur lg:hidden">
-        <NavLink href="/" label="Home" className={tab}><Home size={19} aria-hidden /></NavLink>
-        <NavLink href="/screener" label="Screener" also={["/etfs"]} className={tab}><SlidersHorizontal size={19} aria-hidden /></NavLink>
-        <NavLink href="/compare" label="Compare" className={tab}><Scale size={19} aria-hidden /></NavLink>
-        <NavLink href="/academy" label="Learn" className={tab}><BookOpen size={19} aria-hidden /></NavLink>
-        <NavLink href="/watchlists" label="Lists" also={["/portfolio"]} className={tab}><Bookmark size={19} aria-hidden /></NavLink>
+        <NavLink href="/" label={t("Home")} className={tab}><Home size={19} aria-hidden /></NavLink>
+        <NavLink href="/screener" label={t("Screener")} also={["/etfs"]} className={tab}><SlidersHorizontal size={19} aria-hidden /></NavLink>
+        <NavLink href="/compare" label={t("Compare")} className={tab}><Scale size={19} aria-hidden /></NavLink>
+        <NavLink href="/academy" label={t("Learn")} className={tab}><BookOpen size={19} aria-hidden /></NavLink>
+        <NavLink href="/watchlists" label={t("Lists")} also={["/portfolio"]} className={tab}><Bookmark size={19} aria-hidden /></NavLink>
         <details className="relative flex-1">
           <summary className={`${tab} cursor-pointer list-none`}><Menu size={19} aria-hidden /><span>{t("More")}</span></summary>
           <div className="panel absolute bottom-full right-2 mb-2 w-56 p-2 shadow-xl">
-            <ul>{MORE.map((m) => <li key={m.href}><Link href={m.href} className="block rounded-lg px-2 py-2 no-underline hover:bg-sunken">{m.label}</Link></li>)}</ul>
+            <ul>{MORE.map((m) => <li key={m.href}><Link href={m.href} className="block rounded-lg px-2 py-2 no-underline hover:bg-sunken">{t(m.label)}</Link></li>)}</ul>
             <div className="mt-1 border-t border-line px-2 pt-2"><ThemeToggle /></div>
           </div>
         </details>

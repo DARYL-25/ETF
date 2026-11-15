@@ -43,7 +43,7 @@ export function Assistant({ initial, hero = false, home }: { initial?: string; h
       setText("");
       requestAnimationFrame(() => results.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
     } catch (e) {
-      setError((e as Error).message || "The search failed. Try again.");
+      setError((e as Error).message || t("The search failed. Try again."));
     } finally {
       setBusy(false);
     }
@@ -54,7 +54,7 @@ export function Assistant({ initial, hero = false, home }: { initial?: string; h
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initial]);
 
-  const country = reply?.etfs.length ? reply.notChecked.find((n) => n.startsWith("Tax is not scored")) : null;
+  const taxHref = reply?.etfs.length ? reply.taxHref ?? null : null;
 
   return (
     <div className="flex flex-col gap-8">
@@ -63,12 +63,12 @@ export function Assistant({ initial, hero = false, home }: { initial?: string; h
           <textarea id="ask" rows={1} maxLength={2000} value={text} aria-label={t("Describe what you are looking for")}
             onChange={(e) => { setText(e.target.value); e.target.style.height = "auto"; e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`; }}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void ask(text); } }}
-            placeholder={history.length ? "Refine it: only accumulating, under 0.2%, physical…" : home ? `An ETF for an investor in ${home}…` : "An index, a theme, and where you live"} />
+            placeholder={history.length ? t("Refine it: only accumulating, under 0.2%, physical…") : home ? t("An ETF for an investor in {country}…", { country: home }) : t("An index, a theme, and where you live")} />
           <button type="submit" disabled={busy || !text.trim()} aria-label={t("Search")}>{busy ? <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <ArrowUp size={19} aria-hidden />}</button>
         </div>
         {!history.length ? (
           <div className={`mt-4 flex flex-wrap gap-2 ${hero ? "justify-center" : ""}`}>
-            {EXAMPLES.map((ex) => <button key={ex} type="button" className="chip" onClick={() => { setText(ex); void ask(ex); }}>{ex}</button>)}
+            {EXAMPLES.map((ex) => <button key={ex} type="button" className="chip" onClick={() => { setText(t(ex)); void ask(t(ex)); }}>{t(ex)}</button>)}
           </div>
         ) : null}
       </form>
@@ -77,12 +77,12 @@ export function Assistant({ initial, hero = false, home }: { initial?: string; h
         <div ref={results} className="arrive flex scroll-mt-24 flex-col gap-6" aria-live="polite">
           <section>
             <div className="flex flex-wrap items-baseline justify-between gap-3">
-              <h2 className="text-[1.5rem]">{reply.etfs.length ? "Closest matches" : "No match"}</h2>
+              <h2 className="text-[1.5rem]">{reply.etfs.length ? t("Closest matches") : "No match"}</h2>
               <button type="button" className="chip" onClick={() => { setHistory([]); setReply(null); setAsked(""); }}><RotateCcw size={13} aria-hidden />{t("Start again")}</button>
             </div>
             <p className="mt-1 text-muted">{t("For “")}{asked}”</p>
             <p className="mt-3 max-w-[72ch] whitespace-pre-line leading-relaxed">{reply.text}</p>
-            <p className="mt-1.5 text-[0.85rem] text-muted">{reply.aiUsed ? "Written by AI from database results, and it can make mistakes." : "No AI was used for this answer."}{t(" Research support, not investment or tax advice.")}</p>
+            <p className="mt-1.5 text-[0.85rem] text-muted">{reply.aiUsed ? t("Written by AI from database results, and it can make mistakes.") : t("No AI was used for this answer.")}{t(" Research support, not investment or tax advice.")}</p>
           </section>
           {reply.etfs.length ? (
             <ol className="arrive flex flex-col gap-2.5">
@@ -115,7 +115,7 @@ export function Assistant({ initial, hero = false, home }: { initial?: string; h
           <div className="grid gap-3 md:grid-cols-2">
             {reply.applied.length ? <section className="panel p-4"><h2 className="mb-2 text-[1.05rem]">{t("What we took into account")}</h2><ul className="list-disc space-y-1 pl-5">{reply.applied.map((a) => <li key={a}>{a}</li>)}<li>{t("Ranked by fee, size, UCITS status and data available")}</li></ul></section> : null}
             <section className="panel p-4"><h2 className="mb-2 text-[1.05rem]">{t("What we could not check")}</h2><ul className="list-disc space-y-1 pl-5">{reply.notChecked.map((a) => <li key={a}>{a}</li>)}</ul>
-              {country ? <p className="mt-2"><Link className="prose-link" href={country.includes("Switzerland") ? "/tax/switzerland" : "/tax/france"}>{t("Read the tax notes")}</Link></p> : null}
+              {taxHref ? <p className="mt-2"><Link className="prose-link" href={taxHref}>{t("Read the tax notes")}</Link></p> : null}
             </section>
           </div>
           {reply.lessons.length ? <p>{t("Learn more: ")}{reply.lessons.map((l, i) => <span key={l.slug}>{i ? ", " : ""}<Link className="prose-link" href={`/academy/${l.slug}`}>{l.title}</Link></span>)}</p> : null}

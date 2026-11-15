@@ -1,3 +1,4 @@
+import { countryName } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -19,8 +20,8 @@ export default async function Page() {
         {TAX_COUNTRIES.map((c) => (
           <li key={c.code}>
             <Link href={`/tax/${c.slug}`} className="panel group flex h-full flex-col gap-2 p-5 no-underline transition-colors hover:border-pine">
-              <span className="flex items-center justify-between text-[1.3rem] font-semibold">{c.name}{lens?.code === c.code ? <span className="rounded-full bg-sunken px-2.5 py-0.5 text-[0.8rem] font-medium text-pine">{t("Your country")}</span> : <ArrowRight size={18} aria-hidden className="text-muted group-hover:text-pine" />}</span>
-              <span className="text-muted">{c.summary}</span>
+              <span className="flex items-center justify-between text-[1.3rem] font-semibold">{countryName(c.code, t.lang)}{lens?.code === c.code ? <span className="rounded-full bg-sunken px-2.5 py-0.5 text-[0.8rem] font-medium text-pine">{t("Your country")}</span> : <ArrowRight size={18} aria-hidden className="text-muted group-hover:text-pine" />}</span>
+              <span className="text-muted">{t(c.summary)}</span>
               <span className="mt-auto pt-2 text-[0.85rem] text-muted">{c.rules.length}{t(" rules, ")}{c.rules.reduce((n, r) => n + r.sources.length, 0)}{t(" official references")}</span>
             </Link>
           </li>
