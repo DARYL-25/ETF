@@ -401,6 +401,17 @@ export function buildSeedSql(root: string): string {
       });
       out.push(`insert into public.holdings select v.* from (values\n${values.join(",\n")}) as v(etf_key, holding_key, name, ticker, weight_pct, sector, country, asset_class) ${known};`);
     }
+    // State Street's US files carry no sector. Its eleven Select Sector funds split the S&P 500 by sector,
+    // so a company's sector is the sector fund that holds it. Companies outside those funds stay without one.
+    const sectorFunds: Record<string, string> = { XLK: "Information Technology", XLF: "Financials", XLV: "Health Care", XLY: "Consumer Discretionary", XLP: "Consumer Staples", XLE: "Energy", XLI: "Industrials", XLB: "Materials", XLU: "Utilities", XLRE: "Real Estate", XLC: "Communication Services" };
+    out.push(`update public.holdings h set sector = m.sector from (
+        select distinct on (x.holding_key) x.holding_key, f.sector from public.holdings x
+        join public.universe_etfs u on u.etf_key = x.etf_key
+        join (values ${Object.entries(sectorFunds).map(([t, name]) => `(${q(t)}, ${q(name)})`).join(", ")}) as f(ticker, sector) on f.ticker = u.ticker
+        where x.holding_key not like '|%' order by x.holding_key, x.weight_pct desc
+      ) m where m.holding_key = h.holding_key and (h.sector is null or h.sector in ('', '-'));`);
+    out.push(`update public.holdings set sector = null where sector in ('', '-');`);
+    out.push(`update public.holdings h set country = 'United States' from public.holdings x join public.universe_etfs u on u.etf_key = x.etf_key and u.ticker = 'SPY' where x.holding_key = h.holding_key and h.country is null;`);
   }
 
   out.push("commit;");
