@@ -71,7 +71,7 @@ def ishares():
             # Share classes of one fund share a portfolio, so one file serves them all.
             if not u or not page or ok + failed >= LIMIT: continue
             pid = f.get("portfolioId") or page
-            url = f"https://www.ishares.com{page}/1506575576011.ajax?fileType=csv&fileName=holdings&dataType=fund"
+            url = f"https://www.ishares.com{page}/latest-holdings.csv"
             if pid in seen and seen is not None:
                 first = shared.get(pid)
                 if first and first in holdings:
@@ -83,9 +83,7 @@ def ishares():
                 time.sleep(0.8)
                 text = get(url).decode("utf-8-sig", "replace")
                 lines = text.splitlines()
-                if PROBE and len(probe) < 6:
-                    probe[u["etf_key"]] = {"url": url, "links": sorted(set(re.findall(r'["\'(]((?:https?:)?/[^"\')\s]*(?:csv|xls|holdings|ajax|download)[^"\')\s]*)', text, re.I)))[:40],
-                        "api": sorted(set(re.findall(r'["\']((?:https?:)?/[^"\']*(?:api|varnish)[^"\']*)["\']', text)))[:25], "near": [text[m.start() - 200:m.start() + 300] for m in list(re.finditer(r"[Hh]oldings", text))[:2]]}
+                if PROBE and len(probe) < 6: probe[u["etf_key"]] = [l[:260] for l in lines[:9]]
                 head = next(i for i, l in enumerate(lines[:40]) if "Weight (%)" in l)
                 as_of = next((parse_date(l.split(",", 1)[1]) for l in lines[:head] if l.lower().startswith(("fund holdings as of", "holdings as of")) and "," in l), "")
                 rows = []

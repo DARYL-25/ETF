@@ -94,7 +94,7 @@ const q = (v: unknown): string => {
 
 /** Builds idempotent-free insert SQL for an empty database. Same SQL for local and Supabase. */
 /** Public data tables, in an order that is safe to empty together. User tables never reference them. */
-export const PUBLIC_DATA_TABLES = ["universe_prices", "universe_details", "universe_etfs", "fund_top_holdings", "fund_prices", "fund_exposures", "metric_observations", "share_class_fees", "listings", "share_classes", "fund_categories", "fund_index_relationships", "funds", "categories", "indices", "exchanges", "issuers", "fx_rates", "data_sources"];
+export const PUBLIC_DATA_TABLES = ["holdings", "holdings_summary", "universe_prices", "universe_details", "universe_etfs", "fund_top_holdings", "fund_prices", "fund_exposures", "metric_observations", "share_class_fees", "listings", "share_classes", "fund_categories", "fund_index_relationships", "funds", "categories", "indices", "exchanges", "issuers", "fx_rates", "data_sources"];
 
 export function buildSeedSql(root: string): string {
   const funds = fundsFile.parse(JSON.parse(readFileSync(join(root, "data/seed/funds.json"), "utf8")));
@@ -378,6 +378,28 @@ export function buildSeedSql(root: string): string {
       out.push(`insert into public.universe_prices (etf_key, price_date, value, currency, kind, source)
         select v.* from (values\n${values.join(",\n")}) as v(etf_key, price_date, value, currency, kind, source)
         where exists (select 1 from public.universe_etfs u where u.etf_key = v.etf_key) on conflict do nothing;`);
+    }
+  }
+
+  // Full holdings, from scripts/universe/holdings.py.
+  const holdingsPath = join(root, "data/holdings/holdings.csv.gz");
+  const summaryPath = join(root, "data/holdings/summary.csv.gz");
+  if (existsSync(holdingsPath) && existsSync(summaryPath)) {
+    const known = `where exists (select 1 from public.universe_etfs u where u.etf_key = v.etf_key) on conflict do nothing`;
+    const summaries = gunzipSync(readFileSync(summaryPath)).toString("utf8").trim().split(/\r?\n/).slice(1).map((line) => {
+      const [key, asOf, n, kept, covered, source, url] = parseLine(line);
+      return `(${q(current(key))}, ${asOf ? `${q(asOf)}::date` : "null::date"}, ${Number(n)}, ${Number(kept)}, ${Number(covered)}, ${q(source)}, ${q(url)})`;
+    });
+    for (let i = 0; i < summaries.length; i += 500) {
+      out.push(`insert into public.holdings_summary select v.* from (values\n${summaries.slice(i, i + 500).join(",\n")}) as v(etf_key, as_of, n_holdings, kept, covered_pct, source, source_url) ${known};`);
+    }
+    const lines = gunzipSync(readFileSync(holdingsPath)).toString("utf8").trim().split(/\r?\n/).slice(1);
+    for (let i = 0; i < lines.length; i += 1000) {
+      const values = lines.slice(i, i + 1000).map((line) => {
+        const [key, holding, name, ticker, weight, sector, country, assetClass] = parseLine(line);
+        return `(${q(current(key))}, ${q(holding)}, ${q(name)}, ${q(ticker || null)}, ${Number(weight)}, ${q(sector || null)}, ${q(country || null)}, ${q(assetClass || null)})`;
+      });
+      out.push(`insert into public.holdings select v.* from (values\n${values.join(",\n")}) as v(etf_key, holding_key, name, ticker, weight_pct, sector, country, asset_class) ${known};`);
     }
   }
 
