@@ -9,7 +9,7 @@ export function NavLink({ href, label, also = [], children, className }: { href:
   const t = useT();
   const active = href === "/" ? path === "/" : [href, ...also].some((h) => path.startsWith(h));
   return (
-    <Link href={href} aria-current={active ? "page" : undefined} className={className}>
+    <Link href={href} aria-current={active ? "page" : undefined} className={`whitespace-nowrap ${className ?? ""}`}>
       {children}
       <span>{t(label)}</span>
     </Link>
