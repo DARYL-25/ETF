@@ -98,6 +98,31 @@
    "wtdAvgCarbonIntensity",
    "yieldToWorst"
   ],
+  "error_body": {
+   "url": "https://www.ishares.com/uk/individual/en/products/296967/ishares-spain-govt-bond-ucits-etf/latest-holdings.csv",
+   "code": 400,
+   "headers": {
+    "Content-Type": "text/html; charset=utf-8",
+    "Content-Encoding": "gzip",
+    "x-visibility": "public",
+    "x-varnish": "4520577",
+    "x-varnish-age": "0",
+    "Cache-Control": "no-cache, no-store",
+    "strict-transport-security": "max-age=31536000;preload",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "SAMEORIGIN",
+    "referrer-policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    "Content-Length": "36",
+    "x-envoy-upstream-service-time": "5",
+    "x-region-ref": "muse2",
+    "Date": "Sun, 15 Nov 2026 21:53:13 GMT",
+    "Connection": "close",
+    "Set-Cookie": "DC_STICKY_SESSION_COOKIE=muse2; Expires=Mon, 16 Nov 2026 05:53:13 GMT; Secure; HttpOnly; SameSite=None; Path=/",
+    "Alt-Svc": "h3=\":443\"; ma=93600"
+   },
+   "body": "\u001f�\b\u0000\u0000\u0000\u0000\u0000\u0000\u0003\u000b����/�S(�,I�R(�\u0006\u0000\u001b e�\u0010\u0000\u0000\u0000"
+  },
   "ssga_sample": [
    [
     "Fund Name:",
