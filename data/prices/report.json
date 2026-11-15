@@ -1,5 +1,5 @@
 {
- "on": "2026-11-14",
+ "on": "2026-11-15",
  "fx": {
   "ok": true,
   "rate_date": "2026-11-13",
@@ -10,7 +10,7 @@
   "ok": true,
   "points": 235
  },
- "new_points": 1380,
+ "new_points": 3,
  "etfs_priced": 2511,
  "latest_date": "2026-11-13"
 }
