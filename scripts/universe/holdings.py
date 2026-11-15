@@ -148,15 +148,18 @@ def spdr_eu():
     ws.reset_dimensions()
     table = [[str(c).strip() if c is not None else "" for c in r] for r in ws.iter_rows(values_only=True)]
     head = next(i for i, r in enumerate(table[:12]) if "ISIN" in r)
-    probe["spdr_eu_rows"] = [r[33:80] for r in table[max(0, head - 2):head + 5]]
-    col = {n: i for i, n in enumerate(table[head])}
-    tick = next((col[n] for n in col if re.search(r"ticker", n, re.I)), None)
+    col = {n: i for i, n in enumerate(table[head]) if n}
+    # Listing tickers sit three rows deep: exchange, currency, then "Ticker". A fund's holdings file is named after one of them.
+    ticker_cols = [i for i, c in enumerate(table[head + 2]) if c == "Ticker"]
     ok = failed = 0
     tried = []
-    for r in table[head + 1:]:
-        u = by_isin.get(r[col["ISIN"]])
-        if not u or tick is None or not r[tick] or ok + failed >= LIMIT: continue
-        code = re.sub(r"[^a-z0-9]+", "-", r[tick].lower()).strip("-")
+    for r in table[head + 3:]:
+        u = by_isin.get(r[col["ISIN"]]) if len(r) > col["ISIN"] else None
+        if not u or u["etf_key"] in summary or ok + failed >= LIMIT: continue
+        codes = [r[i] for i in ticker_cols if i < len(r) and r[i] not in ("", "-")]
+        codes.sort(key=lambda c: (not c.endswith(" GY"), not c.endswith(" LN")))
+        if not codes: continue
+        code = re.sub(r"[^a-z0-9]+", "-", codes[0].lower()).strip("-")
         url = f"https://www.ssga.com/library-content/products/fund-data/etfs/emea/holdings-daily-emea-en-{code}.xlsx"
         try:
             time.sleep(0.8)
@@ -204,7 +207,7 @@ def probe_others():
             out[name] = f"{type(e).__name__}: {e}"[:120]
     probe["others"] = out
 
-for fn in (ssga_us, spdr_eu, probe_others):
+for fn in (ssga_us, spdr_eu):
     try: fn()
     except Exception as e: report[fn.__name__] = f"{type(e).__name__}: {e}"[:200]
 
