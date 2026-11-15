@@ -6,14 +6,19 @@
 |---|---|
 | Website, design, phone layout | Done. Tested on desktop and phone |
 | Global ETF list | Done for the EU, UK, US, Japan, Hong Kong, India, Shanghai, Taiwan, Canada, Singapore, Korea and Australia. About 17,900 ETFs after joining duplicate US records |
-| Fees, size, returns | 6,650 ETFs have a fee (37%), 3,400 a size and 2,200 official returns. Filled issuer by issuer |
+| Fees, size, returns | 7,990 ETFs have a fee (45%), 3,400 a size and 2,200 official returns. Filled issuer by issuer |
 | Daily prices | Issuer NAV or an open-data close for about 2,500 ETFs, of which 1,500 refresh every day. History builds from 4 November 2026 |
-| Update schedule | Done: weekly list, daily prices, monthly details, quarterly SEC fees. See [DATA_UPDATES.md](DATA_UPDATES.md) |
+| Holdings | Full holdings for about 340 ETFs (State Street, ARK, Direxion), refreshed weekly. Powers overlap between funds, "which ETFs hold X", and portfolio look-through |
+| True cost | Fee in money on each ETF page, and the return gap between funds on the same index |
+| Update schedule | Done: weekly list and holdings, daily prices, monthly details, quarterly SEC fees. See [DATA_UPDATES.md](DATA_UPDATES.md) |
 | Search, ask bar, screener, comparison, index pages, CSV export | Done |
 | Investor country | Done: rankings, quick filters and ETF pages adapt |
-| Tax notes | Switzerland and France, from official sources. **Not reviewed by a tax adviser** |
+| Tax notes | Switzerland and France, from official sources, including PEA, assurance-vie and ICTax. **Not reviewed by a tax adviser** |
+| French | The whole site in French and English, except the lessons. The language is remembered in a cookie, so both languages share one address |
+| Search engines | Sitemap of every page, robots file, page descriptions and structured data. Set `NEXT_PUBLIC_SITE_URL` to the live address |
+| Hardening | Security headers and content policy, accessibility audit with axe (no problems on 14 pages, light and dark), a one-minute read cache |
 | Learn | Lessons, quizzes, glossary, calculators. Not reviewed by a second person |
-| Watchlists, practice portfolio | Done, stored in the browser |
+| Watchlists, practice portfolio | Done. Stored in the browser, and in the account when signed in (**account saving never tested against a live Supabase project**) |
 | AI assistant | Done. Ranked answers work without a key. Written explanations need `ANTHROPIC_API_KEY` |
 | Accounts | Code complete, **never tested against a live Supabase project** |
 | Subscriptions | Stripe checkout, portal and webhook written and unit-tested, **never run against Stripe** |
@@ -25,16 +30,18 @@
 3. **Have a tax adviser review the Switzerland and France notes.**
 4. **Check whether ranking funds for a country counts as regulated advice** where you operate.
 5. **Create the Stripe products** and set the keys, when ready to charge.
-6. **Download the issuer files each quarter**, including the SIX explorer's CSV.
-7. **Choose a licensed price feed** when revenue allows. Live prices cannot be free.
+6. **Decide how to get iShares and other issuers' holdings**: ask the issuers for permission, or buy a licensed feed.
+7. **Download the issuer files each quarter**, including the SIX explorer's CSV.
+8. **Choose a licensed price feed** when revenue allows. Live prices cannot be free.
 
 ## What is left to build
 
-- Watchlists and portfolios saved to the account, not only the browser
-- Holdings, overlap between funds, and tracking difference, which need licensed or issuer holdings files
-- Fees for Canada and Asia, and the markets still missing
-- More tax countries, and assurance-vie for France
-- Email alerts, native apps, a paid API
+- Holdings for more issuers. iShares, Xtrackers, Amundi, Vanguard and Invesco serve their files only after a visitor accepts site terms, so they need an agreement or a licensed source
+- Fees for Canada and Asia, and the markets still missing (Shenzhen, Brazil; India's list fails on some runs)
+- PEA eligibility beyond State Street's funds, and the SIX list from the exchange's CSV
+- French lessons, and French addresses (`/fr/...`) so search engines index both languages
+- More tax countries
+- Email alerts, which need an email service account. Native apps, a paid API
 
 ## Running costs
 

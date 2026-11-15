@@ -57,6 +57,16 @@ export const DATASETS: Dataset[] = [
     ],
   },
   {
+    id: "holdings", name: "What each fund holds", what: "Every holding with its weight, for funds whose issuer publishes the full list as a file. Used for overlap, look-through and finding which ETFs hold a company.",
+    cadence: "Weekly", schedule: "Sundays, 06:37 UTC", job: "holdings.yml", report: "data/holdings/report.json",
+    sources: [
+      { name: "State Street holdings files", covers: "About 310 ETFs in the US and Europe", url: "https://www.ssga.com/us/en/intermediary/etfs", state: "automatic" },
+      { name: "ARK Invest holdings files", covers: "ARK's US ETFs", url: "https://www.ark-funds.com/", state: "automatic" },
+      { name: "Direxion holdings files", covers: "Direxion funds that hold their securities directly", url: "https://www.direxion.com/", state: "automatic", note: "Leveraged funds built on swaps are left out, because their file does not show the real exposure." },
+      { name: "iShares holdings files", covers: "iShares ETFs", url: "https://www.ishares.com/", state: "not working", note: "The file is only served after a visitor accepts the site's terms, which a job cannot do on anyone's behalf." },
+    ],
+  },
+  {
     id: "fx", name: "Exchange rates", what: "Euro reference rates for about 30 currencies, used to compare fund sizes.",
     cadence: "Daily", schedule: "With the daily price job", job: "daily.yml", report: "data/prices/report.json",
     sources: [{ name: "European Central Bank", covers: "Euro reference rates", url: "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html", state: "automatic" }],
@@ -84,6 +94,7 @@ export function getFreshness(): Freshness[] {
   const list = read("data/universe/report.json") as Record<string, { ok?: boolean; on?: string }> | null;
   const details = read("data/universe/details/report.json") as { on?: string; fees?: number } | null;
   const prices = read("data/prices/report.json") as { on?: string; latest_date?: string; etfs_priced?: number; fx?: { ok?: boolean; rate_date?: string } } | null;
+  const holdings = read("data/holdings/report.json") as { on?: string; etfs?: number } | null;
   const files = read("data/universe/details/issuer_files_report.json") as { retrieved_on?: string } | null;
   const listDates = list ? Object.values(list).filter((s) => s?.ok && s.on).map((s) => s.on as string).sort() : [];
   const LABEL: Record<string, string> = { india: "India", china_sz: "Shenzhen", china_sh: "Shanghai", australia: "Australia", korea: "Korea", japan: "Japan", hongkong: "Hong Kong", taiwan: "Taiwan", canada: "Canada", singapore: "Singapore", us: "United States", esma: "EU register", fca: "UK register", gleif: "GLEIF" };
@@ -93,6 +104,7 @@ export function getFreshness(): Freshness[] {
     { id: "facts", lastRun: details?.on ?? null, detail: files?.retrieved_on ? { text: "Owner files read {date}", vars: { date: files.retrieved_on } } : null },
     { id: "size", lastRun: details?.on ?? null, detail: null },
     { id: "prices", lastRun: prices?.on ?? null, detail: prices?.latest_date ? { text: "{n} ETFs, latest price dated {date}", vars: { n: prices.etfs_priced ?? 0, date: prices.latest_date } } : null },
+    { id: "holdings", lastRun: holdings?.on ?? null, detail: holdings?.etfs ? { text: "{n} ETFs with full holdings", vars: { n: holdings.etfs } } : null },
     { id: "fx", lastRun: prices?.fx?.ok ? prices.on ?? null : null, detail: prices?.fx?.rate_date ? { text: "Rates of {date}", vars: { date: prices.fx.rate_date } } : null },
     { id: "tax", lastRun: "2026-11-14", detail: { text: "Not yet reviewed by a tax adviser" } },
   ];

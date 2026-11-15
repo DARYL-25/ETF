@@ -23,10 +23,12 @@ On GitHub, choose **Code**, then **Codespaces**, then **Create codespace**. Wait
 - **Your country**: choose where you live once, and rankings, quick filters and every ETF page adapt
 - **Screener**: combined filters, quick filters, sorting, changeable columns, shareable links and CSV export
 - **ETF pages** for every fund: key figures with dates, price history, performance, facts, holdings where held, and where each figure came from
-- **Compare** 2 to 5 ETFs, and **index pages** listing every fund on an index
-- **Tax notes** for Switzerland and France, each rule quoted from an official source
+- **Compare** 2 to 5 ETFs with their holdings overlap, and **index pages** listing every fund on an index with the return gap between them
+- **Which ETFs hold it**: search a company and see every fund that holds it, with the weight
+- **French and English**, switched from the top bar
+- **Tax notes** for Switzerland and France, each rule quoted from an official source, including PEA and assurance-vie
 - **Learn**: lessons with quizzes, a glossary and calculators
-- **Watchlists and a practice portfolio**, kept in the browser
+- **Watchlists and a practice portfolio** with look-through, overlap warnings and yearly cost. Kept in the browser, and in the account when signed in
 - **Data and updates**: the refresh schedule with each job's last run
 - Sign-in through Supabase and subscriptions through Stripe, both off until configured
 - Public JSON API under `/api/v1`
