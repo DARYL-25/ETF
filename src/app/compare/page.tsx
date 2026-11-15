@@ -1,3 +1,4 @@
+import type { T } from "@/lib/i18n";
 import { getT } from "@/lib/i18n/server";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -13,51 +14,51 @@ import { MISSING, assetClassLabel, countryName, distributionLabel, formatDate, f
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Compare" };
 
-type Row = { label: string; render: (r: EtfRow) => React.ReactNode };
+type Row = { label: string; render: (r: EtfRow, t: T) => React.ReactNode };
 
 const groups: { title: string; rows: Row[] }[] = [
   { title: "General", rows: [
-    { label: "Issuer", render: (r) => r.issuer_name },
-    { label: "ISIN", render: (r) => r.isin ?? MISSING },
-    { label: "Ticker", render: (r) => r.ticker ?? MISSING },
-    { label: "Index", render: (r) => r.index_name ?? MISSING },
-    { label: "Asset class", render: (r) => assetClassLabel(r.asset_class) },
-    { label: "Domicile", render: (r) => countryName(r.domicile) },
-    { label: "Share class launched", render: (r) => formatDate(r.share_class_launch_date) },
-    { label: "Size", render: (r) => <>{formatMoney(r.fund_aum ?? r.class_aum, r.fund_aum_currency ?? r.class_aum_currency)}{(r.aum_level === "share_class" || (r.fund_aum === null && r.class_aum !== null)) ? <span className="block text-[0.75rem] text-muted">Share class</span> : null}</> },
-    { label: "Size date", render: (r) => formatDate(r.fund_aum_as_of ?? r.class_aum_as_of) },
-    { label: "Share class currency", render: (r) => r.currency ?? MISSING },
+    { label: "Issuer", render: (r, t) => r.issuer_name },
+    { label: "ISIN", render: (r, t) => r.isin ?? MISSING },
+    { label: "Ticker", render: (r, t) => r.ticker ?? MISSING },
+    { label: "Index", render: (r, t) => r.index_name ?? MISSING },
+    { label: "Asset class", render: (r, t) => t(assetClassLabel(r.asset_class)) },
+    { label: "Domicile", render: (r, t) => countryName(r.domicile, t.lang) },
+    { label: "Share class launched", render: (r, t) => formatDate(r.share_class_launch_date, t.lang) },
+    { label: "Size", render: (r, t) => <>{formatMoney(r.fund_aum ?? r.class_aum, r.fund_aum_currency ?? r.class_aum_currency, t.lang)}{(r.aum_level === "share_class" || (r.fund_aum === null && r.class_aum !== null)) ? <span className="block text-[0.75rem] text-muted">{t("Share class")}</span> : null}</> },
+    { label: "Size date", render: (r, t) => formatDate(r.fund_aum_as_of ?? r.class_aum_as_of, t.lang) },
+    { label: "Share class currency", render: (r, t) => r.currency ?? MISSING },
   ] },
   { title: "Structure", rows: [
-    { label: "Approach", render: (r) => styleLabel(r.management_style) },
-    { label: "Replication", render: (r) => replicationLabel(r.replication) },
-    { label: "Income", render: (r) => distributionLabel(r.distribution_policy) },
-    { label: "Currency hedged", render: (r) => yesNoUnknown(r.hedged) },
-    { label: "UCITS", render: (r) => yesNoUnknown(r.ucits) },
+    { label: "Approach", render: (r, t) => t(styleLabel(r.management_style)) },
+    { label: "Replication", render: (r, t) => t(replicationLabel(r.replication)) },
+    { label: "Income", render: (r, t) => t(distributionLabel(r.distribution_policy)) },
+    { label: "Currency hedged", render: (r, t) => t(yesNoUnknown(r.hedged)) },
+    { label: "UCITS", render: (r, t) => t(yesNoUnknown(r.ucits)) },
   ] },
   { title: "Fees", rows: [
-    { label: "Yearly fee", render: (r) => <Fee row={r} /> },
-    { label: "TER", render: (r) => formatPct(r.ter_pct) },
-    { label: "OCF", render: (r) => formatPct(r.ocf_pct) },
+    { label: "Yearly fee", render: (r, t) => <Fee row={r} /> },
+    { label: "TER", render: (r, t) => formatPct(r.ter_pct) },
+    { label: "OCF", render: (r, t) => formatPct(r.ocf_pct) },
     { label: "Transaction costs", render: () => MISSING },
   ] },
   { title: "Official NAV return", rows: [
-    { label: "1 year", render: (r) => <Change value={r.nav_return_1y} /> },
-    { label: "3 years, per year", render: (r) => <Change value={r.nav_return_3y} /> },
-    { label: "5 years, per year", render: (r) => <Change value={r.nav_return_5y} /> },
-    { label: "Since launch, per year", render: (r) => <Change value={r.nav_return_si} /> },
-    { label: "Calculated to", render: (r) => formatDate(r.nav_return_as_of) },
-    { label: "Return currency", render: (r) => r.nav_currency ?? r.currency ?? "—" },
+    { label: "1 year", render: (r, t) => <Change value={r.nav_return_1y} /> },
+    { label: "3 years, per year", render: (r, t) => <Change value={r.nav_return_3y} /> },
+    { label: "5 years, per year", render: (r, t) => <Change value={r.nav_return_5y} /> },
+    { label: "Since launch, per year", render: (r, t) => <Change value={r.nav_return_si} /> },
+    { label: "Calculated to", render: (r, t) => formatDate(r.nav_return_as_of, t.lang) },
+    { label: "Return currency", render: (r, t) => r.nav_currency ?? r.currency ?? "—" },
   ] },
   { title: "Market price change", rows: [
-    { label: "1 year", render: (r) => <Change value={r.market_return_1y} /> },
-    { label: "3 years, per year", render: (r) => <Change value={r.market_return_3y} /> },
-    { label: "5 years, per year", render: (r) => <Change value={r.market_return_5y} /> },
-    { label: "Calculated to", render: (r) => formatDate(r.market_return_as_of) },
+    { label: "1 year", render: (r, t) => <Change value={r.market_return_1y} /> },
+    { label: "3 years, per year", render: (r, t) => <Change value={r.market_return_3y} /> },
+    { label: "5 years, per year", render: (r, t) => <Change value={r.market_return_5y} /> },
+    { label: "Calculated to", render: (r, t) => formatDate(r.market_return_as_of, t.lang) },
   ] },
   { title: "Holdings and income", rows: [
-    { label: "Number of holdings", render: (r) => r.holdings_count?.toLocaleString("en-GB") ?? MISSING },
-    { label: "Trailing 12-month yield", render: (r) => formatPct(r.trailing_yield_pct) },
+    { label: "Number of holdings", render: (r, t) => r.holdings_count?.toLocaleString("en-GB") ?? MISSING },
+    { label: "Trailing 12-month yield", render: (r, t) => formatPct(r.trailing_yield_pct) },
   ] },
 ];
 
@@ -131,7 +132,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
               {group.rows.map((row) => (
                 <tr key={row.label}>
                   <td className="sticky left-0 z-10 min-w-[8rem] bg-surface text-muted">{t(row.label)}</td>
-                  {etfs.map((e) => <td key={e.etf_key} className={row.label === "Yearly fee" && lowest !== null && e.headline_fee_pct === lowest ? "bg-sunken font-semibold" : undefined}>{row.render(e)}</td>)}
+                  {etfs.map((e) => <td key={e.etf_key} className={row.label === "Yearly fee" && lowest !== null && e.headline_fee_pct === lowest ? "bg-sunken font-semibold" : undefined}>{row.render(e, t)}</td>)}
                 </tr>
               ))}
             </tbody>
@@ -175,7 +176,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
               <p className="mt-3 max-w-[72ch] text-[0.85rem] text-muted">{t("Based on issuers' holdings files. Securities are matched by ISIN, or by ticker and name where the file has no ISIN, so a few matches can be missed.")}</p>
             </>
           ) : (
-            <p className="max-w-[72ch] text-muted">{t("Overlap needs a holdings file for at least two of these funds. We hold them for iShares and State Street funds so far")}{hasHoldings.size ? t(", here only for {funds}", { funds: [...hasHoldings].map(label).join(", ") }) : ""}.</p>
+            <p className="max-w-[72ch] text-muted">{t("Overlap needs a holdings file for at least two of these funds. We hold them for State Street funds so far")}{hasHoldings.size ? t(", here only for {funds}", { funds: [...hasHoldings].map(label).join(", ") }) : ""}.</p>
           )}
         </section>
       ) : null}

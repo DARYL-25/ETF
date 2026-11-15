@@ -28,6 +28,8 @@ export function collectKeys(root: string): string[] {
     }
   };
   walk(join(root, "src"));
+  // Tax notes shown on ETF pages.
+  for (const m of readFileSync(join(root, "src/lib/tax/content.ts"), "utf8").matchAll(/\btext: "((?:[^"\\]|\\.)*)"/g)) add(JSON.parse(`"${m[1]}"`));
   for (const d of DATASETS) { add(d.name); add(d.what); add(d.cadence); add(d.schedule); for (const s of d.sources) { add(s.covers); add(s.note); } }
   for (const c of TAX_COUNTRIES) {
     add(c.summary);

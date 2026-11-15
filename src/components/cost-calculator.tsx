@@ -10,7 +10,7 @@ export function CostCalculator({ feePct, cheapestPct, currency }: { feePct: numb
   const [amount, setAmount] = useState(10000);
   const [years, setYears] = useState(10);
   const [growth, setGrowth] = useState(5);
-  const money = (v: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency, maximumFractionDigits: 0 }).format(v);
+  const money = (v: number) => new Intl.NumberFormat(t.lang === "fr" ? "fr-FR" : "en-GB", { style: "currency", currency, maximumFractionDigits: 0 }).format(v);
   const valid = amount > 0 && years > 0 && years <= 60 && growth > -50 && growth < 50;
   const cost = valid ? feeImpact(amount, 0, growth, feePct, years).cost : 0;
   const cheapest = valid && cheapestPct !== null && cheapestPct < feePct ? feeImpact(amount, 0, growth, cheapestPct, years).cost : null;
@@ -25,8 +25,8 @@ export function CostCalculator({ feePct, cheapestPct, currency }: { feePct: numb
       </div>
       {valid ? (
         <p className="mt-3" aria-live="polite">
-          {t("Over ")}{years} {years === 1 ? "year" : "years"}, a {feePct.toFixed(2)}{t("% fee takes about ")}<strong className="data text-[1.15rem]">{money(cost)}</strong>{t(" from ")}{money(amount)}.
-          {cheapest !== null ? <>{t(" The cheapest fund on the same index, at ")}{cheapestPct!.toFixed(2)}{t("%, would take about ")}<strong className="data">{money(cheapest)}</strong>.</> : null}
+          {t("Over {years}, a {fee}% fee takes about", { years: years === 1 ? t("1 year") : t("{n} years", { n: years }), fee: feePct.toFixed(2) })} <strong className="data text-[1.15rem]">{money(cost)}</strong> {t("from {amount}.", { amount: money(amount) })}
+          {cheapest !== null ? <> {t("The cheapest fund on the same index, at {fee}%, would take about", { fee: cheapestPct!.toFixed(2) })} <strong className="data">{money(cheapest)}</strong>.</> : null}
         </p>
       ) : <p className="mt-3 text-muted">{t("Enter an amount, a period of 1 to 60 years and a growth rate.")}</p>}
       <p className="mt-2 text-[0.82rem] text-muted">{t("An illustration with a constant growth rate you choose. Real returns vary, and the fee is not the only cost: see how funds on the same index actually compared on the index page.")}</p>

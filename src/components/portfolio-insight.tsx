@@ -4,7 +4,7 @@ import { useT } from "@/lib/i18n/client";
 import { useEffect, useState } from "react";
 import type { PortfolioInsight as Insight } from "@/lib/etfs/portfolio";
 
-const eur = (v: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
+const eur = (v: number, lang = "en") => new Intl.NumberFormat(lang === "fr" ? "fr-FR" : "en-GB", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
 
 function Bars({ title, rows }: { title: string; rows: { label: string; weight_pct: number }[] }) {
   if (rows.length < 2) return null;
@@ -43,9 +43,9 @@ export function PortfolioInsight({ positions }: { positions: { key: string; quan
     <div className="panel mt-3 p-4" aria-label={t("What this portfolio holds")}>
       <h3 className="text-[1.1rem]">{t("What this portfolio adds up to")}</h3>
       <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-4">
-        <div><dt className="text-[0.85rem] text-muted">{t("Value")}</dt><dd className="stat-value mt-0.5">{eur(data.total_eur)}</dd></div>
+        <div><dt className="text-[0.85rem] text-muted">{t("Value")}</dt><dd className="stat-value mt-0.5">{eur(data.total_eur, t.lang)}</dd></div>
         <div><dt className="text-[0.85rem] text-muted">{t("Blended yearly fee")}</dt><dd className="stat-value mt-0.5">{data.fee_pct !== null ? `${data.fee_pct.toFixed(2)}%` : "—"}</dd></div>
-        <div><dt className="text-[0.85rem] text-muted">{t("Fees per year")}</dt><dd className="stat-value mt-0.5">{data.yearly_cost_eur !== null ? eur(data.yearly_cost_eur) : "—"}</dd></div>
+        <div><dt className="text-[0.85rem] text-muted">{t("Fees per year")}</dt><dd className="stat-value mt-0.5">{data.yearly_cost_eur !== null ? eur(data.yearly_cost_eur, t.lang) : "—"}</dd></div>
         <div><dt className="text-[0.85rem] text-muted">{t("Seen through to holdings")}</dt><dd className="stat-value mt-0.5">{data.look.covered_pct.toFixed(0)}%</dd></div>
       </dl>
       {data.fee_known_pct < 99.5 && data.fee_pct !== null ? <p className="mt-2 text-[0.85rem] text-muted">{t("The fee covers the ")}{data.fee_known_pct.toFixed(0)}{t("% of the portfolio whose funds have a fee on file.")}</p> : null}

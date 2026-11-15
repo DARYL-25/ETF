@@ -34,7 +34,7 @@ export const DATASETS: Dataset[] = [
       { name: "iShares product list", covers: "About 920 iShares UCITS ETFs", url: "https://www.ishares.com/uk/individual/en/products/etf-investments", state: "automatic" },
       { name: "State Street product data", covers: "About 340 SPDR ETFs, US and Europe", url: "https://www.ssga.com/", state: "automatic" },
       { name: "Amundi monthly factsheets", covers: "About 500 Amundi and Lyxor ETFs", url: "https://www.amundietf.com/", state: "automatic" },
-      { name: "SEC prospectus data sets", covers: "Fees of about 2,900 US ETFs", url: "https://www.sec.gov/data-research/sec-markets-data/mutual-fund-prospectus-risk-return-summary-data-sets", state: "automatic" },
+      { name: "SEC prospectus data sets", covers: "Fees of about 4,500 US ETFs", url: "https://www.sec.gov/data-research/sec-markets-data/mutual-fund-prospectus-risk-return-summary-data-sets", state: "automatic" },
       { name: "ASX investment products report", covers: "Fee and size of about 480 Australian ETFs", url: "https://www.asx.com.au/issuers/investment-products/asx-funds-statistics", state: "automatic" },
       { name: "Xtrackers, Invesco, Vanguard and UBS product files", covers: "About 1,750 ETFs", url: "https://github.com/DARYL-25/ETF/blob/main/docs/DATA_UPDATES.md", state: "owner file", note: "These sites show terms before the download, so a person accepts them and downloads the files each quarter." },
     ],

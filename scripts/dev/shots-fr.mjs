@@ -1,0 +1,16 @@
+import { chromium } from "playwright";
+const out = process.argv[2];
+const b = await chromium.launch();
+const d = await b.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
+await d.addCookies([{ name: "lens", value: "FR", url: "http://localhost:3100" }, { name: "lang", value: "fr", url: "http://localhost:3100" }]);
+const p = await d.newPage();
+const shot = async (path, name, full = true) => { await p.goto("http://localhost:3100" + path, { waitUntil: "networkidle" }); await p.waitForTimeout(500); await p.screenshot({ path: `${out}/${name}.png`, fullPage: full }); };
+await shot("/", "home");
+await shot("/etfs/IE00B6YX5C33", "etf");
+await shot("/screener", "screener", false);
+await shot("/tax/france", "tax");
+await shot("/compare?isins=ARCX-SPY,ARCX-XLK,IE00B6YX5C33", "compare");
+await shot("/holdings?q=nvidia", "holdings", false);
+await shot("/indices/sp-500", "index");
+await shot("/data", "data", false);
+await b.close();

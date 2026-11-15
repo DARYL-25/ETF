@@ -31,13 +31,13 @@ def num(v):
     try: return float(str(v).replace(",", "").replace("%", "").strip())
     except ValueError: return None
 
-SUFFIX = re.compile(r"\b(INC|CORP|CORPORATION|CO|COMPANY|PLC|LTD|LIMITED|SA|AG|NV|SE|ASA|AB|OYJ|HOLDINGS?|GROUP|CLASS|CL|ORD|REG|SHS|ADR|THE)\b")
+SUFFIX = re.compile(r"\b(INC|INCORPORATED|CORP|CORPORATION|CO|COMPANY|PLC|LTD|LIMITED|SA|AG|NV|SE|ASA|AB|OYJ|SPA|HOLDINGS?|GROUP|CLASS|CL|ORD|REG|SHS|ADR|THE|AND|COM)\b")
 def holding_key(isin, ticker, name):
-    """ISIN when the file gives one. Otherwise ticker plus the start of the cleaned name, which matches the same
-    security across issuers in most cases but not all."""
-    if isin and re.fullmatch(r"[A-Z]{2}[A-Z0-9]{9}\d", isin): return isin
-    clean = re.sub(r"[^A-Z0-9]", "", SUFFIX.sub("", re.sub(r"[^A-Z0-9 ]", " ", name.upper())))
-    return f"{ticker.upper().split(' ')[0]}|{clean[:10]}" if ticker and ticker != "-" else f"|{clean[:16]}"
+    """One key for a security whichever issuer reports it: the cleaned start of its name. Issuers identify
+    holdings differently (ISIN in Europe, ticker and CUSIP in the US), and the name is what they share.
+    Two securities whose cleaned names start alike would merge, which is rare among a fund's holdings."""
+    clean = re.sub(r"[^A-Z0-9]", "", SUFFIX.sub("", re.sub(r"[^A-Z0-9 ]", " ", name.upper().replace(".COM", "COM"))))
+    return clean[:22] or (isin or ticker or "?")
 
 def store(key, as_of, rows, source, url):
     rows = [r for r in rows if r["weight"] is not None and r["weight"] > 0]
@@ -171,7 +171,7 @@ def spdr_eu():
             c2 = {n: i for i, n in enumerate(t2[h2])}
             pick = lambda *names: next((c2[n] for n in names if n in c2), None)
             name, weight, isin, sector, country = pick("Security Name", "Name"), pick("Percent of Fund", "Weight"), pick("ISIN"), pick("Sector Classification", "Sector"), pick("Trade Country Name", "Country")
-            as_of = next((parse_date(re.sub(r"^As of\s*", "", c)) for x in t2[:h2] for c in x if c.startswith("As of")), "")
+            as_of = next((d for d in (parse_date(m.group(0)) for x in t2[:h2] for c in x for m in [re.search(r"\d{1,2}[-/ ][A-Za-z]{3}[-/ ]\d{4}|\d{4}-\d\d-\d\d", c)] if m) if d), "")
             rows = [{"name": x[name], "ticker": "", "isin": x[isin] if isin is not None else "", "weight": num(x[weight]), "sector": x[sector] if sector is not None else "", "country": x[country] if country is not None else "", "asset_class": ""} for x in t2[h2 + 1:] if len(x) > weight and x[name] and num(x[weight]) is not None]
             if store(u["etf_key"], as_of, rows, "State Street", url): ok += 1
             else: failed += 1
