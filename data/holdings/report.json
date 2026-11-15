@@ -18,6 +18,16 @@
    "sepe-se: HTTPError: HTTP Error 404: Not Found"
   ]
  },
+ "ark": {
+  "ok": 7,
+  "failed": 0,
+  "errors": []
+ },
+ "direxion": {
+  "ok": 18,
+  "failed": 116,
+  "errors": []
+ },
  "probe": {
   "spdr_eu_sample": [
    [
@@ -78,6 +88,6 @@
    ]
   ]
  },
- "etfs": 312,
- "rows": 85126
+ "etfs": 337,
+ "rows": 86586
 }
