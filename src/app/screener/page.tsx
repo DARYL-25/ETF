@@ -77,7 +77,7 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
   const activeFilters = [params.issuer, params.domicile, params.assetClass, params.region, params.factor, params.theme, params.bondType, params.index, params.replication, params.distribution, params.style, params.currency]
     .reduce((sum, list) => sum + list.length, 0)
     + [params.feeMin, params.feeMax, params.aumMin, params.aumMax].filter((v) => v !== undefined).length
-    + (params.ucits ? 1 : 0) + (params.q ? 1 : 0) + (params.six ? 1 : 0) + (params.hasFee ? 1 : 0);
+    + (params.ucits ? 1 : 0) + (params.q ? 1 : 0) + (params.six ? 1 : 0) + (params.pea ? 1 : 0) + (params.hasFee ? 1 : 0);
   const lens = await getLens();
   const has = (list: string[], v: string) => list.includes(v);
   const flip = (list: string[], v: string) => (has(list, v) ? list.filter((x) => x !== v) : [...list, v]);
@@ -90,6 +90,7 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
     { label: "Listed on SIX", on: Boolean(params.six), href: screenerHref(params, { six: params.six ? "" : "1" }) },
   ];
   if (lens?.code === "CH") quick.unshift(quick.pop()!);
+  if (lens?.code === "FR") quick.unshift({ label: "PEA", on: Boolean(params.pea), href: screenerHref(params, { pea: params.pea ? "" : "1" }) });
 
   const columns = params.cols.length ? params.cols : DEFAULT_COLUMNS;
   const show = (key: string) => columns.includes(key);
@@ -101,6 +102,7 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
       {/* Carries the search text and the sort order through filter changes. */}
       <input type="hidden" name="sort" value={params.sort} />
       {params.six ? <input type="hidden" name="six" value="1" /> : null}
+      {params.pea ? <input type="hidden" name="pea" value="1" /> : null}
       {params.hasFee ? <input type="hidden" name="hasFee" value="1" /> : null}
       {params.dir ? <input type="hidden" name="dir" value={params.dir} /> : null}
       <label className="block pb-3 font-semibold">Name, ISIN or ticker

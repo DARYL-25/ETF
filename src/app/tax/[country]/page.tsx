@@ -67,7 +67,7 @@ export default async function Page({ params }: Props) {
           </table>
         </div>
         <p className="mt-3 flex flex-wrap gap-2">
-          {c.code === "CH" ? <Link className="btn btn-primary" href="/screener?six=1">ETFs listed on SIX</Link> : <Link className="btn btn-primary" href="/screener?q=PEA">ETFs with PEA in their name</Link>}
+          {c.code === "CH" ? <Link className="btn btn-primary" href="/screener?six=1">ETFs listed on SIX</Link> : <Link className="btn btn-primary" href="/screener?pea=1">ETFs presented as PEA-eligible</Link>}
           <Link className="btn btn-quiet" href={`/assistant?q=${encodeURIComponent(`MSCI World ETF for a ${c.adjective} investor`)}`}>Ask for a {c.adjective} investor</Link>
         </p>
       </section>

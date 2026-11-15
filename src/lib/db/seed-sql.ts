@@ -290,6 +290,7 @@ export function buildSeedSql(root: string): string {
       const values = names.map((n, i) => {
         if (cells[i] === "" || cells[i] === undefined) return "null";
         if (numeric.has(n)) return q(Number(cells[i]));
+        if (n === "hedged" || n === "pea_eligible") return cells[i] === "t" ? "true" : "false";
         return q(n === "name" ? prettyName(cells[i]) : cells[i]);
       });
       // iShares sizes are per share class. The others cover the whole fund.

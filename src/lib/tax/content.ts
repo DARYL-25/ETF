@@ -71,7 +71,7 @@ export const taxCountry = (codeOrSlug: string | null | undefined) =>
 export type TaxNote = { text: string; source?: Source; kind: "fact" | "check" };
 
 /** Notes for one ETF and one country of residence, built only from structural facts we hold. */
-export function taxNotes(row: Pick<EtfRow, "name" | "domicile" | "distribution_policy" | "replication" | "ucits" | "isin" | "listed_on_six" | "fund_key">, code: string): TaxNote[] {
+export function taxNotes(row: Pick<EtfRow, "name" | "domicile" | "distribution_policy" | "replication" | "ucits" | "isin" | "listed_on_six" | "fund_key" | "pea_eligible">, code: string): TaxNote[] {
   const notes: TaxNote[] = [];
   const policy = row.distribution_policy;
   // On basic records the domicile field is the issuer's registered country, so use the ISIN prefix as a hint only when it is a fund domicile we can trust.
@@ -87,7 +87,9 @@ export function taxNotes(row: Pick<EtfRow, "name" | "domicile" | "distribution_p
     notes.push({ kind: "check", text: `Look up ${row.isin ?? "the ISIN"} in ICTax to see its taxable income and year-end value.`, source: ICTAX });
   }
   if (code === "FR") {
-    if (/\bPEA\b/.test(row.name)) notes.push({ kind: "fact", text: "The fund's name says PEA, so the issuer presents it as eligible. Confirm in its KID.", source: FR_PEA });
+    if (row.pea_eligible === true) notes.push({ kind: "fact", text: "The issuer lists this fund as eligible for a PEA.", source: FR_PEA });
+    else if (row.pea_eligible === false) notes.push({ kind: "fact", text: "The issuer lists this fund as not eligible for a PEA, so it belongs in a compte-titres.", source: FR_PEA });
+    else if (/\bPEA\b/.test(row.name)) notes.push({ kind: "fact", text: "The fund's name says PEA, so the issuer presents it as eligible. Confirm in its KID.", source: FR_PEA });
     else notes.push({ kind: "check", text: "PEA eligibility is decided fund by fund. We do not hold it yet, so check the issuer's page.", source: FR_PEA });
     if (policy === "accumulating") notes.push({ kind: "fact", text: "It reinvests its income, so in a compte-titres there is no dividend to tax each year. The gain is taxed when you sell.", source: FR_PV });
     else if (policy === "distributing") notes.push({ kind: "fact", text: "It pays out its income, and in a compte-titres each payment is taxed.", source: FR_SP });

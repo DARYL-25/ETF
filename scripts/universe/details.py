@@ -7,7 +7,7 @@ from pathlib import Path
 
 OUT = Path("data/universe"); (OUT / "details").mkdir(parents=True, exist_ok=True)
 UA = "etf-intelligence-universe/1.0 (+https://github.com/DARYL-25/ETF)"
-FIELDS = ["etf_key", "fee_pct", "fee_type", "aum", "aum_currency", "aum_as_of", "nav", "nav_currency", "nav_as_of", "ret_1y", "ret_3y", "ret_5y", "ret_si", "ret_as_of", "volatility_3y", "tracking_error_3y", "distribution", "source", "source_url", "name"]
+FIELDS = ["etf_key", "fee_pct", "fee_type", "aum", "aum_currency", "aum_as_of", "nav", "nav_currency", "nav_as_of", "ret_1y", "ret_3y", "ret_5y", "ret_si", "ret_as_of", "volatility_3y", "tracking_error_3y", "distribution", "source", "source_url", "name", "domicile", "replication", "hedged", "benchmark", "pea_eligible"]
 
 def get(url):
     with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": UA}), timeout=90) as r:
@@ -119,9 +119,10 @@ def ishares():
             if f.get("investorClassName") and f["investorClassName"] != "-" and name: name = f'{name} {f["investorClassName"]}'.strip()
             name = f'{name} {f.get("seriesBaseCurrencyCode", "")} ({f.get("useOfProfits", "")[:4]})' if name and f.get("useOfProfits") else name
             policy = {"Accumulating": "accumulating", "Distributing": "distributing"}.get(f.get("useOfProfits"), "")
+            home = {"Ireland": "IE", "Luxembourg": "LU", "Germany": "DE", "Switzerland": "CH", "United States": "US"}.get(str(f.get("domicile") or ""), "")
             rows.append({"etf_key": u["etf_key"], "fee_pct": fee, "fee_type": kind if fee != "" else "", "name": name, "aum": size if size != "" else "", "aum_currency": f.get("seriesBaseCurrencyCode", "") if size != "" else "", "aum_as_of": day(f.get("navAmountAsOf")),
                 "nav": val(f.get("navAmount")), "nav_currency": f.get("seriesBaseCurrencyCode", ""), "nav_as_of": day(f.get("navAmountAsOf")), "ret_1y": val(f.get("navOneYearAnnualized")), "ret_3y": val(f.get("navThreeYearAnnualized")), "ret_5y": val(f.get("navFiveYearAnnualized")), "ret_si": val(f.get("navSinceInceptionAnnualized")), "ret_as_of": day(f.get("navAnnualisedAsOf")),
-                "volatility_3y": "", "tracking_error_3y": "", "distribution": policy, "source": "iShares", "source_url": site + f.get("productPageUrl", "")})
+                "volatility_3y": "", "tracking_error_3y": "", "distribution": policy, "source": "iShares", "source_url": site + f.get("productPageUrl", ""), "domicile": home})
         result[label] = {"etfs": len(funds), "unmatched": len(unmatched), "unmatched_sample": unmatched[:8]}
     if not done: raise RuntimeError(str(result))
     return result
@@ -167,6 +168,13 @@ def from_sheet(url, source, label, cols, aum_scale=1, aum_currency=None):
         if fee != "" and fee > 3: fee = ""
         income = str(cell(r, "income") or "").lower()
         policy = "accumulating" if income.startswith(("acc", "capital", "reinvest")) else "distributing" if income.startswith(("dis", "inc")) else ""
+        text = lambda k: str(cell(r, k) or "").strip()
+        home = {"ireland": "IE", "luxembourg": "LU", "germany": "DE", "france": "FR", "switzerland": "CH", "united kingdom": "GB"}.get(text("domicile").lower(), "")
+        method = text("replication").lower()
+        how = "synthetic_swap" if "synth" in method or "swap" in method else "physical_sampling" if re.search("sampl|optimi", method) else "physical_full" if re.search("replicat|physical|full", method) else ""
+        hedge = text("hedging").lower()
+        hedged_flag = "" if not hedge else "f" if hedge in ("no", "unhedged", "-", "n/a", "none") else "t"
+        pea = {"yes": "t", "no": "f"}.get(text("pea").lower(), "")
         when = str(cell(r, "as_of") or "")
         try:
             when = dt.datetime.strptime(when, "%d %b %Y").date().isoformat()
@@ -175,7 +183,8 @@ def from_sheet(url, source, label, cols, aum_scale=1, aum_currency=None):
         rows.append({"etf_key": u["etf_key"], "fee_pct": fee, "fee_type": "ter" if fee != "" else "", "distribution": policy, "source": source, "source_url": url,
             "aum": aum * aum_scale if aum != "" else "", "aum_currency": (aum_currency or str(cell(r, "aum_currency") or "")) if aum != "" else "", "aum_as_of": when if re.match(r"\d{4}-\d\d-\d\d", when) else "",
             "nav": parse_number(cell(r, "nav")), "nav_currency": str(cell(r, "currency") or ""), "nav_as_of": when if re.match(r"\d{4}-\d\d-\d\d", when) else "",
-            "ret_1y": parse_number(cell(r, "ret_1y")), "ret_3y": "", "ret_5y": "", "ret_si": "", "ret_as_of": "", "volatility_3y": "", "tracking_error_3y": "", "name": str(cell(r, "name") or "").split("\n")[0].strip()})
+            "ret_1y": parse_number(cell(r, "ret_1y")), "ret_3y": "", "ret_5y": "", "ret_si": "", "ret_as_of": "", "volatility_3y": "", "tracking_error_3y": "", "name": str(cell(r, "name") or "").split("\n")[0].strip(),
+            "domicile": home, "replication": how, "hedged": hedged_flag, "benchmark": text("benchmark") if text("benchmark") not in ("-", "None") else "", "pea_eligible": pea})
         found += 1
     return {"found": found, "not_in_universe": unmatched}
 
@@ -183,7 +192,7 @@ def xtrackers():
     return from_sheet("https://etf.dws.com/en-gb/product-finder/downloadxls/?query=%7B%22selectedTabIndex%22%3A0%2C%22totalReturnType%22%3A0%2C%22searchTerm%22%3A%22%22%2C%22filters%22%3A%5B%5D%7D", "Xtrackers", "xtrackers", {"isin": "ISIN", "name": "Name", "fee": r"TER p\.a\. \(%\)", "aum": r"AuM \(GBP\)", "income": "Distribution policy", "currency": "Share class currency", "ret_1y": r"1Y \(%\)"}, aum_currency="GBP")
 
 def spdr_eu():
-    return from_sheet("https://www.ssga.com/library-content/products/fund-data/etfs/emea/spdr-product-data-ie-en.xlsx", "State Street Europe", "spdr_eu", {"isin": "ISIN", "name": "Fund Name", "fee": r"TER \(%\)", "aum": "Total Fund Assets Raw", "aum_currency": "Base Fund Currency", "income": "Income Treatment", "currency": "Share Class Currency", "nav": "Official NAV Raw", "as_of": "NAV as of Date"})
+    return from_sheet("https://www.ssga.com/library-content/products/fund-data/etfs/emea/spdr-product-data-ie-en.xlsx", "State Street Europe", "spdr_eu", {"isin": "ISIN", "name": "Fund Name", "fee": r"TER \(%\)", "aum": "Total Fund Assets Raw", "aum_currency": "Base Fund Currency", "domicile": "Domicile", "replication": "Replication Method", "hedging": "Currency Hedging", "benchmark": "Benchmark", "pea": "PEA Eligible", "income": "Income Treatment", "currency": "Share Class Currency", "nav": "Official NAV Raw", "as_of": "NAV as of Date"})
 
 SOURCE_FUNCS = {"ssga_us": ssga_us, "amundi": amundi, "ishares": ishares, "xtrackers": xtrackers, "spdr_eu": spdr_eu}
 chosen = os.environ.get("SOURCES", "").split(",") if os.environ.get("SOURCES") else list(SOURCE_FUNCS)
