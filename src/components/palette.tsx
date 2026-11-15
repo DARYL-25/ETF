@@ -11,6 +11,7 @@ const PAGES: [string, string, string][] = [
   ["Screener", "/screener", "filter every ETF"],
   ["Compare ETFs", "/compare", "side by side"],
   ["Indices", "/indices", "funds that track the same index"],
+  ["Which ETFs hold it", "/holdings", "find funds by a company they own"],
   ["Learn", "/academy", "lessons and calculators"],
   ["Tax", "/tax", "Switzerland and France"],
   ["Watchlists", "/watchlists", "ETFs you saved"],

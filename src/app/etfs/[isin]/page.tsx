@@ -9,6 +9,7 @@ import { FeeRuler } from "@/components/fee-ruler";
 import { PriceChart } from "@/components/price-chart";
 import { getBondMetrics, getDailyPoints, getEtf, getExposures, getFeePoints, getListings, getPriceSeries, getSimilarEtfs, getTopHoldings, type EtfRow } from "@/lib/etfs/queries";
 import { getLens } from "@/lib/lens-server";
+import { getBreakdown, getHoldingsSummary, getTopHoldingsFull } from "@/lib/etfs/holdings";
 import { TAX_CHECKED_ON, taxCountry, taxNotes } from "@/lib/tax/content";
 import { MISSING, exchangeName, assetClassLabel, countryName, distributionLabel, formatDate, formatMoney, formatPct, frequencyLabel, productLabel, replicationLabel, styleLabel, yesNoUnknown } from "@/lib/format";
 
@@ -120,6 +121,8 @@ export default async function EtfPage({ params }: Props) {
     researched ? getListings(isin!) : [], researched ? getExposures(row.fund_key!) : [], researched ? getBondMetrics(row.fund_key!) : [],
     researched ? getPriceSeries(isin) : null, getSimilarEtfs(row), researched ? getFeePoints() : [], researched ? getTopHoldings(row.fund_key!) : [], getDailyPoints(key),
   ]);
+  const full = await getHoldingsSummary(row.etf_key ?? key);
+  const [fullTop, fullSectors, fullCountries] = full ? await Promise.all([getTopHoldingsFull(full.etf_key, 10), getBreakdown(full.etf_key, "sector"), getBreakdown(full.etf_key, "country")]) : [[], [], []];
   const sectors = exposures.filter((x) => x.dimension === "sector");
   const countries = exposures.filter((x) => x.dimension === "country");
   const metric = (name: string) => bond.find((b) => b.metric === name);
@@ -240,7 +243,30 @@ export default async function EtfPage({ params }: Props) {
             </Section>
           ) : null}
 
-          {researched && (row.holdings_count !== null || topHoldings.length || bond.length) ? (
+          {full ? (
+            <Section id="holdings" title="What it holds">
+              <p className="mb-4 max-w-[72ch] text-muted">{full.n_holdings.toLocaleString("en-GB")} holdings on {formatDate(full.as_of)}, from {full.source}&apos;s holdings file.{full.kept < full.n_holdings ? ` We keep the largest ${full.kept}, which make up ${full.covered_pct.toFixed(1)}% of the fund.` : ""}</p>
+              <div className="grid gap-x-10 gap-y-8 md:grid-cols-2">
+                <div className="md:col-span-2 max-w-2xl">
+                  <h3 className="mb-1 text-[1.05rem]">Largest holdings</h3>
+                  <ul>
+                    {fullTop.map((h) => (
+                      <li key={h.holding_key} className="py-1.5">
+                        <div className="flex justify-between gap-3"><Link className="no-underline hover:text-pine" href={`/holdings?key=${encodeURIComponent(h.holding_key)}`}>{h.name}</Link><span className="data">{h.weight_pct.toFixed(2)}%</span></div>
+                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-sunken"><div className="h-full rounded-full bg-pine" style={{ width: `${Math.min(100, (h.weight_pct / (fullTop[0]?.weight_pct || 1)) * 100)}%` }} /></div>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-[0.85rem] text-muted">Select a holding to see every ETF that owns it.</p>
+                </div>
+                {fullSectors.length > 1 ? <div><h3 className="mb-1 text-[1.05rem]">Sectors</h3><Bars rows={fullSectors.map((x) => ({ label: x.label, weight_pct: x.weight_pct }))} /></div> : null}
+                {fullCountries.length > 1 ? <div><h3 className="mb-1 text-[1.05rem]">Countries</h3><Bars rows={fullCountries.map((x) => ({ label: x.label, weight_pct: x.weight_pct }))} /></div> : null}
+              </div>
+              <p className="mt-4 flex flex-wrap gap-2"><Link className="btn btn-quiet" href={`/compare?isins=${key}`}>Check overlap with another ETF</Link>{full.source_url ? <a className="btn btn-quiet" href={full.source_url} target="_blank" rel="noreferrer">Issuer page</a> : null}</p>
+            </Section>
+          ) : null}
+
+          {!full && researched && (row.holdings_count !== null || topHoldings.length || bond.length) ? (
             <Section id="holdings" title="Holdings">
               <Facts items={[
                 ["Number of holdings", row.holdings_count?.toLocaleString("en-GB") ?? MISSING],
@@ -260,7 +286,7 @@ export default async function EtfPage({ params }: Props) {
             </Section>
           ) : null}
 
-          {sectors.length || countries.length ? (
+          {!full && (sectors.length || countries.length) ? (
             <div className="grid gap-10 md:grid-cols-2">
               {sectors.length ? (
                 <Section id="sectors" title="Sectors">

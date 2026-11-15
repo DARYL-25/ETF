@@ -3,7 +3,7 @@
 Writes data/holdings/holdings.csv.gz (one row per ETF and holding) and summary.csv.gz (one row per ETF).
 Holdings under 0.02% of the fund are dropped and at most 800 are kept per fund, largest first; the summary
 records how many the fund has and what share of it the kept rows cover. One request at a time."""
-import csv, datetime as dt, gzip, io, json, os, re, time, urllib.request
+import csv, datetime as dt, gzip, io, json, os, re, time, urllib.error, urllib.request
 from pathlib import Path
 
 UA = {"User-Agent": "etf-intelligence-universe/1.0 (+https://github.com/DARYL-25/ETF)"}
@@ -17,9 +17,15 @@ by_us_ticker = {r["ticker"]: r for r in universe if r["ticker"] and r["source"] 
 report, probe = {"on": dt.date.today().isoformat()}, {}
 holdings, summary = {}, {}
 
-def get(url, timeout=60):
-    with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=timeout) as r:
-        return r.read()
+def get(url, timeout=60, referer=None):
+    headers = {**UA, "Accept": "text/csv,application/json,*/*"}
+    if referer: headers["Referer"] = referer
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=timeout) as r:
+            return r.read()
+    except urllib.error.HTTPError as e:
+        if PROBE and "error_body" not in probe: probe["error_body"] = {"url": url, "code": e.code, "headers": dict(e.headers.items()), "body": e.read()[:600].decode("utf-8", "replace")}
+        raise
 
 def num(v):
     try: return float(str(v).replace(",", "").replace("%", "").strip())
@@ -81,7 +87,7 @@ def ishares():
             seen.add(pid)
             try:
                 time.sleep(0.8)
-                text = get(url).decode("utf-8-sig", "replace")
+                text = get(url, referer="https://www.ishares.com" + page).decode("utf-8-sig", "replace")
                 lines = text.splitlines()
                 if PROBE and len(probe) < 6: probe[u["etf_key"]] = [l[:260] for l in lines[:9]]
                 head = next(i for i, l in enumerate(lines[:40]) if "Weight (%)" in l)

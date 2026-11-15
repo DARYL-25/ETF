@@ -15,7 +15,7 @@ const MAIN: { href: string; label: string; also?: string[] }[] = [
   { href: "/watchlists", label: "My lists", also: ["/portfolio"] },
 ];
 const MORE = [
-  { href: "/assistant", label: "Ask" }, { href: "/indices", label: "Indices" }, { href: "/tax", label: "Tax" }, { href: "/portfolio", label: "Portfolio" },
+  { href: "/assistant", label: "Ask" }, { href: "/holdings", label: "Which ETFs hold it" }, { href: "/indices", label: "Indices" }, { href: "/tax", label: "Tax" }, { href: "/portfolio", label: "Portfolio" },
   { href: "/pricing", label: "Pricing" }, { href: "/profile", label: "Account" }, { href: "/data", label: "Data and updates" },
 ];
 

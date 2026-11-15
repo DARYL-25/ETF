@@ -4,6 +4,8 @@ import { Change, Fee, PageTitle } from "@/components/etf-bits";
 import { PriceChart } from "@/components/price-chart";
 import { getEtfs, getExposures, getPriceSeries, type EtfRow, type Exposure } from "@/lib/etfs/queries";
 import { currentPlan } from "@/lib/billing/plan";
+import { getOverlaps, getSharedHoldings } from "@/lib/etfs/holdings";
+import { query } from "@/lib/db/client";
 import { PLANS } from "@/lib/billing/stripe";
 import { MISSING, assetClassLabel, countryName, distributionLabel, formatDate, formatMoney, formatPct, replicationLabel, styleLabel, yesNoUnknown } from "@/lib/format";
 
@@ -69,6 +71,13 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
   const limit = PLANS[plan].compare;
   const etfs = await getEtfs(requested.slice(0, limit));
   const cut = locked && requested.length > limit;
+  const keys = etfs.map((e) => e.etf_key!);
+  const [overlaps, shared, withHoldings] = await Promise.all([
+    getOverlaps(keys), getSharedHoldings(keys, 12),
+    keys.length ? query<{ etf_key: string }>("select etf_key from public.holdings_summary where etf_key = any($1::text[])", [keys]) : [],
+  ]);
+  const hasHoldings = new Set(withHoldings.map((w) => w.etf_key));
+  const label = (k: string) => { const e = etfs.find((x) => x.etf_key === k)!; return e.ticker ?? e.name; };
   const fees = etfs.map((e) => e.headline_fee_pct).filter((f): f is number => f !== null);
   const lowest = fees.length > 1 ? Math.min(...fees) : null;
 
@@ -127,6 +136,47 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
           ))}
         </table>
       </div>
+
+      {etfs.length >= 2 ? (
+        <section className="mt-10">
+          <h2 className="mb-2 text-[1.3rem]">Overlap</h2>
+          {hasHoldings.size >= 2 ? (
+            <>
+              <p className="mb-4 max-w-[72ch] text-muted">How much of two funds is the same investment: for every security both hold, we add the smaller of the two weights. 100% means identical funds, so owning both adds little.</p>
+              <ul className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                {keys.flatMap((a, i) => keys.slice(i + 1).map((b) => [a, b] as const)).filter(([a, b]) => hasHoldings.has(a) && hasHoldings.has(b)).map(([a, b]) => {
+                  const o = overlaps.find((x) => (x.a === a && x.b === b) || (x.a === b && x.b === a));
+                  const pct = Math.min(100, o?.overlap_pct ?? 0);
+                  return (
+                    <li key={`${a}-${b}`} className="panel p-4">
+                      <p className="data text-[0.9rem] text-muted">{label(a)} and {label(b)}</p>
+                      <p className="stat-value mt-1">{pct.toFixed(0)}%</p>
+                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-sunken"><div className="h-full rounded-full bg-pine" style={{ width: `${pct}%` }} /></div>
+                      <p className="mt-2 text-[0.85rem] text-muted">{o?.shared ?? 0} shared holdings</p>
+                    </li>
+                  );
+                })}
+              </ul>
+              {shared.length ? (
+                <div className="mt-5 overflow-x-auto">
+                  <table className="table-data">
+                    <thead><tr><th>Largest shared holdings</th>{keys.filter((k) => hasHoldings.has(k)).map((k) => <th key={k} className="num">{label(k)}</th>)}</tr></thead>
+                    <tbody>
+                      {shared.map((h) => (
+                        <tr key={h.name}><td>{h.name}</td>{keys.filter((k) => hasHoldings.has(k)).map((k) => <td key={k} className="num">{h.weights[k] !== undefined ? `${Number(h.weights[k]).toFixed(2)}%` : MISSING}</td>)}</tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+              {hasHoldings.size < keys.length ? <p className="mt-3 text-[0.85rem] text-muted">No holdings file on record for {keys.filter((k) => !hasHoldings.has(k)).map(label).join(", ")}, so it is left out.</p> : null}
+              <p className="mt-3 max-w-[72ch] text-[0.85rem] text-muted">Based on issuers&apos; holdings files. Securities are matched by ISIN, or by ticker and name where the file has no ISIN, so a few matches can be missed.</p>
+            </>
+          ) : (
+            <p className="max-w-[72ch] text-muted">Overlap needs a holdings file for at least two of these funds. We hold them for iShares and State Street funds so far{hasHoldings.size ? `, here only for ${[...hasHoldings].map(label).join(", ")}` : ""}.</p>
+          )}
+        </section>
+      ) : null}
 
       <section className="mt-10 max-w-5xl">
         <h2 className="mb-3 text-[1.3rem]">Price history</h2>
