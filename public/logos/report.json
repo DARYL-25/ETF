@@ -1,6 +1,6 @@
 {
  "ishares": "https://www.ishares.com/blk-one02-c-assets/ishares-favicon.ico",
- "vanguard": "https://www.vanguard.com/favicon.ico",
+ "vanguard": "none",
  "amundi": "https://static.amundi.com/web-assets/awf-assets/corporate/Favicon.ico",
  "xtrackers": "https://etf.dws.com/Resources/img/favicon.ico",
  "invesco": "https://www.invesco.com/etc.clientlibs/invesco/clientlibs/main/resources/images/apple-touch-icon.png",
@@ -17,13 +17,13 @@
  "proshares": "https://www.proshares.com/contentassets/53d45dcd6816447eb9b1802a7690ca57/proshares-fav-icon.png",
  "direxion": "https://www.direxion.com/images/favicon.png",
  "schwab": "none",
- "global-x": "https://assets.ctfassets.net/9gigg57dwmx9/2Ram1PjhFyIth8pxPJRzcE/db76750e910f42e7c31b2ae3ebec4657/favicon.ico",
+ "global-x": "page: HTTP Error 429: Too Many Requests",
  "ark": "page: HTTP Error 403: Forbidden",
  "dimensional": "https://www.dimensional.com/static/media/favicon.ico?v=2",
- "pimco": "https://www.pimco.com/ren-assets/img/favicons/favicon.png?rev=A685BE29F21B5694FCD60FD2DAD9F0C3",
+ "pimco": "https://www.pimco.com/ren-assets/img/favicons/favicon.png?rev=39FF4811267ED9A29FB01C3CBB9955EF",
  "deka": "https://www.deka.de/apple-touch-icon.png",
  "ossiam": "none",
  "legal-general": "https://www.landg.com/favicon.ico",
  "kodex": "https://www.samsungfund.com/assets/icons/icon_fund.png",
- "tiger": "page: HTTP Error 404: Not Found"
+ "tiger": "page: HTTP Error 403: Forbidden"
 }
