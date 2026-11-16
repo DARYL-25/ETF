@@ -254,7 +254,7 @@ export function buildSeedSql(root: string): string {
       for (const row of rest) {
         const c = parseLine(row);
         const b = c[cols.indexOf("benchmark")];
-        if (b) benchmarks.set(c[cols.indexOf("lookup")], b);
+        if (b) benchmarks.set(c[cols.indexOf("lookup")], b.replace(/<[^>]+>|[®™]/g, ""));
       }
     }
     const benchmarkOf = (isin: string, ticker: string) => benchmarks.get(isin) ?? benchmarks.get(`TICKER:${ticker}`) ?? "";
@@ -263,7 +263,7 @@ export function buildSeedSql(root: string): string {
         const [key, isin, ticker, mic, name, currency, lei, issuer, country, ucits, assetClass, venues, source, url] = parseLine(line);
         liveKeys.add(key);
         if (ticker && mic) oldKeys.set(`${mic}-${ticker}`, key);
-        const full = prettyName(name);
+        const full = prettyName(name.replace(/[®™]|<[^>]+>/g, ""));
         const pretty = cleanName(full);
         const slugs = inferCategories(full);
         // A brand in the fund's name is a surer guide to the issuer than the register's legal entity, which can be a platform.
@@ -291,11 +291,16 @@ export function buildSeedSql(root: string): string {
         if (cells[i] === "" || cells[i] === undefined) return "null";
         if (numeric.has(n)) return q(Number(cells[i]));
         if (n === "hedged" || n === "pea_eligible") return cells[i] === "t" ? "true" : "false";
-        return q(n === "name" ? prettyName(cells[i]) : cells[i]);
+        const text = n === "source_url" ? cells[i] : cells[i].replace(/<[^>]+>|[®™]/g, "").trim();
+        return q(n === "name" ? cleanName(prettyName(text)) : text);
       });
       // iShares sizes are per share class. The others cover the whole fund.
       const level = cells[names.indexOf("source")] === "iShares" ? "share_class" : "fund";
       out.push(`insert into public.universe_details (${names.join(", ")}, aum_level) select ${values.join(", ")}, ${q(level)} where exists (select 1 from public.universe_etfs u where u.etf_key = ${values[0]});`);
+      // The issuer's own name and benchmark say which index a fund tracks when the register's name does not.
+      const clean = (v: string | undefined) => (v ?? "").replace(/<[^>]+>|[®™]/g, "");
+      const slug = inferIndex(clean(cells[names.indexOf("name")])) ?? inferIndex(clean(cells[names.indexOf("benchmark")]));
+      if (slug) out.push(`update public.universe_etfs set index_slug = ${q(slug)} where etf_key = ${values[0]} and index_slug is null and exists (select 1 from public.indices where slug = ${q(slug)});`);
     }
   }
 

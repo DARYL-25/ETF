@@ -71,7 +71,7 @@ test("an old figure is flagged as out of date", async ({ page }) => {
 });
 
 test("comparison builds from the tray", async ({ page }) => {
-  await page.goto("/indices/sp-500");
+  await page.goto("/indices/sp-500?all=1");
   await page.getByRole("button", { name: "Add IE00B5BMR087 to comparison" }).click();
   await page.getByRole("button", { name: "Add IE00BFMXXD54 to comparison" }).click();
   await page.getByRole("link", { name: "Compare 2 ETFs" }).click();

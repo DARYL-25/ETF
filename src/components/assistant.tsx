@@ -54,6 +54,28 @@ export function Assistant({ initial, hero = false, home }: { initial?: string; h
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initial]);
 
+  // On the home page the empty field writes out example questions, one after another, until the reader types.
+  const [typed, setTyped] = useState("");
+  const idle = hero && !text && !history.length && !busy;
+  useEffect(() => {
+    if (!idle || matchMedia("(prefers-reduced-motion: reduce)").matches) { setTyped(""); return; }
+    let example = 0, at = 0, hold = 0, erasing = false;
+    const timer = setInterval(() => {
+      const full = t(EXAMPLES[example]);
+      if (hold > 0) { hold -= 1; return; }
+      if (!erasing) {
+        at += 1;
+        if (at >= full.length) { erasing = true; hold = 28; }
+      } else {
+        at -= 2;
+        if (at <= 0) { at = 0; erasing = false; example = (example + 1) % EXAMPLES.length; hold = 6; }
+      }
+      setTyped(full.slice(0, at));
+    }, 55);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idle, t.lang]);
+
   const taxHref = reply?.etfs.length ? reply.taxHref ?? null : null;
 
   return (
@@ -63,7 +85,7 @@ export function Assistant({ initial, hero = false, home }: { initial?: string; h
           <textarea id="ask" rows={1} maxLength={2000} value={text} aria-label={t("Describe what you are looking for")}
             onChange={(e) => { setText(e.target.value); e.target.style.height = "auto"; e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`; }}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void ask(text); } }}
-            placeholder={history.length ? t("Refine it: only accumulating, under 0.2%, physical…") : home ? t("An ETF for an investor in {country}…", { country: home }) : t("An index, a theme, and where you live")} />
+            placeholder={typed ? typed : history.length ? t("Refine it: only accumulating, under 0.2%, physical…") : home ? t("An ETF for an investor in {country}…", { country: home }) : t("An index, a theme, and where you live")} />
           <button type="submit" disabled={busy || !text.trim()} aria-label={t("Search")}>{busy ? <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <ArrowUp size={19} aria-hidden />}</button>
         </div>
         {!history.length ? (

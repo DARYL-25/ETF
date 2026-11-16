@@ -1,4 +1,6 @@
 import { getT } from "@/lib/i18n/server";
+import { Mosaic } from "@/components/mosaic";
+import { SectionNav } from "@/components/section-nav";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -50,11 +52,11 @@ function Facts({ items }: { items: [string, React.ReactNode][] }) {
 function Bars({ rows }: { rows: { label: string; weight_pct: number }[] }) {
   const top = Math.max(...rows.map((r) => r.weight_pct));
   return (
-    <ul>
-      {rows.map((r) => (
+    <ul data-reveal>
+      {rows.map((r, i) => (
         <li key={r.label} className="py-1.5">
           <div className="flex justify-between gap-3"><span>{r.label}</span><span className="data">{r.weight_pct.toFixed(2)}%</span></div>
-          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-sunken"><div className="h-full rounded-full bg-pine" style={{ width: `${(r.weight_pct / top) * 100}%` }} /></div>
+          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-sunken"><div className="bar-fill h-full rounded-full bg-pine" style={{ width: `${(r.weight_pct / top) * 100}%`, "--i": i } as React.CSSProperties} /></div>
         </li>
       ))}
     </ul>
@@ -63,7 +65,7 @@ function Bars({ rows }: { rows: { label: string; weight_pct: number }[] }) {
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
-    <section id={id} className="scroll-mt-24">
+    <section id={id} data-nav className="scroll-mt-32">
       <h2 className="mb-3 text-[1.3rem]">{title}</h2>
       {children}
     </section>
@@ -136,7 +138,7 @@ export default async function EtfPage({ params }: Props) {
     researched ? getPriceSeries(isin) : null, getSimilarEtfs(row), researched ? getFeePoints() : [], researched ? getTopHoldings(row.fund_key!) : [], getDailyPoints(key),
   ]);
   const full = await getHoldingsSummary(row.etf_key ?? key);
-  const [fullTop, fullSectors, fullCountries] = full ? await Promise.all([getTopHoldingsFull(full.etf_key, 10), getBreakdown(full.etf_key, "sector"), getBreakdown(full.etf_key, "country")]) : [[], [], []];
+  const [fullTop, fullSectors, fullCountries] = full ? await Promise.all([getTopHoldingsFull(full.etf_key, 64), getBreakdown(full.etf_key, "sector"), getBreakdown(full.etf_key, "country")]) : [[], [], []];
   const sectors = exposures.filter((x) => x.dimension === "sector");
   const countries = exposures.filter((x) => x.dimension === "country");
   const metric = (name: string) => bond.find((b) => b.metric === name);
@@ -170,7 +172,7 @@ export default async function EtfPage({ params }: Props) {
         <Stat label={t("Yearly fee")} value={<Fee row={row} />} note={row.ter_as_of ?? row.ocf_as_of ? t("As of {date}", { date: formatDate(row.ter_as_of ?? row.ocf_as_of, t.lang) }) : row.headline_fee_pct === null ? t("No fee on file yet") : undefined} />
         <Stat label={sizeIsClass ? t("Share class size") : t("Fund size")} value={formatMoney(size, sizeCurrency, t.lang)} note={row.fund_aum_as_of ?? row.class_aum_as_of ? t("As of {date}", { date: formatDate(row.fund_aum_as_of ?? row.class_aum_as_of, t.lang) }) : undefined} />
         <Stat label={t("NAV return, 1 year")} value={<Change value={row.nav_return_1y} />} note={row.nav_return_1y !== null ? t("In {currency}, to {date}", { currency: returnCurrency ?? t("the fund's currency"), date: formatDate(row.nav_return_as_of, t.lang) }) : t("Not loaded yet")} />
-        <Stat label={t("Latest NAV")} value={row.nav !== null ? <>{row.nav.toFixed(2)} <span className="text-[0.6em] font-medium text-muted">{row.nav_currency}</span></> : MISSING} note={row.nav_as_of ? `On ${formatDate(row.nav_as_of, t.lang)}` : undefined} />
+        <Stat label={t("Latest NAV")} value={row.nav !== null ? <>{row.nav.toFixed(2)} <span className="text-[0.6em] font-medium text-muted">{row.nav_currency}</span></> : MISSING} note={row.nav_as_of ? t("On {date}", { date: formatDate(row.nav_as_of, t.lang) }) : undefined} />
       </section>
 
       {row.verification !== "reviewed" ? (
@@ -183,6 +185,8 @@ export default async function EtfPage({ params }: Props) {
           {row.source_url ? <a className="underline" href={row.source_url} rel="noreferrer" target="_blank">{t("Open the source")}</a> : null}
         </p>
       ) : null}
+
+      <SectionNav name={row.name} figure={row.headline_fee_pct !== null ? `${row.headline_fee_pct.toFixed(2)}%` : null} label={t("Sections of this page")} />
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start">
         <div className="flex min-w-0 flex-col gap-10">
@@ -279,18 +283,19 @@ export default async function EtfPage({ params }: Props) {
           {full ? (
             <Section id="holdings" title={t("What it holds")}>
               <p className="mb-4 max-w-[72ch] text-muted">{full.as_of ? t("{n} holdings on {date}, from {source}'s holdings file.", { n: full.n_holdings.toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB"), date: formatDate(full.as_of, t.lang), source: full.source }) : t("{n} holdings, from {source}'s holdings file.", { n: full.n_holdings.toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB"), source: full.source })}{full.kept < full.n_holdings ? t(" We keep the largest {n}, which make up {pct}% of the fund.", { n: full.kept, pct: full.covered_pct.toFixed(1) }) : ""}</p>
+              <Mosaic items={fullTop} label={t("Largest holdings of {name}", { name: row.name })} restLabel={(pct) => t("{n} more holdings, {pct}%", { n: Math.max(0, full.n_holdings - fullTop.length).toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB"), pct })} />
+              <p className="mb-6 mt-2 text-[0.85rem] text-muted">{t("Each tile is one holding, sized by its share of the fund. Select one to see every ETF that owns it.")}</p>
               <div className="grid gap-x-10 gap-y-8 md:grid-cols-2">
-                <div className="md:col-span-2 max-w-2xl">
+                <div>
                   <h3 className="mb-1 text-[1.05rem]">{t("Largest holdings")}</h3>
-                  <ul>
-                    {fullTop.map((h) => (
+                  <ul data-reveal>
+                    {fullTop.slice(0, 10).map((h, i) => (
                       <li key={h.holding_key} className="py-1.5">
                         <div className="flex justify-between gap-3"><Link className="no-underline hover:text-pine" href={`/holdings?key=${encodeURIComponent(h.holding_key)}`}>{h.name}</Link><span className="data">{h.weight_pct.toFixed(2)}%</span></div>
-                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-sunken"><div className="h-full rounded-full bg-pine" style={{ width: `${Math.min(100, (h.weight_pct / (fullTop[0]?.weight_pct || 1)) * 100)}%` }} /></div>
+                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-sunken"><div className="bar-fill h-full rounded-full bg-pine" style={{ width: `${Math.min(100, (h.weight_pct / (fullTop[0]?.weight_pct || 1)) * 100)}%`, "--i": i } as React.CSSProperties} /></div>
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-2 text-[0.85rem] text-muted">{t("Select a holding to see every ETF that owns it.")}</p>
                 </div>
                 {fullSectors.length > 1 ? <div><h3 className="mb-1 text-[1.05rem]">{t("Sectors")}</h3><Bars rows={fullSectors.map((x) => ({ label: x.label, weight_pct: x.weight_pct }))} /></div> : null}
                 {fullCountries.length > 1 ? <div><h3 className="mb-1 text-[1.05rem]">{t("Countries")}</h3><Bars rows={fullCountries.map((x) => ({ label: x.label, weight_pct: x.weight_pct }))} /></div> : null}

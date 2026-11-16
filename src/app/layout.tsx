@@ -5,6 +5,8 @@ import { CompareTray } from "@/components/compare-tray";
 import { themeScript } from "@/components/theme-toggle";
 import { LangProvider } from "@/lib/i18n/client";
 import { getT } from "@/lib/i18n/server";
+import { Suspense } from "react";
+import { Motion } from "@/components/motion";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
@@ -23,6 +25,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
+        <Suspense><Motion /></Suspense>
         <LangProvider lang={lang}>
           <Shell>{children}</Shell>
           <CompareTray />

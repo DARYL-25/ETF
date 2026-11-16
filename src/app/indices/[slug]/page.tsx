@@ -1,4 +1,6 @@
 import { getT } from "@/lib/i18n/server";
+import { Mosaic } from "@/components/mosaic";
+import { getHoldingsSummary, getTopHoldingsFull, largestWithHoldings } from "@/lib/etfs/holdings";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -11,20 +13,24 @@ import { assetClassLabel, countryName, distributionLabel, formatDate, formatMone
 
 export const dynamic = "force-dynamic";
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ all?: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const data = await getIndex((await params).slug);
   return { title: data?.index.name ?? "Index not found" };
 }
 
-export default async function IndexPage({ params }: Props) {
+export default async function IndexPage({ params, searchParams }: Props) {
   const t = await getT();
   const data = await getIndex((await params).slug);
   if (!data) notFound();
   const { index, etfs } = data;
   const compareAll = etfs.slice(0, 5).map((e) => e.etf_key).join(",");
   const gaps = returnGaps(etfs);
+  const FIRST = 30;
+  const showAll = (await searchParams).all === "1" || etfs.length <= FIRST + 5;
+  const seen = await largestWithHoldings(etfs.map((e) => e.etf_key).filter((k): k is string => Boolean(k)));
+  const [inside, insideSummary] = seen ? await Promise.all([getTopHoldingsFull(seen.etf_key, 64), getHoldingsSummary(seen.etf_key)]) : [[], null];
 
   return (
     <div>
@@ -35,6 +41,13 @@ export default async function IndexPage({ params }: Props) {
         <div><dt className="inline text-muted">{t("Covers: ")}</dt><dd className="inline">{t(index.geography ?? "")}</dd></div>
       </dl>
       <p className="mb-3 max-w-[68ch] text-muted">{t("For most funds, the link to this index is inferred from the fund's name. Check the factsheet before relying on it.")}</p>
+      {seen && insideSummary && inside.length > 5 ? (
+        <section className="mb-10">
+          <h2 className="mb-1 text-[1.3rem]">{t("What the index holds")}</h2>
+          <p className="mb-3 max-w-[72ch] text-muted">{t("Seen through {name}, the largest fund on this index whose full holdings we hold: {n} holdings on {date}. Other funds on the index can differ slightly.", { name: seen.name, n: insideSummary.n_holdings.toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB"), date: formatDate(insideSummary.as_of, t.lang) })}</p>
+          <Mosaic items={inside} label={t("Largest holdings of {name}", { name: seen.name })} restLabel={(pct) => t("{n} more holdings, {pct}%", { n: Math.max(0, insideSummary.n_holdings - inside.length).toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB"), pct })} />
+        </section>
+      ) : null}
       <h2 className="mb-3 text-[1.3rem]">{etfs.length === 0 ? t("No ETFs loaded yet") : etfs.length === 1 ? t("1 ETF follows this index") : t("{n} ETFs follow this index", { n: etfs.length })}</h2>
       {etfs.length === 0 ? (
         <p className="max-w-[68ch] text-muted">{t("We have not loaded an ETF on this index yet. That does not mean none exists. ")}<Link className="prose-link" href="/screener">{t("Search the screener")}</Link>{t(" for other funds.")}</p>
@@ -44,7 +57,7 @@ export default async function IndexPage({ params }: Props) {
             <table className="table-data">
               <thead><tr><th aria-label={t("Compare")} /><th>{t("ETF")}</th><th>{t("Domicile")}</th><th>{t("Replication")}</th><th>{t("Income")}</th><th className="num">{t("Yearly fee")}</th><th className="num">{t("Size")}</th></tr></thead>
               <tbody>
-                {etfs.map((row) => (
+                {(showAll ? etfs : etfs.slice(0, FIRST)).map((row) => (
                   <tr key={row.etf_key}>
                     <td className="w-px"><CompareToggle isin={row.etf_key!} /></td>
                     <td className="min-w-[16rem]"><EtfName row={row} /></td>
@@ -58,6 +71,7 @@ export default async function IndexPage({ params }: Props) {
               </tbody>
             </table>
           </div>
+          {!showAll ? <p className="mt-3"><Link className="btn btn-quiet" href={`/indices/${index.slug}?all=1`} scroll={false}>{t("Show all {n} ETFs", { n: etfs.length })}</Link></p> : null}
           {gaps ? (
             <section className="mt-10">
               <h2 className="text-[1.3rem]">{t("What each fund actually delivered")}</h2>

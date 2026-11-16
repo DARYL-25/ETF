@@ -3,6 +3,7 @@
 import { useT } from "@/lib/i18n/client";
 import { useEffect, useState } from "react";
 import type { PortfolioInsight as Insight } from "@/lib/etfs/portfolio";
+import { Mosaic } from "./mosaic";
 
 const eur = (v: number, lang = "en") => new Intl.NumberFormat(lang === "fr" ? "fr-FR" : "en-GB", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
 
@@ -54,6 +55,12 @@ export function PortfolioInsight({ positions }: { positions: { key: string; quan
         <div className="mt-4 rounded-xl bg-warn-bg px-3.5 py-2.5 text-warn-ink">
           <p className="font-semibold">{t("Funds that largely hold the same things")}</p>
           <ul className="mt-1 space-y-0.5">{data.overlaps.map((o) => <li key={o.a + o.b}>{name(o.a)}{t(" and ")}{name(o.b)}: {o.overlap_pct.toFixed(0)}{t("% overlap")}</li>)}</ul>
+        </div>
+      ) : null}
+      {data.look.covered_pct > 0 ? (
+        <div className="mt-5">
+          <h4 className="mb-2 font-semibold">{t("Your portfolio as one basket")}</h4>
+          <Mosaic items={data.look.holdings.map((h) => ({ holding_key: h.holding_key, name: h.label, ticker: h.ticker, weight_pct: h.weight_pct }))} label={t("Your portfolio as one basket")} restLabel={(pct) => t("Everything else, {pct}%", { pct })} />
         </div>
       ) : null}
       {data.look.covered_pct > 0 ? (

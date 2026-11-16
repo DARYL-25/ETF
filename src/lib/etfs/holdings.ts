@@ -72,7 +72,7 @@ export const getHolders = (holdingKey: string, limit = 100) =>
     [holdingKey, limit],
   );
 
-export type LookThrough = { holdings: (Slice & { ticker: string | null })[]; sectors: Slice[]; countries: Slice[]; covered_pct: number };
+export type LookThrough = { holdings: (Slice & { ticker: string | null; holding_key: string })[]; sectors: Slice[]; countries: Slice[]; covered_pct: number };
 
 /**
  * What a set of positions holds underneath. `weights` are each ETF's share of the portfolio, in percent.
@@ -84,10 +84,31 @@ export async function lookThrough(weights: Record<string, number>): Promise<Look
   const share = JSON.stringify(weights);
   const base = `from public.holdings h join jsonb_each_text($1::jsonb) w on w.key = h.etf_key`;
   const [holdings, sectors, countries, covered] = await Promise.all([
-    query<Slice & { ticker: string | null }>(`select min(h.name) as label, min(h.ticker) as ticker, sum(h.weight_pct * w.value::float / 100) as weight_pct ${base} group by h.holding_key order by 3 desc limit 15`, [share]),
+    query<Slice & { ticker: string | null; holding_key: string }>(`select h.holding_key, min(h.name) as label, min(h.ticker) as ticker, sum(h.weight_pct * w.value::float / 100) as weight_pct ${base} group by h.holding_key order by 4 desc limit 48`, [share]),
     query<Slice>(`select h.sector as label, sum(h.weight_pct * w.value::float / 100) as weight_pct ${base} where h.sector is not null and h.sector not in ('', '-') group by 1 order by 2 desc limit 12`, [share]),
     query<Slice>(`select h.country as label, sum(h.weight_pct * w.value::float / 100) as weight_pct ${base} where h.country is not null and h.country not in ('', '-') group by 1 order by 2 desc limit 12`, [share]),
     query<{ covered: number }>(`select coalesce(sum(w.value::float), 0) as covered from jsonb_each_text($1::jsonb) w where exists (select 1 from public.holdings_summary s where s.etf_key = w.key)`, [share]),
   ]);
   return { holdings, sectors, countries, covered_pct: covered[0].covered };
+}
+
+/** Well-known funds whose full holdings we hold, for the picture on the home page. */
+const SHOWCASE: [string, string][] = [["US78462F1030", "S&P 500"], ["IE00BFY0GT14", "MSCI World"], ["XNAS-QNDX", "Nasdaq-100"], ["US78463X1037", "Europe"], ["IE00B469F816", "Emerging markets"]];
+
+export type Showcase = { key: string; label: string; name: string; summary: HoldingsSummary; holdings: Holding[] };
+
+export async function getShowcase(tiles = 64): Promise<Showcase[]> {
+  const rows = await Promise.all(SHOWCASE.map(async ([key, label]) => {
+    const [summary, holdings, names] = await Promise.all([getHoldingsSummary(key), getTopHoldingsFull(key, tiles), query<{ name: string }>("select name from public.etf_directory where etf_key = $1", [key])]);
+    return summary && holdings.length > 5 && names[0] ? { key, label, name: names[0].name, summary, holdings } : null;
+  }));
+  return rows.filter((r): r is Showcase => r !== null);
+}
+
+/** The largest of these ETFs that has full holdings on file, to show what an index holds through one fund. */
+export async function largestWithHoldings(keys: string[]): Promise<{ etf_key: string; name: string } | null> {
+  if (!keys.length) return null;
+  return (await query<{ etf_key: string; name: string }>(
+    `select d.etf_key, d.name from public.holdings_summary s join public.etf_directory d on d.etf_key = s.etf_key
+     where s.etf_key = any($1::text[]) and s.covered_pct > 80 order by d.size_eur desc nulls last limit 1`, [keys]))[0] ?? null;
 }

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 type Theme = "system" | "light" | "dark";
 
 /** Runs before first paint, so a saved theme never flashes the wrong colours. */
-export const themeScript = `try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+export const themeScript = `document.documentElement.dataset.js="";try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
 
 export function ThemeToggle() {
   const t = useT();

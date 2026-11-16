@@ -1,4 +1,5 @@
 import type { T } from "@/lib/i18n";
+import { isValidElement } from "react";
 import { getT } from "@/lib/i18n/server";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -7,6 +8,8 @@ import { PriceChart } from "@/components/price-chart";
 import { getEtfs, getExposures, getPriceSeries, type EtfRow, type Exposure } from "@/lib/etfs/queries";
 import { currentPlan } from "@/lib/billing/plan";
 import { getOverlaps, getSharedHoldings } from "@/lib/etfs/holdings";
+import { Venn } from "@/components/venn";
+import { shortName } from "@/lib/etfs/treemap";
 import { query } from "@/lib/db/client";
 import { PLANS } from "@/lib/billing/stripe";
 import { MISSING, assetClassLabel, countryName, distributionLabel, formatDate, formatMoney, formatPct, replicationLabel, styleLabel, yesNoUnknown } from "@/lib/format";
@@ -112,7 +115,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
 
   return (
     <div>
-      <PageTitle title={t("Compare")}>{t("A dash means we hold no figure, not that the value is zero. The lowest yearly fee is marked.")}</PageTitle>
+      <PageTitle title={t("Compare")}>{t("A dash means we hold no figure, not that the value is zero. Rows with no figure for any of these funds are left out. The lowest yearly fee is marked.")}</PageTitle>
       {cut ? <p className="mb-4 max-w-[70ch] rounded-xl bg-warn-bg px-3.5 py-2.5 text-warn-ink">{t("Showing the first ")}{limit}{t(" of ")}{requested.length}{t(" ETFs. ")}<Link className="underline" href="/pricing">{t("Premium compares up to 5")}</Link>.</p> : null}
       <div className="overflow-x-auto">
         <table className="table-data">
@@ -126,7 +129,11 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
               ))}
             </tr>
           </thead>
-          {[...groups, { title: t("Allocation"), rows: allRenders }].map((group) => (
+          {[...groups, { title: t("Allocation"), rows: allRenders }]
+            // A row is shown only when at least one of these funds has a figure for it.
+            .map((group) => ({ ...group, rows: group.rows.filter((row) => etfs.some((e) => { const v = row.render(e, t); return v !== MISSING && v !== null && v !== undefined && v !== "" && !(isValidElement(v) && (v.props as { value?: unknown }).value === null); })) }))
+            .filter((group) => group.rows.length)
+            .map((group) => (
             <tbody key={group.title}>
               <tr><th colSpan={etfs.length + 1} className="sticky left-0 bg-surface pt-5 text-left text-[1.05rem] text-ink">{t(group.title)}</th></tr>
               {group.rows.map((row) => (
@@ -153,9 +160,10 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
                   return (
                     <li key={`${a}-${b}`} className="panel p-4">
                       <p className="data text-[0.9rem] text-muted">{label(a)}{t(" and ")}{label(b)}</p>
-                      <p className="stat-value mt-1">{pct.toFixed(0)}%</p>
-                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-sunken"><div className="h-full rounded-full bg-pine" style={{ width: `${pct}%` }} /></div>
-                      <p className="mt-2 text-[0.85rem] text-muted">{o?.shared ?? 0}{t(" shared holdings")}</p>
+                      <div className="mt-2 flex items-center justify-between gap-4">
+                        <div><p className="stat-value">{pct.toFixed(0)}%</p><p className="mt-1 text-[0.85rem] text-muted">{o?.shared ?? 0}{t(" shared holdings")}</p></div>
+                        <Venn pct={pct} />
+                      </div>
                     </li>
                   );
                 })}
@@ -166,7 +174,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
                     <thead><tr><th>{t("Largest shared holdings")}</th>{keys.filter((k) => hasHoldings.has(k)).map((k) => <th key={k} className="num">{label(k)}</th>)}</tr></thead>
                     <tbody>
                       {shared.map((h) => (
-                        <tr key={h.name}><td>{h.name}</td>{keys.filter((k) => hasHoldings.has(k)).map((k) => <td key={k} className="num">{h.weights[k] !== undefined ? `${Number(h.weights[k]).toFixed(2)}%` : MISSING}</td>)}</tr>
+                        <tr key={h.name}><td>{shortName(h.name)}</td>{keys.filter((k) => hasHoldings.has(k)).map((k) => <td key={k} className="num">{h.weights[k] !== undefined ? `${Number(h.weights[k]).toFixed(2)}%` : MISSING}</td>)}</tr>
                       ))}
                     </tbody>
                   </table>
