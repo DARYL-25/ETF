@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { query } from "@/lib/db/client";
 import { LESSONS } from "@/lib/academy/content";
 import { TAX_COUNTRIES } from "@/lib/tax/content";
+import { THEMES } from "@/lib/etfs/themes";
 
 export const dynamic = "force-dynamic";
 const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -19,6 +20,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...TAX_COUNTRIES.map((c) => page(`/tax/${c.slug}`, 0.8, "monthly")),
     ...LESSONS.map((l) => page(`/academy/${l.slug}`, 0.6, "monthly")),
     ...indices.map((i) => page(`/indices/${i.slug}`, 0.8, "weekly")),
+    page("/themes", 0.9, "weekly"),
+    ...THEMES.map((x) => page(`/themes/${x.slug}`, 0.8, "weekly")),
     ...etfs.map((e) => page(`/etfs/${encodeURIComponent(e.etf_key)}`, e.rich ? 0.6 : 0.3, "weekly")),
   ];
 }

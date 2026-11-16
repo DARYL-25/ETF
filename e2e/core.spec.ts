@@ -228,3 +228,21 @@ test("an ETF page turns its fee into money and shows what the fund holds", async
   await expect(page.getByRole("heading", { name: "What it holds" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Sectors" })).toBeVisible();
 });
+
+test("themes group ETFs from every market and can be compared", async ({ page }) => {
+  await page.goto("/themes");
+  await expect(page.getByRole("heading", { level: 1, name: "Themes" })).toBeVisible();
+  await page.getByRole("link", { name: /Semiconductors/ }).first().click();
+  await expect(page).toHaveURL(/\/themes\/semiconductors/);
+  await expect(page.getByRole("heading", { level: 1, name: "Semiconductors ETFs" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Semiconductor/ }).first()).toBeVisible();
+  await page.getByRole("link", { name: /United States/ }).click();
+  await expect(page).toHaveURL(/market=us/);
+  await expect(page.getByRole("link", { name: /Compare the first/ })).toBeVisible();
+});
+
+test("the halal theme says who certifies compliance", async ({ page }) => {
+  await page.goto("/themes/shariah");
+  await expect(page.getByText(/certified by each fund's own Shariah board/)).toBeVisible();
+  await expect(page.getByRole("link", { name: /Islamic|Shariah|Sharia|Sukuk/ }).first()).toBeVisible();
+});

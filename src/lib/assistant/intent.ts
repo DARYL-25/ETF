@@ -63,7 +63,8 @@ export function parseIntent(text: string): Intent {
   const assetClass = /\b(bonds?|obligations?|fixed income|treasur\w*)\b/i.test(t) ? "fixed_income" : /\b(gold|or physique|commodit\w*|mati[eè]res? premi[eè]res?)\b/i.test(t) ? "commodities" : /\bmoney market\b/i.test(t) ? "money_market" : null;
   // A country named as the investor's home is not an investment region.
   const forCategories = COUNTRY.reduce((s, [re]) => (investorCountry && re.test(s) ? s.replace(re, " ") : s), t);
-  const categories = index ? [] : inferCategories(forCategories).filter((c) => !["government-bonds", "aggregate-bonds", "corporate-bonds", "gold"].includes(c) || assetClass);
+  // People type "ai" in lower case; fund names write it in capitals, which is what the theme rule expects.
+  const categories = index ? [] : inferCategories(forCategories.replace(/\b(ai|ia)\b/gi, "AI")).filter((c) => !["government-bonds", "aggregate-bonds", "corporate-bonds", "gold"].includes(c) || assetClass);
   const issuer = ISSUERS.find((i) => t.toLowerCase().includes(i)) ?? null;
   const ucitsOnly = /\bucits\b|\bopcvm\b/i.test(t);
   const keywords = !index && !categories.length && !assetClass ? (t.toLowerCase().match(/[a-z&-]{4,}/g) ?? []).filter((w) => !STOP.has(w)).slice(0, 4) : [];

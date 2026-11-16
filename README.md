@@ -24,6 +24,7 @@ On GitHub, choose **Code**, then **Codespaces**, then **Create codespace**. Wait
 - **Screener**: combined filters, quick filters, sorting, changeable columns, shareable links and CSV export
 - **ETF pages** for every fund: key figures with dates, price history, performance, facts, holdings where held, and where each figure came from
 - **Compare** 2 to 5 ETFs with their holdings overlap, and **index pages** listing every fund on an index with the return gap between them
+- **Themes**: every ETF on a theme, such as AI, semiconductors, defence, Chinese technology, halal or actively managed funds, side by side
 - **Which ETFs hold it**: search a company and see every fund that holds it, with the weight
 - **French and English**, switched from the top bar, lessons included
 - **Tax notes** for Switzerland and France, each rule quoted from an official source, including PEA and assurance-vie

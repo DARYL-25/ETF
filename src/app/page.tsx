@@ -7,6 +7,8 @@ import { getCoverage, getFeePoints, getIndexTiles } from "@/lib/etfs/queries";
 import { getFreshness } from "@/lib/data/policy";
 import { getLens } from "@/lib/lens-server";
 import { getShowcase } from "@/lib/etfs/holdings";
+import { getThemeCounts } from "@/lib/etfs/queries";
+import { THEMES } from "@/lib/etfs/themes";
 import { Mosaic } from "@/components/mosaic";
 import { Tabs } from "@/components/tabs";
 import { formatDate, formatPct } from "@/lib/format";
@@ -15,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const t = await getT();
-  const [coverage, tiles, fees, lens, showcase] = await Promise.all([getCoverage(), getIndexTiles(8), getFeePoints(), getLens(), getShowcase()]);
+  const [coverage, tiles, fees, lens, showcase, themeCounts] = await Promise.all([getCoverage(), getIndexTiles(8), getFeePoints(), getLens(), getShowcase(), getThemeCounts()]);
   const fresh = Object.fromEntries(getFreshness().map((f) => [f.id, f]));
   const locale = t.lang === "fr" ? "fr-FR" : "en-GB";
   const n = (v: number) => v.toLocaleString(locale);
@@ -52,6 +54,18 @@ export default async function HomePage() {
           }))} />
         </section>
       ) : null}
+
+      <section>
+        <div className="mb-4 flex items-baseline justify-between gap-4">
+          <h2 className="text-[1.5rem]">{t("Start from a theme")}</h2>
+          <Link href="/themes" className="prose-link whitespace-nowrap">{t("All themes")}</Link>
+        </div>
+        <ul className="flex flex-wrap gap-2">
+          {THEMES.filter((x) => x.featured && themeCounts.get(x.slug)).map((x) => (
+            <li key={x.slug}><Link href={`/themes/${x.slug}`} className="chip">{t(x.label)} <span className="data text-muted">{themeCounts.get(x.slug)!.n.toLocaleString(locale)}</span></Link></li>
+          ))}
+        </ul>
+      </section>
 
       <section>
         <div className="mb-4 flex items-baseline justify-between gap-4">

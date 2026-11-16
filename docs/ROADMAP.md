@@ -10,6 +10,7 @@
 | Daily prices | Issuer NAV or an open-data close for about 2,500 ETFs, of which 1,500 refresh every day. History builds from 4 November 2026 |
 | Holdings | Full holdings for about 340 ETFs (State Street, ARK, Direxion), refreshed weekly. Powers overlap between funds, "which ETFs hold X", and portfolio look-through |
 | Holdings mosaic | A fund drawn as its holdings, each tile sized by weight: on the home page, each fund page, index pages and the practice portfolio |
+| Themes | 45 themes, strategies and regions (AI, semiconductors, defence, Chinese technology, halal, actively managed and more), each with every matching ETF from every market, ready to compare. Funds are filed by the words in their name, in English, Chinese, Japanese and Korean |
 | True cost | Fee in money on each ETF page, and the return gap between funds on the same index |
 | Update schedule | Done: weekly list and holdings, daily prices, monthly details, quarterly SEC fees. See [DATA_UPDATES.md](DATA_UPDATES.md) |
 | Search, ask bar, screener, comparison, index pages, CSV export | Done |

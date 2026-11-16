@@ -179,10 +179,14 @@ def canada():
     for exch, mic in (("tsx", "XTSE"), ("tsxv", "XTSX")):
         data = json.loads(get(f"https://www.tsx.com/json/company-directory/search/{exch}/%5E*"))
         for c in data.get("results", []):
+            # The directory lists a fund once, with its unit classes under it. A class is often named only
+            # "CAD Units", so the fund's own name decides whether it is an ETF and is kept in the class name.
+            fund = c.get("name", "")
             for inst in c.get("instruments", []) or [c]:
-                name = inst.get("name") or c.get("name", "")
-                if re.search(r"\bETF\b|Exchange.Traded|Index Fund", name, re.I):
-                    rows.append({"isin": "", "ticker": inst.get("symbol", ""), "mic": mic, "name": name, "currency": "", "cfi": "", "issuer_lei": "", "market": "CA"})
+                name = inst.get("name") or fund
+                if not re.search(r"\bETFs?\b|Exchange.Traded|Index Fund", f"{fund} {name}", re.I): continue
+                if fund and not re.search(r"\bETFs?\b|Exchange.Traded|Index Fund", name, re.I): name = f"{fund} {name}".strip()
+                rows.append({"isin": "", "ticker": inst.get("symbol", ""), "mic": mic, "name": name, "currency": "", "cfi": "", "issuer_lei": "", "market": "CA"})
     return rows
 
 def singapore():

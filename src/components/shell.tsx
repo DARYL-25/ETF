@@ -11,6 +11,7 @@ import { getLens } from "@/lib/lens-server";
 
 const MAIN: { href: string; label: string; also?: string[] }[] = [
   { href: "/screener", label: "Screener", also: ["/etfs"] },
+  { href: "/themes", label: "Themes" },
   { href: "/compare", label: "Compare" },
   { href: "/indices", label: "Indices" },
   { href: "/academy", label: "Learn" },
@@ -18,7 +19,7 @@ const MAIN: { href: string; label: string; also?: string[] }[] = [
   { href: "/watchlists", label: "My lists", also: ["/portfolio"] },
 ];
 const MORE = [
-  { href: "/assistant", label: "Ask" }, { href: "/holdings", label: "Which ETFs hold it" }, { href: "/indices", label: "Indices" }, { href: "/tax", label: "Tax" }, { href: "/portfolio", label: "Portfolio" },
+  { href: "/assistant", label: "Ask" }, { href: "/themes", label: "Themes" }, { href: "/holdings", label: "Which ETFs hold it" }, { href: "/indices", label: "Indices" }, { href: "/tax", label: "Tax" }, { href: "/portfolio", label: "Portfolio" },
   { href: "/pricing", label: "Pricing" }, { href: "/profile", label: "Account" }, { href: "/data", label: "Data and updates" },
 ];
 
