@@ -1,4 +1,5 @@
 import { query } from "@/lib/db/client";
+import { themeBySlug } from "./themes";
 import { SORT_COLUMNS, buildScreenerWhere, defaultDirection, type ScreenerParams } from "./screener-params";
 
 export type EtfRow = {
@@ -264,13 +265,23 @@ export async function getIndex(slug: string): Promise<{ index: IndexRow; etfs: E
   return { index, etfs };
 }
 
-export const getSimilarEtfs = (row: EtfRow, limit = 6) =>
-  query<EtfRow>(
+/**
+ * Funds close to this one: first those on the same index, then those sharing the most labels.
+ * A fund's themes count before its region, so a defence fund is matched with defence funds, not with
+ * every fund from the same country. Leveraged and inverse products are only matched with each other.
+ */
+export const getSimilarEtfs = (row: EtfRow, limit = 6) => {
+  const themes = row.category_slugs.filter((slug) => themeBySlug(slug)?.kind === "theme");
+  const labels = themes.length ? themes : row.category_slugs;
+  return query<EtfRow>(
     `select * from public.etf_directory
-     where etf_key <> $1 and (index_slug = $2 or ($2::text is null and asset_class = $3 and category_slugs && $4::text[] and cardinality($4::text[]) > 0))
-     order by (index_slug = $2) desc nulls last, headline_fee_pct asc nulls last, size_eur desc nulls last limit ${limit}`,
-    [row.etf_key ?? row.isin, row.index_slug, row.asset_class, row.category_slugs],
+     where etf_key <> $1 and ('leveraged-inverse' = any(category_slugs)) = $5
+       and (index_slug = $2 or ($2::text is null and coalesce(asset_class, '') = coalesce($3, '') and category_slugs && $4::text[] and cardinality($4::text[]) > 0))
+     order by (index_slug = $2) desc nulls last, (select count(*) from unnest(category_slugs) c where c = any($4::text[])) desc,
+       (headline_fee_pct is null), size_eur desc nulls last, headline_fee_pct asc limit ${limit}`,
+    [row.etf_key ?? row.isin, row.index_slug, row.asset_class, labels, row.category_slugs.includes("leveraged-inverse")],
   );
+};
 
 export async function getDashboard() {
   const [largest, cheapest, coverage, sp500, fees] = await Promise.all([

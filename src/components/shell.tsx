@@ -61,7 +61,7 @@ export async function Shell({ children }: { children: React.ReactNode }) {
       <footer className="border-t border-line pb-24 lg:pb-0">
         <div className="mx-auto flex max-w-[84rem] flex-col gap-2 px-4 py-6 text-[0.85rem] text-muted lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <p className="max-w-[72ch]">{t("General information, not investment or tax advice. Prices are end-of-day values, never real time. Figures come from issuers and official lists and can contain errors, so check the issuer's documents before you act.")}</p>
-          <p className="flex flex-none gap-4"><Link href="/data" className="prose-link">{t("Data and updates")}</Link><Link href="/pricing" className="prose-link">{t("Pricing")}</Link></p>
+          <p className="flex flex-none flex-wrap gap-x-4 gap-y-1"><Link href="/data" className="prose-link">{t("Data and updates")}</Link><Link href="/pricing" className="prose-link">{t("Pricing")}</Link><Link href="/legal/terms" className="prose-link">{t("Terms of use")}</Link><Link href="/legal/privacy" className="prose-link">{t("Privacy")}</Link><Link href="/legal/notice" className="prose-link">{t("Legal notice")}</Link></p>
         </div>
       </footer>
       <nav aria-label={t("Main, phone")} className="fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-surface/95 backdrop-blur lg:hidden">

@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const theme = themeBySlug((await params).slug);
   if (!theme) return { title: "Theme not found" };
   const t = await getT();
-  return { title: t("{theme} ETFs", { theme: t(theme.label) }), description: t(theme.blurb), alternates: { canonical: `/themes/${theme.slug}` } };
+  return { title: t("{theme} ETFs", { theme: t(theme.label) }), description: t(theme.blurb) };
 }
 
 const SORTS: [ThemeSort, string][] = [["size", "Largest first"], ["fee", "Lowest fee first"], ["return", "Best 1-year return first"]];

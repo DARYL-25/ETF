@@ -246,3 +246,22 @@ test("the halal theme says who certifies compliance", async ({ page }) => {
   await expect(page.getByText(/certified by each fund's own Shariah board/)).toBeVisible();
   await expect(page.getByRole("link", { name: /Islamic|Shariah|Sharia|Sukuk/ }).first()).toBeVisible();
 });
+
+test("French addresses show French and point search engines to both languages", async ({ page }) => {
+  await page.goto("/fr/themes/defense");
+  await expect(page.locator("html")).toHaveAttribute("lang", "fr");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Défense");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/fr\/themes\/defense$/);
+  await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", /\/themes\/defense$/);
+  await page.getByRole("button", { name: "Switch to English" }).click();
+  await expect(page).toHaveURL(/\/themes\/defense$/);
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+});
+
+test("terms, privacy and the legal notice are published and marked as drafts", async ({ page }) => {
+  for (const [path, title] of [["/legal/terms", "Terms of use"], ["/legal/privacy", "Privacy"], ["/legal/notice", "Legal notice"]]) {
+    await page.goto(path);
+    await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
+    await expect(page.getByText(/A lawyer has not reviewed this text yet/)).toBeVisible();
+  }
+});

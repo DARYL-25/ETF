@@ -1,4 +1,4 @@
-import { getT } from "@/lib/i18n/server";
+import { alternatesFor, getT } from "@/lib/i18n/server";
 import { themeBySlug } from "@/lib/etfs/themes";
 import { Mosaic } from "@/components/mosaic";
 import { SectionNav } from "@/components/section-nav";
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: [row.name, row.ticker].filter(Boolean).join(" "),
     description: `${row.name}: ${facts}. Fees, size, holdings and returns with their source and date.`.slice(0, 300),
-    alternates: { canonical: `/etfs/${row.etf_key}` },
+    alternates: await alternatesFor(`/etfs/${row.etf_key}`),
   };
 }
 
