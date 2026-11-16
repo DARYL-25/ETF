@@ -3,31 +3,31 @@
   "ok": true,
   "rows": 115005,
   "distinct_isin": 8204,
-  "on": "2026-11-14"
+  "on": "2026-11-16"
  },
  "fca": {
   "ok": true,
-  "rows": 193065,
-  "distinct_isin": 10395,
-  "on": "2026-11-14"
+  "rows": 193209,
+  "distinct_isin": 10436,
+  "on": "2026-11-16"
  },
  "us": {
   "ok": true,
   "rows": 5787,
   "distinct_isin": 0,
-  "on": "2026-11-14"
+  "on": "2026-11-16"
  },
  "japan": {
   "ok": true,
   "rows": 488,
   "distinct_isin": 0,
-  "on": "2026-11-14"
+  "on": "2026-11-16"
  },
  "hongkong": {
   "ok": true,
   "rows": 453,
   "distinct_isin": 283,
-  "on": "2026-11-14"
+  "on": "2026-11-16"
  },
  "india": {
   "ok": false,
@@ -39,21 +39,21 @@
  },
  "canada": {
   "ok": true,
-  "rows": 320,
+  "rows": 321,
   "distinct_isin": 0,
-  "on": "2026-11-14"
+  "on": "2026-11-16"
  },
  "singapore": {
   "ok": true,
   "rows": 108,
   "distinct_isin": 0,
-  "on": "2026-11-14"
+  "on": "2026-11-16"
  },
  "china_sh": {
   "ok": true,
   "rows": 948,
   "distinct_isin": 0,
-  "on": "2026-11-14"
+  "on": "2026-11-16"
  },
  "china_sz": {
   "ok": false,
@@ -64,24 +64,24 @@
   "ok": true,
   "rows": 1188,
   "distinct_isin": 0,
-  "on": "2026-11-14"
+  "on": "2026-11-16"
  },
  "taiwan": {
   "ok": true,
-  "rows": 242,
+  "rows": 244,
   "distinct_isin": 0,
-  "on": "2026-11-14"
+  "on": "2026-11-16"
  },
  "australia": {
   "ok": true,
   "rows": 481,
   "distinct_isin": 0,
-  "on": "2026-11-14"
+  "on": "2026-11-16"
  },
  "gleif": {
   "ok": true,
-  "rows": 6925,
-  "wanted": 6925
+  "rows": 6926,
+  "wanted": 6926
  },
  "ishares_details": {
   "ok": false,
