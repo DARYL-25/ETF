@@ -112,3 +112,28 @@ export async function largestWithHoldings(keys: string[]): Promise<{ etf_key: st
     `select d.etf_key, d.name from public.holdings_summary s join public.etf_directory d on d.etf_key = s.etf_key
      where s.etf_key = any($1::text[]) and s.covered_pct > 80 order by d.size_eur desc nulls last limit 1`, [keys]))[0] ?? null;
 }
+
+export type CommonHolding = { holding_key: string; name: string; ticker: string | null; etfs: number; avg_weight: number };
+
+/** The securities held by the most ETFs among those whose holdings we have. Cash and derivatives lines are left out. */
+export const getMostHeld = (limit = 20) =>
+  query<CommonHolding>(
+    `select holding_key, min(name) as name, min(ticker) as ticker, count(distinct etf_key)::int as etfs, avg(weight_pct) as avg_weight
+     from public.holdings where name !~* '(cash|dollar|\\mUSD\\M|\\mEUR\\M|futures?|swap|treasury bill|money market|collateral|government (cash|fund))'
+     group by holding_key order by 4 desc, 5 desc limit ${Math.floor(limit)}`);
+
+/**
+ * What the funds on a theme have in common: the securities most of them hold. Only funds whose full
+ * holdings we have can be counted, so the answer says how many that is.
+ */
+export async function getThemeCommon(slug: string, limit = 12): Promise<{ funds: number; rows: CommonHolding[] }> {
+  const [count] = await query<{ funds: number }>(
+    "select count(*)::int as funds from public.holdings_summary s join public.etf_directory d on d.etf_key = s.etf_key where $1 = any(d.category_slugs)", [slug]);
+  if (!count || count.funds < 3) return { funds: count?.funds ?? 0, rows: [] };
+  const rows = await query<CommonHolding>(
+    `select h.holding_key, min(h.name) as name, min(h.ticker) as ticker, count(distinct h.etf_key)::int as etfs, avg(h.weight_pct) as avg_weight
+     from public.holdings h join public.etf_directory d on d.etf_key = h.etf_key
+     where $1 = any(d.category_slugs) and h.name !~* '(cash|dollar|\\mUSD\\M|\\mEUR\\M|futures?|swap|treasury bill|money market|collateral)'
+     group by h.holding_key having count(distinct h.etf_key) >= 2 order by 4 desc, 5 desc limit ${Math.floor(limit)}`, [slug]);
+  return { funds: count.funds, rows };
+}

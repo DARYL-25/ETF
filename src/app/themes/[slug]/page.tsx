@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { CompareToggle } from "@/components/compare-tray";
 import { Change, EtfName, Fee, PageTitle } from "@/components/etf-bits";
 import { Mosaic } from "@/components/mosaic";
-import { getHoldingsSummary, getTopHoldingsFull, largestWithHoldings } from "@/lib/etfs/holdings";
+import { getHoldingsSummary, getThemeCommon, getTopHoldingsFull, largestWithHoldings } from "@/lib/etfs/holdings";
+import { shortName } from "@/lib/etfs/treemap";
 import { THEME_MARKETS, getThemeEtfs, type ThemeMarket, type ThemeSort } from "@/lib/etfs/queries";
 import { THEMES, themeBySlug } from "@/lib/etfs/themes";
 import { exchangeName, formatDate, formatMoney } from "@/lib/format";
@@ -47,6 +48,7 @@ export default async function ThemePage({ params, searchParams }: Props) {
   };
   const seen = await largestWithHoldings(rows.map((e) => e.etf_key).filter((k): k is string => Boolean(k)));
   const [inside, insideSummary] = seen ? await Promise.all([getTopHoldingsFull(seen.etf_key, 48), getHoldingsSummary(seen.etf_key)]) : [[], null];
+  const common = await getThemeCommon(theme.slug);
   const compare = rows.slice(0, 5).map((e) => e.etf_key).join(",");
   const related = THEMES.filter((x) => x.featured && x.slug !== theme.slug).slice(0, 8);
 
@@ -98,6 +100,27 @@ export default async function ThemePage({ params, searchParams }: Props) {
           <h2 className="mb-1 text-[1.3rem]">{t("What a fund on this theme holds")}</h2>
           <p className="mb-3 max-w-[72ch] text-muted">{t("Seen through {name}: {n} holdings on {date}. Funds on the same theme can hold very different companies, so compare before choosing.", { name: seen.name, n: insideSummary.n_holdings.toLocaleString(locale), date: formatDate(insideSummary.as_of, t.lang) })}</p>
           <Mosaic items={inside} label={t("Largest holdings of {name}", { name: seen.name })} restLabel={(pct) => t("{n} more holdings, {pct}%", { n: Math.max(0, insideSummary.n_holdings - inside.length).toLocaleString(locale), pct })} />
+        </section>
+      ) : null}
+
+      {common.rows.length >= 5 ? (
+        <section className="mt-12">
+          <h2 className="mb-1 text-[1.3rem]">{t("What these funds have in common")}</h2>
+          <p className="mb-3 max-w-[72ch] text-muted">{t("The companies held by the most funds on this theme, among the {n} funds whose full holdings we have.", { n: common.funds })}</p>
+          <div className="overflow-x-auto">
+            <table className="table-data max-w-3xl">
+              <thead><tr><th>{t("Company")}</th><th className="num">{t("Held by")}</th><th className="num">{t("Average weight")}</th></tr></thead>
+              <tbody>
+                {common.rows.map((h) => (
+                  <tr key={h.holding_key}>
+                    <td><Link className="no-underline hover:text-pine" href={`/holdings?key=${encodeURIComponent(h.holding_key)}`}>{shortName(h.name)}</Link>{h.ticker ? <span className="data ml-2 text-[0.85rem] text-muted">{h.ticker}</span> : null}</td>
+                    <td className="num whitespace-nowrap">{t("{n} of {total} funds", { n: h.etfs, total: common.funds })}</td>
+                    <td className="num">{Number(h.avg_weight).toFixed(2)}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       ) : null}
 
