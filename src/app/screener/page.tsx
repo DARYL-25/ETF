@@ -158,7 +158,7 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
             {quick.map((q) => <Link key={q.label} href={q.href} scroll={false} aria-current={q.on ? "true" : undefined} className={q.on ? "chip chip-on" : "chip"}>{q.label}</Link>)}
           </div>
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-            <p className="font-semibold" role="status">{result.total.toLocaleString("en-GB")} {result.total === 1 ? "ETF" : "ETFs"}</p>
+            <p className="font-semibold" role="status">{result.total.toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB")} {result.total === 1 || t.lang === "fr" ? "ETF" : "ETFs"}</p>
             <span className="flex gap-4">{activeFilters ? <Link href="/screener" className="prose-link">{t("Reset filters")}</Link> : null}<a href={screenerHref(params, {}).replace("/screener", "/api/v1/etfs/export")} className="prose-link" download>{t("Export CSV")}</a></span>
           </div>
           {result.rows.length === 0 ? (
@@ -185,9 +185,9 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
                     {show("currency") ? <SortHeader params={params} sort="currency" label={t("Currency")} /> : null}
                   </tr>
                 </thead>
-                <tbody>
-                  {result.rows.map((row) => (
-                    <tr key={row.etf_key}>
+                <tbody key={JSON.stringify(params)} className="rows-in">
+                  {result.rows.map((row, i) => (
+                    <tr key={row.etf_key} style={{ "--i": i } as React.CSSProperties}>
                       <td className="w-px"><CompareToggle isin={row.etf_key!} /></td>
                       <td className="min-w-[10.5rem]"><EtfName row={row} /></td>
                       {show("issuer") ? <td className="whitespace-nowrap">{row.issuer_name}</td> : null}
@@ -198,7 +198,7 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
                       ) : null}
                       {show("domicile") ? <td>{countryName(row.domicile, t.lang)}</td> : null}
                       {show("replication") ? <td className="whitespace-nowrap">{t(replicationLabel(row.replication))}</td> : null}
-                      <td className="num"><Fee row={row} /></td>
+                      <td className="num"><Fee row={row} />{row.headline_fee_pct !== null ? <span className="fee-meter" aria-hidden style={{ "--p": Math.min(1, row.headline_fee_pct / 0.75) } as React.CSSProperties} /> : null}</td>
                       <td className="num whitespace-nowrap">{formatMoney(row.fund_aum ?? row.class_aum, row.fund_aum_currency ?? row.class_aum_currency, t.lang)}{row.aum_level === "share_class" || row.fund_aum === null && row.class_aum !== null ? <span className="block text-[0.75rem] text-muted">{t("Share class")}</span> : null}</td>
                       {show("return1y") ? <td className={`num ${phoneHide}`} title={returnNote(row, t)}><Change value={row.return_1y} />{row.return_1y !== null && returnNote(row, t) ? <span className="block text-[0.75rem] text-muted">{row.nav_return_1y !== null ? row.nav_currency ?? row.currency ?? "" : "price"}</span> : null}</td> : null}
                       {show("return3y") ? <td className={`num ${phoneHide}`} title={returnNote(row, t)}><Change value={row.return_3y} /></td> : null}
