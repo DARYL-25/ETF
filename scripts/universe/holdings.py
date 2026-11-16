@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Full holdings for ETFs whose issuer publishes them as a file to any plain request: State Street (US and Europe), ARK and Direxion.
+"""Full holdings for ETFs whose issuer publishes them as a file to any plain request: State Street (US and Europe), ARK, Direxion, Global X and KraneShares.
 Writes data/holdings/holdings.csv.gz (one row per ETF and holding) and summary.csv.gz (one row per ETF).
 Holdings under 0.02% of the fund are dropped and at most 800 are kept per fund, largest first; the summary
 records how many the fund has and what share of it the kept rows cover. One request at a time."""
@@ -256,7 +256,7 @@ def dated_files(label, prefix, url_for, name_col, weight_col, ticker_col):
             if text is None: raise RuntimeError(f"no file: {type(last).__name__ + ': ' + str(last)[:60] if last else 'no weights column'}")
             sample = sample or text[:400]
             # The date is in the lines above the table when no column carries it.
-            found = re.search(r"(\d{1,2}/\d{1,2}/\d{4})", text[:400])
+            found = re.search(r"(\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})", text[:400])
             as_of = parse_date(found.group(1)) if found else day.isoformat()
             if csv_fund(u["etf_key"], text, label, url, name_col, weight_col, ticker_col, "", 1.0, as_of): ok += 1
             else: failed += 1

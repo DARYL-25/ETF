@@ -8,9 +8,12 @@
 | Global ETF list | Done for the EU, UK, US, Japan, Hong Kong, India, Shanghai, Taiwan, Canada, Singapore, Korea and Australia. About 17,900 ETFs after joining duplicate US records |
 | Fees, size, returns | 7,990 ETFs have a fee (45%), 3,400 a size and 2,200 official returns. Filled issuer by issuer |
 | Daily prices | Issuer NAV or an open-data close for about 2,500 ETFs, of which 1,500 refresh every day. History builds from 4 November 2026 |
-| Holdings | Full holdings for about 340 ETFs (State Street, ARK, Direxion), refreshed weekly. Powers overlap between funds, "which ETFs hold X", and portfolio look-through |
+| Holdings | Full holdings for about 480 ETFs (State Street, Global X, KraneShares, ARK, Direxion), refreshed weekly. Powers overlap between funds, "which ETFs hold X", and portfolio look-through |
 | Holdings mosaic | A fund drawn as its holdings, each tile sized by weight: on the home page, each fund page, index pages and the practice portfolio |
 | Themes | 45 themes, strategies and regions (AI, semiconductors, defence, Chinese technology, halal, actively managed and more), each with every matching ETF from every market, ready to compare. Funds are filed by the words in their name, in English, Chinese, Japanese and Korean |
+| French addresses | Every page also lives under `/fr`, with language links for search engines and a sitemap listing both |
+| Legal pages | Terms, privacy and legal notice, in both languages, marked as drafts until a lawyer reviews them. Operator details come from environment variables |
+| Sharing | A picture for each fund, theme and the site when a link is shared; an icon and an app manifest so phones can add the site to the home screen |
 | True cost | Fee in money on each ETF page, and the return gap between funds on the same index |
 | Update schedule | Done: weekly list and holdings, daily prices, monthly details, quarterly SEC fees. See [DATA_UPDATES.md](DATA_UPDATES.md) |
 | Search, ask bar, screener, comparison, index pages, CSV export | Done |
@@ -41,7 +44,6 @@
 - Holdings for more issuers. iShares, Xtrackers, Amundi, Vanguard and Invesco serve their files only after a visitor accepts site terms, so they need an agreement or a licensed source
 - Fees for Canada and Asia, and the markets still missing (Shenzhen, Brazil; India's list fails on some runs)
 - PEA eligibility beyond State Street's funds, and the SIX list from the exchange's CSV
-- French addresses (`/fr/...`) so search engines index both languages
 - More tax countries
 - Email alerts, which need an email service account. Native apps, a paid API
 

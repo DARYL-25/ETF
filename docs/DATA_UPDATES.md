@@ -70,6 +70,8 @@ Until then the site says plainly that prices are end of day.
 |---|---|---|
 | State Street holdings files | About 310 ETFs in the US and Europe | Automatic, weekly |
 | ARK Invest holdings files | ARK's US ETFs | Automatic, weekly |
+| Global X holdings files | About 115 Global X ETFs in the US, many of them thematic | Automatic, weekly |
+| KraneShares holdings files | KraneShares ETFs, mostly Chinese shares | Automatic, weekly |
 | Direxion holdings files | Direxion funds that hold their securities directly. Leveraged funds built on swaps are left out | Automatic, weekly |
 | iShares, Xtrackers, Amundi, Vanguard, Invesco | Not collected | Their files are served only after a visitor accepts site terms. Needs permission or a licensed source |
 
