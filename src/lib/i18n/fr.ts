@@ -702,6 +702,7 @@ export const FR: Record<string, string> = {
   "Sections of this page": "Sections de cette page",
   "Sectors": "Secteurs",
   "See all ETFs matching “{term}”": "Voir tous les ETF correspondant à « {term} »",
+  "See every ETF on this theme: {theme}": "Voir tous les ETF sur ce thème : {theme}",
   "See how a currency move changes your return.": "Voyez comment une variation de change modifie votre performance.",
   "See how regular investing could add up.": "Voyez ce que des versements réguliers pourraient donner.",
   "See how they actually compared": "Voir comment ils se sont réellement comparés",

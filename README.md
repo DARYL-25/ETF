@@ -34,6 +34,8 @@ On GitHub, choose **Code**, then **Codespaces**, then **Create codespace**. Wait
 - Sign-in through Supabase and subscriptions through Stripe, both off until configured
 - Public JSON API under `/api/v1`
 
+To put the site online, follow [docs/DEPLOY.md](docs/DEPLOY.md).
+
 ## Connect Supabase
 
 1. Create a project.
