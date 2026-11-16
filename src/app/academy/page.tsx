@@ -2,19 +2,23 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { DoneMark, PathProgress } from "@/components/academy";
 import { PageTitle } from "@/components/etf-bits";
-import { LESSONS, PATHS } from "@/lib/academy/content";
+import { localLessons, localPaths } from "@/lib/academy/content.fr";
+import { getT } from "@/lib/i18n/server";
 
 export const metadata: Metadata = { title: "ETF Academy" };
 
-export default function AcademyPage() {
+export default async function AcademyPage() {
+  const t = await getT();
   const byLevel = ["Beginner", "Intermediate", "Advanced", "Tax"] as const;
+  const LESSONS = localLessons(t.lang);
+  const PATHS = localPaths(t.lang);
   return (
     <div className="flex flex-col gap-10">
-      <PageTitle title="ETF Academy">
-        Learn how ETFs work, from your first fund to reading risk. Your progress is saved on this device. See also the <Link className="prose-link" href="/academy/glossary">glossary</Link> and <Link className="prose-link" href="/academy/calculators">calculators</Link>.
+      <PageTitle title={t("ETF Academy")}>
+        {t("Learn how ETFs work, from your first fund to reading risk. Your progress is saved on this device. See also the ")}<Link className="prose-link" href="/academy/glossary">{t("glossary")}</Link>{t(" and ")}<Link className="prose-link" href="/academy/calculators">{t("calculators")}</Link>.
       </PageTitle>
       <section>
-        <h2 className="mb-3 text-[1.5rem]">Learning paths</h2>
+        <h2 className="mb-3 text-[1.5rem]">{t("Learning paths")}</h2>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {PATHS.map((path) => (
             <div key={path.slug} className="rounded-2xl border border-line bg-surface p-4">
@@ -32,13 +36,13 @@ export default function AcademyPage() {
       </section>
       {byLevel.map((level) => (
         <section key={level}>
-          <h2 className="mb-3 text-[1.5rem]">{level === "Tax" ? "Tax and regulation" : level}</h2>
+          <h2 className="mb-3 text-[1.5rem]">{level === "Tax" ? t("Tax and regulation") : t(level)}</h2>
           <div className="grid gap-3 md:grid-cols-2">
             {LESSONS.filter((l) => l.level === level).map((l) => (
-              <Link key={l.slug} href={`/academy/${l.slug}`} className="rounded-xl border border-line bg-surface p-4 no-underline hover:border-pine">
+              <Link key={l.slug} href={`/academy/${l.slug}`} className="panel p-4 no-underline">
                 <span className="font-semibold">{l.title}</span> <DoneMark slug={l.slug} />
                 <span className="block text-muted">{l.summary}</span>
-                <span className="data mt-1 block text-[0.85rem] text-muted">{l.minutes} minutes</span>
+                <span className="data mt-1 block text-[0.85rem] text-muted">{t("{n} minutes", { n: l.minutes })}</span>
               </Link>
             ))}
           </div>

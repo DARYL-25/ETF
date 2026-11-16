@@ -10,6 +10,7 @@ The goal is every ETF in the world, with figures that show their source and date
 | Fees and fund facts: TER or OCF, domicile, replication, income treatment, benchmark | Quarterly at least | Issuer files on the 8th of each month. SEC data on the 15th of February, May, August and November. Owner files each quarter | `details.yml`, `sec.yml`, and a person |
 | Fund size and official returns | Monthly | The 8th, once the previous month's factsheets are out. Daily for iShares and State Street | `details.yml`, `daily.yml` |
 | Prices: one value per ETF per day | Daily | Tuesday to Saturday, 05:23 UTC, for the previous trading day | `daily.yml` |
+| What each fund holds: every holding with its weight | Weekly | Sundays, 06:37 UTC | `holdings.yml` |
 | Exchange rates | Daily | With the price job | `daily.yml` |
 | Tax rules | Twice a year, and when a law changes | January and July | A person |
 
@@ -43,7 +44,7 @@ Not covered yet: Shenzhen, Brazil, South Africa, Israel's domestic tracker funds
 | iShares product list | About 920 UCITS ETFs: fee, size, NAV, returns | Automatic, daily |
 | State Street product data | About 340 ETFs in the US and Europe | Automatic, daily |
 | Amundi monthly factsheets | About 500 Amundi and Lyxor ETFs | Automatic, monthly |
-| SEC prospectus data sets | Fees of about 2,900 US ETFs | Automatic, quarterly. Used only where no issuer figure exists |
+| SEC prospectus data sets | Fees of about 4,500 US ETFs | Automatic, quarterly. Used only where no issuer figure exists |
 | Xtrackers, Invesco, Vanguard, UBS product files | About 1,750 ETFs in Europe and the US | Read by a person. See the quarterly routine below |
 
 ### Prices
@@ -62,6 +63,17 @@ History is not back-filled or estimated. It starts on the day collection began, 
 3. Intraday quotes then need one more table and a short-interval job. This is not built, because its shape depends on the vendor.
 
 Until then the site says plainly that prices are end of day.
+
+### Holdings
+
+| Source | Covers | State |
+|---|---|---|
+| State Street holdings files | About 310 ETFs in the US and Europe | Automatic, weekly |
+| ARK Invest holdings files | ARK's US ETFs | Automatic, weekly |
+| Direxion holdings files | Direxion funds that hold their securities directly. Leveraged funds built on swaps are left out | Automatic, weekly |
+| iShares, Xtrackers, Amundi, Vanguard, Invesco | Not collected | Their files are served only after a visitor accepts site terms. Needs permission or a licensed source |
+
+Holdings under 0.02% of a fund are dropped and at most 800 are kept per fund. Issuers identify securities differently, so they are matched across issuers by cleaned name. If a fund's file fails on one run, its last good holdings are kept.
 
 ### Exchange rates
 

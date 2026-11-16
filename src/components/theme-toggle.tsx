@@ -1,13 +1,15 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
 import { useEffect, useState } from "react";
 
 type Theme = "system" | "light" | "dark";
 
 /** Runs before first paint, so a saved theme never flashes the wrong colours. */
-export const themeScript = `try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+export const themeScript = `document.documentElement.dataset.js="";try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
 
 export function ThemeToggle() {
+  const t = useT();
   const [theme, setTheme] = useState<Theme>("system");
 
   useEffect(() => {
@@ -34,11 +36,11 @@ export function ThemeToggle() {
 
   return (
     <label className="flex items-center justify-between gap-2 text-[0.85rem] text-muted">
-      Theme
+      {t("Theme")}
       <select className="rounded border border-line bg-transparent px-1.5 py-1 text-ink" value={theme} onChange={(e) => change(e.target.value as Theme)}>
-        <option value="system">System</option>
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
+        <option value="system">{t("System")}</option>
+        <option value="light">{t("Light")}</option>
+        <option value="dark">{t("Dark")}</option>
       </select>
     </label>
   );

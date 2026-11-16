@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Check, Plus } from "lucide-react";
@@ -42,6 +43,7 @@ function useCompareList() {
 }
 
 export function CompareToggle({ isin, wide = false }: { isin: string; wide?: boolean }) {
+  const t = useT();
   const isins = useCompareList();
   const selected = isins.includes(isin);
   const full = !selected && isins.length >= MAX_COMPARE;
@@ -54,7 +56,7 @@ export function CompareToggle({ isin, wide = false }: { isin: string; wide?: boo
     return (
       <button type="button" onClick={toggle} disabled={full} aria-pressed={selected} className="btn btn-quiet disabled:opacity-50">
         {selected ? <Check size={16} aria-hidden /> : <Plus size={16} aria-hidden />}
-        {selected ? "Added to comparison" : full ? "Comparison is full" : "Add to comparison"}
+        {selected ? t("Added to comparison") : full ? t("Comparison is full") : t("Add to comparison")}
       </button>
     );
   }
@@ -64,8 +66,8 @@ export function CompareToggle({ isin, wide = false }: { isin: string; wide?: boo
       onClick={toggle}
       disabled={full}
       aria-pressed={selected}
-      aria-label={selected ? `Remove ${isin} from comparison` : `Add ${isin} to comparison`}
-      title={full ? `You can compare up to ${MAX_COMPARE} ETFs` : selected ? "Remove from comparison" : "Add to comparison"}
+      aria-label={selected ? t("Remove {isin} from comparison", { isin }) : t("Add {isin} to comparison", { isin })}
+      title={full ? t("You can compare up to {n} ETFs", { n: MAX_COMPARE }) : selected ? t("Remove from comparison") : t("Add to comparison")}
       className={`flex size-8 cursor-pointer items-center justify-center rounded border-[1.5px] disabled:cursor-not-allowed disabled:opacity-40 ${selected ? "border-pine bg-pine text-pine-ink" : "border-line hover:border-ink"}`}
     >
       {selected ? <Check size={15} aria-hidden /> : <Plus size={15} aria-hidden />}
@@ -74,15 +76,16 @@ export function CompareToggle({ isin, wide = false }: { isin: string; wide?: boo
 }
 
 export function CompareTray() {
+  const t = useT();
   const isins = useCompareList();
   if (!isins.length) return null;
   return (
     <div className="fixed inset-x-0 bottom-[3.6rem] z-40 border-t border-line bg-surface px-4 py-2.5 shadow-lg lg:bottom-0 lg:px-8">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p>{isins.length} of {MAX_COMPARE} ETFs selected{isins.length < 2 ? ". Add one more to compare." : "."}</p>
+        <p>{isins.length}{t(" of ")}{MAX_COMPARE}{t(" ETFs selected")}{isins.length < 2 ? t(". Add one more to compare.") : "."}</p>
         <div className="flex gap-2">
-          <button type="button" className="btn btn-quiet" onClick={() => write([])}>Clear</button>
-          {isins.length >= 2 ? <Link className="btn btn-primary" href={`/compare?isins=${isins.join(",")}`}>Compare {isins.length} ETFs</Link> : null}
+          <button type="button" className="btn btn-quiet" onClick={() => write([])}>{t("Clear")}</button>
+          {isins.length >= 2 ? <Link className="btn btn-primary" href={`/compare?isins=${isins.join(",")}`}>{t("Compare ")}{isins.length}{t(" ETFs")}</Link> : null}
         </div>
       </div>
     </div>

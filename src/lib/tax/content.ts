@@ -21,6 +21,7 @@ const ICTAX: Source = { label: "ICTax, the Federal Tax Administration's price li
 const FR_PV: Source = { label: "impots.gouv.fr, how a gain on securities is taxed", url: "https://www.impots.gouv.fr/particulier/questions/jai-realise-une-plus-value-mobiliere-comment-est-elle-imposee" };
 const FR_SP: Source = { label: "service-public.gouv.fr, income tax on savings and investment income, verified 12 March 2026", url: "https://www.service-public.gouv.fr/particuliers/vosdroits/F2613" };
 const FR_PEA: Source = { label: "service-public.gouv.fr, plan d'épargne en actions, verified 22 May 2026", url: "https://www.service-public.gouv.fr/particuliers/vosdroits/F2385" };
+const FR_AV: Source = { label: "service-public.gouv.fr, how income from a life insurance contract is taxed, verified 1 January 2026", url: "https://www.service-public.gouv.fr/particuliers/vosdroits/F22414" };
 const FR_PEA_ECO: Source = { label: "economie.gouv.fr, what is a PEA", url: "https://www.economie.gouv.fr/particuliers/plan-epargne-actions-pea" };
 
 export const TAX_COUNTRIES: TaxCountry[] = [
@@ -54,6 +55,7 @@ export const TAX_COUNTRIES: TaxCountry[] = [
     ],
     wrappers: [
       { name: "PEA", body: "Deposits are capped at €150,000. It holds European company shares, and funds that keep at least 75% in eligible European securities. After five years, gains are exempt from income tax. Social levies apply whatever the withdrawal date. A withdrawal before five years normally closes the plan, and the net gain is then taxed at 12.8% unless you opt for the scale.", sources: [FR_PEA, FR_PEA_ECO] },
+      { name: "Assurance-vie", body: "ETFs are held as units inside the contract, when the insurer offers them. For premiums paid since 27 September 2017, gains withdrawn before the contract is eight years old are taxed at 12.8%. After eight years, a yearly allowance of €4,600, or €9,200 for a couple, applies across all contracts, then 7.5% on gains from premiums up to €150,000 and 12.8% above. You can opt for the income tax scale. Social levies on life insurance are stated at 17.2%. The page warns that the 2026 Finance Law may change these rules.", sources: [FR_AV] },
       { name: "Compte-titres ordinaire", body: "No limit on deposits or on which ETFs you can hold. Dividends and gains follow the flat tax or, on option, the income tax scale.", sources: [FR_PV, FR_SP] },
     ],
     compare: [
@@ -61,17 +63,17 @@ export const TAX_COUNTRIES: TaxCountry[] = [
       { fact: "Income treatment", matters: "In a compte-titres, an accumulating fund has no dividend to tax each year. In a PEA the difference matters little." },
       { fact: "Replication", matters: "ETFs on non-European indices that qualify for a PEA typically use synthetic replication, which adds swap counterparty risk." },
     ],
-    open: ["Assurance-vie, which has its own rules and is not covered yet.", "Reporting duties for accounts held with brokers outside France.", "Withholding tax on dividends inside the fund."],
+    open: ["Which ETFs an assurance-vie contract offers and what the contract charges each year, which depend on the insurer.", "Reporting duties for accounts held with brokers outside France.", "Withholding tax on dividends inside the fund."],
   },
 ];
 
 export const taxCountry = (codeOrSlug: string | null | undefined) =>
   TAX_COUNTRIES.find((c) => c.code === (codeOrSlug ?? "").toUpperCase() || c.slug === (codeOrSlug ?? "").toLowerCase()) ?? null;
 
-export type TaxNote = { text: string; source?: Source; kind: "fact" | "check" };
+export type TaxNote = { text: string; vars?: Record<string, string>; source?: Source; kind: "fact" | "check" };
 
 /** Notes for one ETF and one country of residence, built only from structural facts we hold. */
-export function taxNotes(row: Pick<EtfRow, "name" | "domicile" | "distribution_policy" | "replication" | "ucits" | "isin" | "listed_on_six" | "fund_key">, code: string): TaxNote[] {
+export function taxNotes(row: Pick<EtfRow, "name" | "domicile" | "distribution_policy" | "replication" | "ucits" | "isin" | "listed_on_six" | "fund_key" | "pea_eligible">, code: string): TaxNote[] {
   const notes: TaxNote[] = [];
   const policy = row.distribution_policy;
   // On basic records the domicile field is the issuer's registered country, so use the ISIN prefix as a hint only when it is a fund domicile we can trust.
@@ -84,10 +86,12 @@ export function taxNotes(row: Pick<EtfRow, "name" | "domicile" | "distribution_p
     if (domicile === "CH") notes.push({ kind: "fact", text: "Swiss fund: 35% withholding tax on its income, reclaimed through your tax return, and the 1.5 per mille stamp duty rate at a Swiss dealer.", source: ESTV_TAXES });
     else if (domicile) notes.push({ kind: "fact", text: "Foreign fund: the 3 per mille stamp duty rate applies to trades through a Swiss dealer.", source: ESTV_TAXES });
     if (row.listed_on_six) notes.push({ kind: "fact", text: "Listed on SIX Swiss Exchange, according to the issuer." });
-    notes.push({ kind: "check", text: `Look up ${row.isin ?? "the ISIN"} in ICTax to see its taxable income and year-end value.`, source: ICTAX });
+    notes.push({ kind: "check", text: "Look up {isin} in ICTax to see its taxable income and year-end value.", vars: { isin: row.isin ?? "ISIN" }, source: ICTAX });
   }
   if (code === "FR") {
-    if (/\bPEA\b/.test(row.name)) notes.push({ kind: "fact", text: "The fund's name says PEA, so the issuer presents it as eligible. Confirm in its KID.", source: FR_PEA });
+    if (row.pea_eligible === true) notes.push({ kind: "fact", text: "The issuer lists this fund as eligible for a PEA.", source: FR_PEA });
+    else if (row.pea_eligible === false) notes.push({ kind: "fact", text: "The issuer lists this fund as not eligible for a PEA, so it belongs in a compte-titres.", source: FR_PEA });
+    else if (/\bPEA\b/.test(row.name)) notes.push({ kind: "fact", text: "The fund's name says PEA, so the issuer presents it as eligible. Confirm in its KID.", source: FR_PEA });
     else notes.push({ kind: "check", text: "PEA eligibility is decided fund by fund. We do not hold it yet, so check the issuer's page.", source: FR_PEA });
     if (policy === "accumulating") notes.push({ kind: "fact", text: "It reinvests its income, so in a compte-titres there is no dividend to tax each year. The gain is taxed when you sell.", source: FR_PV });
     else if (policy === "distributing") notes.push({ kind: "fact", text: "It pays out its income, and in a compte-titres each payment is taxed.", source: FR_SP });

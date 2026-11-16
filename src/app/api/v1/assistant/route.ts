@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
+import { LANG_COOKIE, pickLang } from "@/lib/i18n";
+import { localizeReply } from "@/lib/assistant/localize";
 import { answer } from "@/lib/assistant/agent";
 
 const schema = z.object({ messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().min(1).max(2000) })).min(1).max(20) });
@@ -17,5 +19,6 @@ export async function POST(request: NextRequest) {
 
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Enter a question of up to 2,000 characters." }, { status: 400 });
-  return NextResponse.json(await answer(parsed.data.messages, fetch, request.cookies.get("lens")?.value ?? null));
+  const lang = pickLang(request.cookies.get(LANG_COOKIE)?.value, request.headers.get("accept-language"));
+  return NextResponse.json(localizeReply(await answer(parsed.data.messages, fetch, request.cookies.get("lens")?.value ?? null, lang), lang));
 }

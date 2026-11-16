@@ -65,7 +65,7 @@ Yahoo Finance was considered and dropped: its data is for personal use, and its 
 - **Index data.** Index levels, constituents and methodology are licensed by MSCI, S&P, FTSE Russell, STOXX and others. Benchmark lines and tracking difference therefore need a licence, or issuer-published figures.
 - **Exchange data.** Displaying prices commercially is usually reportable to the exchange. [EODHD](https://eodhd.com/financial-apis/commercial-vs-personal-license-use) states its listed plans are personal only, and that commercial users are onboarded and reported to exchanges.
 - **Real-time prices.** Never claimed. Prices are labelled delayed.
-- **Holdings.** Issuers publish them daily, usually under site terms. Holdings overlap needs complete files, so confirm the right to store them.
+- **Holdings.** Collected weekly from State Street, ARK and Direxion, whose files answer a plain request. Other issuers serve theirs only after a visitor accepts site terms, and we do not accept terms automatically. Confirm with a lawyer the right to store and show the files we do collect before charging.
 
 ## Providers to evaluate
 

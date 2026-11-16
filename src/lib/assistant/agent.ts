@@ -1,12 +1,12 @@
 import { GLOSSARY, LESSONS } from "@/lib/academy/content";
 import { getEtfs } from "@/lib/etfs/queries";
 import { parseIntent } from "./intent";
-import { findBestEtfs, type Ranked } from "./rank";
+import { findBestEtfs, taxNotesHref, type Ranked } from "./rank";
 import { TAX_CHECKED_ON, taxCountry } from "@/lib/tax/content";
 import { lensCountry } from "@/lib/lens";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
-export type AssistantReply = { text: string; aiUsed: boolean; etfs: Ranked[]; applied: string[]; notChecked: string[]; lessons: { slug: string; title: string }[] };
+export type AssistantReply = { text: string; aiUsed: boolean; etfs: Ranked[]; applied: string[]; notChecked: string[]; lessons: { slug: string; title: string }[]; taxHref?: string | null };
 
 const SYSTEM = `You are the research assistant of ETF Intelligence, an ETF research site.
 Rules you must follow:
@@ -43,7 +43,7 @@ function academyHits(topic: string) {
 const NO_KEY_NOTE = "AI explanations are not switched on yet, so this list comes from the search rules alone.";
 
 /** Works with no AI at all: the ranked list comes from the database either way. */
-export async function answer(messages: ChatMessage[], fetchFn: typeof fetch = fetch, lens: string | null = null): Promise<AssistantReply> {
+export async function answer(messages: ChatMessage[], fetchFn: typeof fetch = fetch, lens: string | null = null, lang: "en" | "fr" = "en"): Promise<AssistantReply> {
   const latest = messages.at(-1)?.content ?? "";
   const key = process.env.ANTHROPIC_API_KEY;
   // The reader's chosen country applies unless the question names another one.
@@ -51,7 +51,7 @@ export async function answer(messages: ChatMessage[], fetchFn: typeof fetch = fe
   const read = (text: string) => { const i = parseIntent(text); return i.investorCountry || !home ? i : { ...i, investorCountry: home }; };
   const outcome = await findBestEtfs(read(latest), 10);
   const lessons = academyHits(latest).lessons.map(({ slug, title }) => ({ slug, title }));
-  const base = { etfs: outcome.results, applied: outcome.applied, notChecked: outcome.notChecked, lessons };
+  const base = { etfs: outcome.results, applied: outcome.applied, notChecked: outcome.notChecked, lessons, taxHref: taxNotesHref(outcome.intent.investorCountry) };
 
   if (!key) {
     const text = outcome.results.length
@@ -66,7 +66,7 @@ export async function answer(messages: ChatMessage[], fetchFn: typeof fetch = fe
     const res = await fetchFn("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: process.env.ASSISTANT_MODEL ?? "claude-haiku-5-5", max_tokens: 900, system: home ? `${SYSTEM}\nThe user has told the site they live in ${home}.` : SYSTEM, tools: TOOLS, messages: convo }),
+      body: JSON.stringify({ model: process.env.ASSISTANT_MODEL ?? "claude-haiku-5-5", max_tokens: 900, system: `${SYSTEM}${home ? `\nThe user has told the site they live in ${home}.` : ""}${lang === "fr" ? "\nThe site is set to French: answer in French unless the user writes in another language." : ""}`, tools: TOOLS, messages: convo }),
     });
     if (!res.ok) return { ...base, text: `The AI explanation is unavailable right now (status ${res.status}). The list below still comes from the database.`, aiUsed: false };
     const body = await res.json() as { stop_reason: string; content: { type: string; text?: string; id?: string; name?: string; input?: Record<string, unknown> }[] };

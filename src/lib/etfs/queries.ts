@@ -37,6 +37,7 @@ export type EtfRow = {
   headline_fee_type: "ter" | "ocf" | "ger" | "ongoing" | "net" | "gross_sec" | "ocf_ter" | "flat_fee" | "mer" | null;
   aum_level?: string | null;
   listed_on_six?: boolean | null;
+  pea_eligible?: boolean | null;
   size_eur?: number | null;
   volatility_3y?: number | null;
   tracking_error_3y?: number | null;

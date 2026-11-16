@@ -34,7 +34,7 @@ export const DATASETS: Dataset[] = [
       { name: "iShares product list", covers: "About 920 iShares UCITS ETFs", url: "https://www.ishares.com/uk/individual/en/products/etf-investments", state: "automatic" },
       { name: "State Street product data", covers: "About 340 SPDR ETFs, US and Europe", url: "https://www.ssga.com/", state: "automatic" },
       { name: "Amundi monthly factsheets", covers: "About 500 Amundi and Lyxor ETFs", url: "https://www.amundietf.com/", state: "automatic" },
-      { name: "SEC prospectus data sets", covers: "Fees of about 2,900 US ETFs", url: "https://www.sec.gov/data-research/sec-markets-data/mutual-fund-prospectus-risk-return-summary-data-sets", state: "automatic" },
+      { name: "SEC prospectus data sets", covers: "Fees of about 4,500 US ETFs", url: "https://www.sec.gov/data-research/sec-markets-data/mutual-fund-prospectus-risk-return-summary-data-sets", state: "automatic" },
       { name: "ASX investment products report", covers: "Fee and size of about 480 Australian ETFs", url: "https://www.asx.com.au/issuers/investment-products/asx-funds-statistics", state: "automatic" },
       { name: "Xtrackers, Invesco, Vanguard and UBS product files", covers: "About 1,750 ETFs", url: "https://github.com/DARYL-25/ETF/blob/main/docs/DATA_UPDATES.md", state: "owner file", note: "These sites show terms before the download, so a person accepts them and downloads the files each quarter." },
     ],
@@ -57,6 +57,16 @@ export const DATASETS: Dataset[] = [
     ],
   },
   {
+    id: "holdings", name: "What each fund holds", what: "Every holding with its weight, for funds whose issuer publishes the full list as a file. Used for overlap, look-through and finding which ETFs hold a company.",
+    cadence: "Weekly", schedule: "Sundays, 06:37 UTC", job: "holdings.yml", report: "data/holdings/report.json",
+    sources: [
+      { name: "State Street holdings files", covers: "About 310 ETFs in the US and Europe", url: "https://www.ssga.com/us/en/intermediary/etfs", state: "automatic" },
+      { name: "ARK Invest holdings files", covers: "ARK's US ETFs", url: "https://www.ark-funds.com/", state: "automatic" },
+      { name: "Direxion holdings files", covers: "Direxion funds that hold their securities directly", url: "https://www.direxion.com/", state: "automatic", note: "Leveraged funds built on swaps are left out, because their file does not show the real exposure." },
+      { name: "iShares holdings files", covers: "iShares ETFs", url: "https://www.ishares.com/", state: "not working", note: "The file is only served after a visitor accepts the site's terms, which a job cannot do on anyone's behalf." },
+    ],
+  },
+  {
     id: "fx", name: "Exchange rates", what: "Euro reference rates for about 30 currencies, used to compare fund sizes.",
     cadence: "Daily", schedule: "With the daily price job", job: "daily.yml", report: "data/prices/report.json",
     sources: [{ name: "European Central Bank", covers: "Euro reference rates", url: "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html", state: "automatic" }],
@@ -71,7 +81,7 @@ export const DATASETS: Dataset[] = [
   },
 ];
 
-export type Freshness = { id: string; lastRun: string | null; detail: string | null };
+export type Freshness = { id: string; lastRun: string | null; detail: { text: string; vars?: Record<string, string | number> } | null };
 
 function read(path: string): Record<string, unknown> | null {
   const full = join(process.cwd(), path);
@@ -84,17 +94,18 @@ export function getFreshness(): Freshness[] {
   const list = read("data/universe/report.json") as Record<string, { ok?: boolean; on?: string }> | null;
   const details = read("data/universe/details/report.json") as { on?: string; fees?: number } | null;
   const prices = read("data/prices/report.json") as { on?: string; latest_date?: string; etfs_priced?: number; fx?: { ok?: boolean; rate_date?: string } } | null;
+  const holdings = read("data/holdings/report.json") as { on?: string; etfs?: number } | null;
   const files = read("data/universe/details/issuer_files_report.json") as { retrieved_on?: string } | null;
   const listDates = list ? Object.values(list).filter((s) => s?.ok && s.on).map((s) => s.on as string).sort() : [];
   const LABEL: Record<string, string> = { india: "India", china_sz: "Shenzhen", china_sh: "Shanghai", australia: "Australia", korea: "Korea", japan: "Japan", hongkong: "Hong Kong", taiwan: "Taiwan", canada: "Canada", singapore: "Singapore", us: "United States", esma: "EU register", fca: "UK register", gleif: "GLEIF" };
   const failing = list ? Object.entries(list).filter(([k, s]) => s && s.ok === false && LABEL[k]).map(([k]) => LABEL[k]) : [];
-  const day = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   return [
-    { id: "list", lastRun: listDates.at(-1) ?? null, detail: failing.length ? `Not updating on the last run: ${failing.join(", ")}` : null },
-    { id: "facts", lastRun: details?.on ?? null, detail: files?.retrieved_on ? `Owner files read ${day(files.retrieved_on)}` : null },
+    { id: "list", lastRun: listDates.at(-1) ?? null, detail: failing.length ? { text: "Not updating on the last run: {markets}", vars: { markets: failing.join(", ") } } : null },
+    { id: "facts", lastRun: details?.on ?? null, detail: files?.retrieved_on ? { text: "Owner files read {date}", vars: { date: files.retrieved_on } } : null },
     { id: "size", lastRun: details?.on ?? null, detail: null },
-    { id: "prices", lastRun: prices?.on ?? null, detail: prices?.latest_date ? `${prices.etfs_priced?.toLocaleString("en-GB")} ETFs, latest price dated ${day(prices.latest_date)}` : null },
-    { id: "fx", lastRun: prices?.fx?.ok ? prices.on ?? null : null, detail: prices?.fx?.rate_date ? `Rates of ${day(prices.fx.rate_date)}` : null },
-    { id: "tax", lastRun: "2026-11-14", detail: "Not yet reviewed by a tax adviser" },
+    { id: "prices", lastRun: prices?.on ?? null, detail: prices?.latest_date ? { text: "{n} ETFs, latest price dated {date}", vars: { n: prices.etfs_priced ?? 0, date: prices.latest_date } } : null },
+    { id: "holdings", lastRun: holdings?.on ?? null, detail: holdings?.etfs ? { text: "{n} ETFs with full holdings", vars: { n: holdings.etfs } } : null },
+    { id: "fx", lastRun: prices?.fx?.ok ? prices.on ?? null : null, detail: prices?.fx?.rate_date ? { text: "Rates of {date}", vars: { date: prices.fx.rate_date } } : null },
+    { id: "tax", lastRun: "2026-11-14", detail: { text: "Not yet reviewed by a tax adviser" } },
   ];
 }

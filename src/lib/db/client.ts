@@ -34,10 +34,26 @@ async function createRunner(): Promise<Runner> {
 
 const holder = globalThis as unknown as { __etfDb?: Promise<Runner> };
 
+/**
+ * Public data changes once a day at most, so identical reads within a minute share one answer, and
+ * identical reads in flight share one query. Private user data never passes through here.
+ */
+const TTL_MS = Number(process.env.QUERY_CACHE_SECONDS ?? 60) * 1000;
+const MAX_ENTRIES = 3000;
+const cache = new Map<string, { at: number; rows: Promise<unknown[]> }>();
+
 export async function query<T>(sql: string, params: unknown[] = []): Promise<T[]> {
   holder.__etfDb ??= createRunner();
   const run = await holder.__etfDb;
-  return run<T>(sql, params);
+  if (TTL_MS <= 0) return run<T>(sql, params);
+  const key = `${sql}\u0000${JSON.stringify(params)}`;
+  const hit = cache.get(key);
+  if (hit && Date.now() - hit.at < TTL_MS) return [...(await hit.rows)] as T[];
+  const rows = run<T>(sql, params);
+  cache.set(key, { at: Date.now(), rows });
+  rows.catch(() => cache.delete(key));
+  if (cache.size > MAX_ENTRIES) for (const k of cache.keys()) { cache.delete(k); if (cache.size <= MAX_ENTRIES * 0.8) break; }
+  return [...(await rows)];
 }
 
 export const usingEmbeddedDatabase = () => !process.env.DATABASE_URL;

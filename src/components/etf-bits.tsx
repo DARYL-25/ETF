@@ -1,3 +1,5 @@
+import { getT } from "@/lib/i18n/server";
+import { use } from "react";
 import Link from "next/link";
 import { IssuerLogo } from "./issuer-logo";
 import type { EtfRow } from "@/lib/etfs/queries";
@@ -7,11 +9,12 @@ const FEE_LABEL: Record<string, string> = { ter: "TER", ocf: "OCF", ger: "Gross"
 
 /** A fee always carries its type. TER and OCF are not interchangeable. */
 export function Fee({ row }: { row: Pick<EtfRow, "headline_fee_pct" | "headline_fee_type"> }) {
-  if (row.headline_fee_pct === null) return <span className="text-muted" title="No fee on file for this ETF yet">{MISSING}</span>;
+  const t = use(getT());
+  if (row.headline_fee_pct === null) return <span className="text-muted" title={t("No fee on file for this ETF yet")}>{MISSING}</span>;
   return (
     <span className="whitespace-nowrap">
       {formatPct(row.headline_fee_pct)}
-      <span className="ml-1 text-[0.75rem] text-muted">{FEE_LABEL[row.headline_fee_type ?? ""] ?? row.headline_fee_type}</span>
+      <span className="ml-1 text-[0.75rem] text-muted">{t(FEE_LABEL[row.headline_fee_type ?? ""] ?? row.headline_fee_type ?? "")}</span>
     </span>
   );
 }
@@ -35,13 +38,14 @@ export function EtfName({ row }: { row: Pick<EtfRow, "etf_key" | "isin" | "name"
 
 /** States when a fact dates from. When the source gave no date, says that rather than guessing. */
 export function AsOf({ date, retrieved }: { date: string | null | undefined; retrieved?: string | null }) {
+  const t = use(getT());
   if (!date) {
-    return <span className="text-[0.85rem] text-muted">{retrieved ? `Date not published, read ${formatDate(retrieved)}` : "Date not published"}</span>;
+    return <span className="text-[0.85rem] text-muted">{retrieved ? t("Date not published, read {date}", { date: formatDate(retrieved, t.lang) }) : t("Date not published")}</span>;
   }
   return (
     <span className="text-[0.85rem] text-muted">
-      As of {formatDate(date)}
-      {isStale(date) ? <span className="ml-1.5 rounded bg-warn-bg px-1.5 py-0.5 text-warn-ink">Out of date</span> : null}
+      {t("As of ")}{formatDate(date, t.lang)}
+      {isStale(date) ? <span className="ml-1.5 rounded bg-warn-bg px-1.5 py-0.5 text-warn-ink">{t("Out of date")}</span> : null}
     </span>
   );
 }

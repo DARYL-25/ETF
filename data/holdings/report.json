@@ -1,0 +1,93 @@
+{
+ "on": "2026-11-15",
+ "ssga_errors": [
+  "GLDM: HTTPError: HTTP Error 404: Not Found",
+  "GLD: HTTPError: HTTP Error 404: Not Found"
+ ],
+ "ssga_us": {
+  "ok": 184,
+  "failed": 2
+ },
+ "spdr_eu": {
+  "ok": 128,
+  "failed": 52,
+  "errors": [
+   "semr-se: HTTPError: HTTP Error 404: Not Found",
+   "secm-se: HTTPError: HTTP Error 404: Not Found",
+   "seza-se: HTTPError: HTTP Error 404: Not Found",
+   "sepe-se: HTTPError: HTTP Error 404: Not Found"
+  ]
+ },
+ "ark": {
+  "ok": 7,
+  "failed": 0,
+  "errors": []
+ },
+ "direxion": {
+  "ok": 18,
+  "failed": 116,
+  "errors": []
+ },
+ "probe": {
+  "spdr_eu_sample": [
+   [
+    "Fund Name:",
+    "comdirect S&P All World State Street UCITS ETF (Acc)"
+   ],
+   [
+    "ISIN:",
+    "IE00020O1MD6"
+   ],
+   [
+    "Ticker Symbol:",
+    "CD1 GY"
+   ],
+   [
+    "Holdings As Of:",
+    "12-Nov-2026"
+   ],
+   [],
+   [
+    "ISIN",
+    "SEDOL",
+    "Security Name",
+    "Currency",
+    "Number of Shares",
+    "Percent of Fund",
+    "Trade Country Name",
+    "Local Price",
+    "Sector Classification",
+    "Industry Classification",
+    "Base Market Value"
+   ],
+   [
+    "US0378331005",
+    "2046251",
+    "Apple Inc.",
+    "USD",
+    "8215.0",
+    "2.611508",
+    "United States",
+    "354.88",
+    "Information Technology",
+    "Technology Hardware Storage & Peripherals",
+    "2915339.3"
+   ],
+   [
+    "US5949181045",
+    "2588173",
+    "Microsoft Corporation",
+    "USD",
+    "5301.0",
+    "2.483486",
+    "United States",
+    "523.0",
+    "Information Technology",
+    "Software",
+    "2772423.0"
+   ]
+  ]
+ },
+ "etfs": 337,
+ "rows": 86586
+}

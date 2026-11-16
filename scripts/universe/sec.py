@@ -51,10 +51,20 @@ for link in reversed(links[-8:]):
     with z.open("sub.tsv") as fh:
         for r in csv.DictReader(io.TextIOWrapper(fh, "utf-8", "replace"), delimiter="\t", quoting=csv.QUOTE_NONE):
             filed[r["adsh"]] = r["filed"]
+    stats = {"files": z.namelist()[:12], "tag_rows": 0, "class_known": 0, "series_known": 0, "samples": []}
+    report[f"probe_{link[-14:]}"] = stats
     with z.open("num.tsv") as fh:
-        for r in csv.DictReader(io.TextIOWrapper(fh, "utf-8", "replace"), delimiter="\t", quoting=csv.QUOTE_NONE):
+        reader = csv.DictReader(io.TextIOWrapper(fh, "utf-8", "replace"), delimiter="\t", quoting=csv.QUOTE_NONE)
+        stats["columns"] = reader.fieldnames
+        for r in reader:
             if r["tag"] != "NetExpensesOverAssets" and r["tag"] != "ExpensesOverAssets": continue
-            if r.get("otherdims") or not r.get("value"): continue
+            stats["tag_rows"] += 1
+            stats["class_known"] += r.get("class") in by_class
+            stats["series_known"] += r.get("series") in by_series
+            if len(stats["samples"]) < 3: stats["samples"].append({k: str(v)[:40] for k, v in r.items()})
+            # Newer filings name the class and the fund as dimensions. Any other dimension is a breakdown, not the fund's fee.
+            dims = {d.split("=")[0] for d in (r.get("otherdims") or "").split(";") if d}
+            if dims - {"Class", "LegalEntity", "DocumentInformationDocument", "Series"} or not r.get("value"): continue
             symbols = {by_class[r["class"]]} if r.get("class") in by_class else (by_series.get(r.get("series"), set()) if len(by_series.get(r.get("series"), set())) == 1 else set())
             for sym in symbols:
                 key = universe.get(sym)

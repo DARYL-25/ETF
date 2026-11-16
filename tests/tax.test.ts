@@ -39,7 +39,7 @@ describe("tax notes", () => {
 
 describe("update policy", () => {
   it("covers every kind of data with a cadence, a job and at least one source", () => {
-    expect(DATASETS.map((d) => d.id)).toEqual(["list", "facts", "size", "prices", "fx", "tax"]);
+    expect(DATASETS.map((d) => d.id)).toEqual(["list", "facts", "size", "prices", "holdings", "fx", "tax"]);
     for (const d of DATASETS) { expect(d.cadence).toBeTruthy(); expect(d.sources.length).toBeGreaterThan(0); }
     expect(DATASETS.find((d) => d.id === "prices")!.cadence).toBe("Daily");
   });

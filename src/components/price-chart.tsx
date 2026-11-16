@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AreaSeries, ColorType, CrosshairMode, LineSeries, LineStyle, createChart, type IChartApi, type ISeriesApi, type UTCTimestamp } from "lightweight-charts";
 
@@ -32,6 +33,7 @@ export function rebase(points: { date: string; close: number }[]) {
 }
 
 export function PriceChart({ series }: { series: ChartSeries[] }) {
+  const t = useT();
   const holder = useRef<HTMLDivElement>(null);
   const [range, setRange] = useState<RangeKey>("5Y");
   const [view, setView] = useState<"price" | "rebased">(series.length > 1 ? "rebased" : "price");
@@ -94,7 +96,7 @@ export function PriceChart({ series }: { series: ChartSeries[] }) {
         date,
         values: apis.map((api, i) => {
           const item = param.seriesData.get(api) as { value?: number } | undefined;
-          if (item?.value === undefined) return `${inView[i].label}: no data`;
+          if (item?.value === undefined) return t("{label}: no data", { label: inView[i].label });
           return `${inView[i].label}: ${item.value.toFixed(2)}${view === "price" && inView[i].currency ? ` ${inView[i].currency}` : ""}`;
         }),
       });
@@ -113,26 +115,26 @@ export function PriceChart({ series }: { series: ChartSeries[] }) {
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <div role="group" aria-label="Time range" className="flex">
+        <div role="group" aria-label={t("Time range")} className="flex">
           {RANGES.map((r) => (
             <button key={r.key} type="button" className={segment} aria-pressed={range === r.key} onClick={() => setRange(r.key)}>{r.key}</button>
           ))}
         </div>
-        <div role="group" aria-label="Value shown" className="flex">
-          <button type="button" className={segment} aria-pressed={view === "price"} onClick={() => setView("price")}>Price</button>
-          <button type="button" className={segment} aria-pressed={view === "rebased"} onClick={() => setView("rebased")}>Start at 100</button>
+        <div role="group" aria-label={t("Value shown")} className="flex">
+          <button type="button" className={segment} aria-pressed={view === "price"} onClick={() => setView("price")}>{t("Price")}</button>
+          <button type="button" className={segment} aria-pressed={view === "rebased"} onClick={() => setView("rebased")}>{t("Start at 100")}</button>
         </div>
         {!multi ? (
-          <div role="group" aria-label="Chart type" className="flex">
-            <button type="button" className={segment} aria-pressed={kind === "area"} onClick={() => setKind("area")}>Area</button>
-            <button type="button" className={segment} aria-pressed={kind === "line"} onClick={() => setKind("line")}>Line</button>
+          <div role="group" aria-label={t("Chart type")} className="flex">
+            <button type="button" className={segment} aria-pressed={kind === "area"} onClick={() => setKind("area")}>{t("Area")}</button>
+            <button type="button" className={segment} aria-pressed={kind === "line"} onClick={() => setKind("line")}>{t("Line")}</button>
           </div>
         ) : null}
       </div>
       <p className="data min-h-[1.5em] text-[0.9rem]" aria-live="off">
         {readout
           ? `${readout.date}: ${readout.values.join(", ")}`
-          : inView.map((s, i) => `${s.label} ${change[i] === null ? "no data" : `${change[i]! >= 0 ? "+" : "−"}${Math.abs(change[i]!).toFixed(1)}%`}`).join(", ") + ` over ${range === "MAX" ? "the full history" : range}`}
+          : inView.map((s, i) => `${s.label} ${change[i] === null ? t("no data") : `${change[i]! >= 0 ? "+" : "−"}${Math.abs(change[i]!).toFixed(1)}%`}`).join(", ") + ` over ${range === "MAX" ? t("the full history") : range}`}
       </p>
       <div ref={holder} className="h-[20rem] w-full lg:h-[24rem]" role="img" aria-label={`Price history chart: ${series.map((s) => s.label).join(", ")}`} />
     </div>

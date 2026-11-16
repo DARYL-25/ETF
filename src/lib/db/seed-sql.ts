@@ -94,7 +94,7 @@ const q = (v: unknown): string => {
 
 /** Builds idempotent-free insert SQL for an empty database. Same SQL for local and Supabase. */
 /** Public data tables, in an order that is safe to empty together. User tables never reference them. */
-export const PUBLIC_DATA_TABLES = ["universe_prices", "universe_details", "universe_etfs", "fund_top_holdings", "fund_prices", "fund_exposures", "metric_observations", "share_class_fees", "listings", "share_classes", "fund_categories", "fund_index_relationships", "funds", "categories", "indices", "exchanges", "issuers", "fx_rates", "data_sources"];
+export const PUBLIC_DATA_TABLES = ["holdings", "holdings_summary", "universe_prices", "universe_details", "universe_etfs", "fund_top_holdings", "fund_prices", "fund_exposures", "metric_observations", "share_class_fees", "listings", "share_classes", "fund_categories", "fund_index_relationships", "funds", "categories", "indices", "exchanges", "issuers", "fx_rates", "data_sources"];
 
 export function buildSeedSql(root: string): string {
   const funds = fundsFile.parse(JSON.parse(readFileSync(join(root, "data/seed/funds.json"), "utf8")));
@@ -254,7 +254,7 @@ export function buildSeedSql(root: string): string {
       for (const row of rest) {
         const c = parseLine(row);
         const b = c[cols.indexOf("benchmark")];
-        if (b) benchmarks.set(c[cols.indexOf("lookup")], b);
+        if (b) benchmarks.set(c[cols.indexOf("lookup")], b.replace(/<[^>]+>|[®™]/g, ""));
       }
     }
     const benchmarkOf = (isin: string, ticker: string) => benchmarks.get(isin) ?? benchmarks.get(`TICKER:${ticker}`) ?? "";
@@ -263,7 +263,7 @@ export function buildSeedSql(root: string): string {
         const [key, isin, ticker, mic, name, currency, lei, issuer, country, ucits, assetClass, venues, source, url] = parseLine(line);
         liveKeys.add(key);
         if (ticker && mic) oldKeys.set(`${mic}-${ticker}`, key);
-        const full = prettyName(name);
+        const full = prettyName(name.replace(/[®™]|<[^>]+>/g, ""));
         const pretty = cleanName(full);
         const slugs = inferCategories(full);
         // A brand in the fund's name is a surer guide to the issuer than the register's legal entity, which can be a platform.
@@ -290,11 +290,17 @@ export function buildSeedSql(root: string): string {
       const values = names.map((n, i) => {
         if (cells[i] === "" || cells[i] === undefined) return "null";
         if (numeric.has(n)) return q(Number(cells[i]));
-        return q(n === "name" ? prettyName(cells[i]) : cells[i]);
+        if (n === "hedged" || n === "pea_eligible") return cells[i] === "t" ? "true" : "false";
+        const text = n === "source_url" ? cells[i] : cells[i].replace(/<[^>]+>|[®™]/g, "").trim();
+        return q(n === "name" ? cleanName(prettyName(text)) : text);
       });
       // iShares sizes are per share class. The others cover the whole fund.
       const level = cells[names.indexOf("source")] === "iShares" ? "share_class" : "fund";
       out.push(`insert into public.universe_details (${names.join(", ")}, aum_level) select ${values.join(", ")}, ${q(level)} where exists (select 1 from public.universe_etfs u where u.etf_key = ${values[0]});`);
+      // The issuer's own name and benchmark say which index a fund tracks when the register's name does not.
+      const clean = (v: string | undefined) => (v ?? "").replace(/<[^>]+>|[®™]/g, "");
+      const slug = inferIndex(clean(cells[names.indexOf("name")])) ?? inferIndex(clean(cells[names.indexOf("benchmark")]));
+      if (slug) out.push(`update public.universe_etfs set index_slug = ${q(slug)} where etf_key = ${values[0]} and index_slug is null and exists (select 1 from public.indices where slug = ${q(slug)});`);
     }
   }
 
@@ -379,6 +385,39 @@ export function buildSeedSql(root: string): string {
         select v.* from (values\n${values.join(",\n")}) as v(etf_key, price_date, value, currency, kind, source)
         where exists (select 1 from public.universe_etfs u where u.etf_key = v.etf_key) on conflict do nothing;`);
     }
+  }
+
+  // Full holdings, from scripts/universe/holdings.py.
+  const holdingsPath = join(root, "data/holdings/holdings.csv.gz");
+  const summaryPath = join(root, "data/holdings/summary.csv.gz");
+  if (existsSync(holdingsPath) && existsSync(summaryPath)) {
+    const known = `where exists (select 1 from public.universe_etfs u where u.etf_key = v.etf_key) on conflict do nothing`;
+    const summaries = gunzipSync(readFileSync(summaryPath)).toString("utf8").trim().split(/\r?\n/).slice(1).map((line) => {
+      const [key, asOf, n, kept, covered, source, url] = parseLine(line);
+      return `(${q(current(key))}, ${asOf ? `${q(asOf)}::date` : "null::date"}, ${Number(n)}, ${Number(kept)}, ${Number(covered)}, ${q(source)}, ${q(url)})`;
+    });
+    for (let i = 0; i < summaries.length; i += 500) {
+      out.push(`insert into public.holdings_summary select v.* from (values\n${summaries.slice(i, i + 500).join(",\n")}) as v(etf_key, as_of, n_holdings, kept, covered_pct, source, source_url) ${known};`);
+    }
+    const lines = gunzipSync(readFileSync(holdingsPath)).toString("utf8").trim().split(/\r?\n/).slice(1);
+    for (let i = 0; i < lines.length; i += 1000) {
+      const values = lines.slice(i, i + 1000).map((line) => {
+        const [key, holding, name, ticker, weight, sector, country, assetClass] = parseLine(line);
+        return `(${q(current(key))}, ${q(holding)}, ${q(name)}, ${q(ticker || null)}, ${Number(weight)}, ${q(sector || null)}, ${q(country || null)}, ${q(assetClass || null)})`;
+      });
+      out.push(`insert into public.holdings select v.* from (values\n${values.join(",\n")}) as v(etf_key, holding_key, name, ticker, weight_pct, sector, country, asset_class) ${known};`);
+    }
+    // State Street's US files carry no sector. Its eleven Select Sector funds split the S&P 500 by sector,
+    // so a company's sector is the sector fund that holds it. Companies outside those funds stay without one.
+    const sectorFunds: Record<string, string> = { XLK: "Information Technology", XLF: "Financials", XLV: "Health Care", XLY: "Consumer Discretionary", XLP: "Consumer Staples", XLE: "Energy", XLI: "Industrials", XLB: "Materials", XLU: "Utilities", XLRE: "Real Estate", XLC: "Communication Services" };
+    out.push(`update public.holdings h set sector = m.sector from (
+        select distinct on (x.holding_key) x.holding_key, f.sector from public.holdings x
+        join public.universe_etfs u on u.etf_key = x.etf_key
+        join (values ${Object.entries(sectorFunds).map(([t, name]) => `(${q(t)}, ${q(name)})`).join(", ")}) as f(ticker, sector) on f.ticker = u.ticker
+        where x.holding_key not like '|%' order by x.holding_key, x.weight_pct desc
+      ) m where m.holding_key = h.holding_key and (h.sector is null or h.sector in ('', '-'));`);
+    out.push(`update public.holdings set sector = null where sector in ('', '-');`);
+    out.push(`update public.holdings h set country = 'United States' from public.holdings x join public.universe_etfs u on u.etf_key = x.etf_key and u.ticker = 'SPY' where x.holding_key = h.holding_key and h.country is null;`);
   }
 
   out.push("commit;");
