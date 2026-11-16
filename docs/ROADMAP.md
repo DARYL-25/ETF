@@ -9,12 +9,13 @@
 | Fees, size, returns | 7,990 ETFs have a fee (45%), 3,400 a size and 2,200 official returns. Filled issuer by issuer |
 | Daily prices | Issuer NAV or an open-data close for about 2,500 ETFs, of which 1,500 refresh every day. History builds from 4 November 2026 |
 | Holdings | Full holdings for about 340 ETFs (State Street, ARK, Direxion), refreshed weekly. Powers overlap between funds, "which ETFs hold X", and portfolio look-through |
+| Holdings mosaic | A fund drawn as its holdings, each tile sized by weight: on the home page, each fund page, index pages and the practice portfolio |
 | True cost | Fee in money on each ETF page, and the return gap between funds on the same index |
 | Update schedule | Done: weekly list and holdings, daily prices, monthly details, quarterly SEC fees. See [DATA_UPDATES.md](DATA_UPDATES.md) |
 | Search, ask bar, screener, comparison, index pages, CSV export | Done |
 | Investor country | Done: rankings, quick filters and ETF pages adapt |
 | Tax notes | Switzerland and France, from official sources, including PEA, assurance-vie and ICTax. **Not reviewed by a tax adviser** |
-| French | The whole site in French and English, except the lessons. The language is remembered in a cookie, so both languages share one address |
+| French | The whole site in French and English, including the 13 lessons, the glossary and the calculators. The language is remembered in a cookie, so both languages share one address |
 | Search engines | Sitemap of every page, robots file, page descriptions and structured data. Set `NEXT_PUBLIC_SITE_URL` to the live address |
 | Hardening | Security headers and content policy, accessibility audit with axe (no problems on 14 pages, light and dark), a one-minute read cache |
 | Learn | Lessons, quizzes, glossary, calculators. Not reviewed by a second person |
@@ -39,7 +40,7 @@
 - Holdings for more issuers. iShares, Xtrackers, Amundi, Vanguard and Invesco serve their files only after a visitor accepts site terms, so they need an agreement or a licensed source
 - Fees for Canada and Asia, and the markets still missing (Shenzhen, Brazil; India's list fails on some runs)
 - PEA eligibility beyond State Street's funds, and the SIX list from the exchange's CSV
-- French lessons, and French addresses (`/fr/...`) so search engines index both languages
+- French addresses (`/fr/...`) so search engines index both languages
 - More tax countries
 - Email alerts, which need an email service account. Native apps, a paid API
 

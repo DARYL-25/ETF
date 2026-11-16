@@ -54,3 +54,29 @@ describe("French", () => {
     expect(parseIntent(FR["Physical S&P 500 ETF for a French resident"])).toMatchObject({ index: "sp-500", investorCountry: "France", replication: "physical" });
   });
 });
+
+import { GLOSSARY, LESSONS, PATHS } from "@/lib/academy/content";
+import { GLOSSARY_FR, LESSONS_FR, PATHS_FR, localLesson } from "@/lib/academy/content.fr";
+
+describe("French lessons", () => {
+  it("mirror every English lesson, section, paragraph and quiz option", () => {
+    for (const lesson of LESSONS) {
+      const fr = LESSONS_FR[lesson.slug];
+      expect(fr, lesson.slug).toBeDefined();
+      expect(fr.sections.map((s) => s.paragraphs.length), lesson.slug).toEqual(lesson.sections.map((s) => s.paragraphs.length));
+      expect(fr.quiz.map((q) => q.options.length), lesson.slug).toEqual(lesson.quiz.map((q) => q.options.length));
+      expect(Boolean(fr.tryIt), lesson.slug).toBe(Boolean(lesson.tryIt));
+    }
+    expect(Object.keys(LESSONS_FR).sort()).toEqual(LESSONS.map((l) => l.slug).sort());
+  });
+  it("keep the right answer and the links when translated", () => {
+    const fr = localLesson(LESSONS[0], "fr");
+    expect(fr.quiz[0].answer).toBe(LESSONS[0].quiz[0].answer);
+    expect(fr.tryIt?.href).toBe(LESSONS[0].tryIt?.href);
+    expect(localLesson(LESSONS[0], "en")).toBe(LESSONS[0]);
+  });
+  it("cover every path and glossary term", () => {
+    expect(Object.keys(PATHS_FR).sort()).toEqual(PATHS.map((p) => p.slug).sort());
+    expect(GLOSSARY_FR).toHaveLength(GLOSSARY.length);
+  });
+});
