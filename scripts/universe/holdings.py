@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Full holdings for ETFs whose issuer publishes them as a file to any plain request: State Street (US and Europe), ARK and Direxion.
+"""Full holdings for ETFs whose issuer publishes them as a file to any plain request: State Street (US and Europe), ARK, Direxion, Global X and KraneShares.
 Writes data/holdings/holdings.csv.gz (one row per ETF and holding) and summary.csv.gz (one row per ETF).
 Holdings under 0.02% of the fund are dropped and at most 800 are kept per fund, largest first; the summary
 records how many the fund has and what share of it the kept rows cover. One request at a time."""
@@ -181,11 +181,11 @@ def spdr_eu():
         if failed >= 6 and ok == 0: break  # The address pattern is wrong, so stop asking.
     report["spdr_eu"] = {"ok": ok, "failed": failed, "errors": tried}
 
-def csv_fund(key, text, source, url, name_col, weight_col, ticker_col, date_col, scale=1.0):
+def csv_fund(key, text, source, url, name_col, weight_col, ticker_col, date_col, scale=1.0, as_of=""):
     """Reads one fund's holdings from a CSV whose header row contains the given column names."""
     lines = text.splitlines()
     head = next(i for i, l in enumerate(lines[:20]) if name_col in l and weight_col in l)
-    rows, as_of = [], ""
+    rows = []
     for r in csv.DictReader(io.StringIO("\n".join(lines[head:]))):
         r = {(k or "").strip(): (v or "").strip() for k, v in r.items() if isinstance(v, str)}
         w = num(r.get(weight_col, ""))
@@ -234,7 +234,45 @@ def direxion():
         if failed >= 8 and ok == 0: break
     report["direxion"] = {"ok": ok, "failed": failed, "errors": errors}
 
-for fn in (ssga_us, spdr_eu, ark, direxion):
+def dated_files(label, prefix, url_for, name_col, weight_col, ticker_col):
+    """Issuers that publish one CSV per fund per day, with the date in the file's name. The latest file is
+    looked for from today backwards, once, and that date is then used for every fund."""
+    ok = failed = 0; errors = []; day = None; sample = ""
+    funds = [u for u in universe if u["source"] == "us" and u["name"].startswith(prefix) and u["ticker"]]
+    for u in funds:
+        if ok + failed >= LIMIT: break
+        try:
+            text, last = None, None
+            for back in ([0] if day else range(0, 8)):
+                d = day or (dt.date.today() - dt.timedelta(days=back))
+                url = url_for(u["ticker"], d)
+                try:
+                    time.sleep(1)
+                    text = get(url).decode("utf-8-sig", "replace")
+                    if weight_col in text[:3000]: day = d; break
+                    text = None
+                except Exception as e:
+                    last = e
+            if text is None: raise RuntimeError(f"no file: {type(last).__name__ + ': ' + str(last)[:60] if last else 'no weights column'}")
+            sample = sample or text[:400]
+            # The date is in the lines above the table when no column carries it.
+            found = re.search(r"(\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})", text[:400])
+            as_of = parse_date(found.group(1)) if found else day.isoformat()
+            if csv_fund(u["etf_key"], text, label, url, name_col, weight_col, ticker_col, "", 1.0, as_of): ok += 1
+            else: failed += 1
+        except Exception as e:
+            failed += 1
+            if len(errors) < 4: errors.append(f"{u['ticker']}: {type(e).__name__}: {e}"[:120])
+        if failed >= 6 and ok == 0: break
+    report[label.lower().replace(" ", "_")] = {"funds": len(funds), "ok": ok, "failed": failed, "errors": errors, "sample": sample}
+
+def globalx():
+    dated_files("Global X", "Global X", lambda t, d: f"https://assets.globalxetfs.com/funds/holdings/{t.lower()}_full-holdings_{d:%Y%m%d}.csv", "Name", "% of Net Assets", "Ticker")
+
+def kraneshares():
+    dated_files("KraneShares", "KraneShares", lambda t, d: f"https://kraneshares.com/csv/{d:%m_%d_%Y}_{t.lower()}_holdings.csv", "Company Name", "% of Net Assets", "Ticker")
+
+for fn in (ssga_us, spdr_eu, ark, direxion, globalx, kraneshares):
     try: fn()
     except Exception as e: report[fn.__name__] = f"{type(e).__name__}: {e}"[:200]
 

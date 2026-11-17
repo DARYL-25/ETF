@@ -11,6 +11,7 @@ import { getLens } from "@/lib/lens-server";
 
 const MAIN: { href: string; label: string; also?: string[] }[] = [
   { href: "/screener", label: "Screener", also: ["/etfs"] },
+  { href: "/themes", label: "Themes" },
   { href: "/compare", label: "Compare" },
   { href: "/indices", label: "Indices" },
   { href: "/academy", label: "Learn" },
@@ -18,7 +19,7 @@ const MAIN: { href: string; label: string; also?: string[] }[] = [
   { href: "/watchlists", label: "My lists", also: ["/portfolio"] },
 ];
 const MORE = [
-  { href: "/assistant", label: "Ask" }, { href: "/holdings", label: "Which ETFs hold it" }, { href: "/indices", label: "Indices" }, { href: "/tax", label: "Tax" }, { href: "/portfolio", label: "Portfolio" },
+  { href: "/assistant", label: "Ask" }, { href: "/themes", label: "Themes" }, { href: "/holdings", label: "Which ETFs hold it" }, { href: "/indices", label: "Indices" }, { href: "/tax", label: "Tax" }, { href: "/portfolio", label: "Portfolio" },
   { href: "/pricing", label: "Pricing" }, { href: "/profile", label: "Account" }, { href: "/data", label: "Data and updates" },
 ];
 
@@ -60,7 +61,7 @@ export async function Shell({ children }: { children: React.ReactNode }) {
       <footer className="border-t border-line pb-24 lg:pb-0">
         <div className="mx-auto flex max-w-[84rem] flex-col gap-2 px-4 py-6 text-[0.85rem] text-muted lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <p className="max-w-[72ch]">{t("General information, not investment or tax advice. Prices are end-of-day values, never real time. Figures come from issuers and official lists and can contain errors, so check the issuer's documents before you act.")}</p>
-          <p className="flex flex-none gap-4"><Link href="/data" className="prose-link">{t("Data and updates")}</Link><Link href="/pricing" className="prose-link">{t("Pricing")}</Link></p>
+          <p className="flex flex-none flex-wrap gap-x-4 gap-y-1"><Link href="/data" className="prose-link">{t("Data and updates")}</Link><Link href="/pricing" className="prose-link">{t("Pricing")}</Link><Link href="/legal/terms" className="prose-link">{t("Terms of use")}</Link><Link href="/legal/privacy" className="prose-link">{t("Privacy")}</Link><Link href="/legal/notice" className="prose-link">{t("Legal notice")}</Link></p>
         </div>
       </footer>
       <nav aria-label={t("Main, phone")} className="fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-surface/95 backdrop-blur lg:hidden">

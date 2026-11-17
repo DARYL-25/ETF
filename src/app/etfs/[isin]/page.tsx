@@ -1,4 +1,5 @@
-import { getT } from "@/lib/i18n/server";
+import { alternatesFor, getT } from "@/lib/i18n/server";
+import { themeBySlug } from "@/lib/etfs/themes";
 import { Mosaic } from "@/components/mosaic";
 import { SectionNav } from "@/components/section-nav";
 import type { Metadata } from "next";
@@ -32,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: [row.name, row.ticker].filter(Boolean).join(" "),
     description: `${row.name}: ${facts}. Fees, size, holdings and returns with their source and date.`.slice(0, 300),
-    alternates: { canonical: `/etfs/${row.etf_key}` },
+    alternates: await alternatesFor(`/etfs/${row.etf_key}`),
   };
 }
 
@@ -253,7 +254,7 @@ export default async function EtfPage({ params }: Props) {
               [t("Share class currency"), row.currency ?? MISSING],
               [t("Currency hedged"), t(yesNoUnknown(row.hedged))],
               ...(researched ? [[t("Product type"), t(productLabel(row.product_type))] as [string, string], [t("Approach"), t(styleLabel(row.management_style))] as [string, string], [t("Share class launched"), formatDate(row.share_class_launch_date, t.lang)] as [string, string]] : []),
-              ...(!researched ? [[t("Trading venues on official lists"), row.venues ? String(row.venues) : MISSING] as [string, string], [t("Labels, inferred from its name"), row.category_slugs.length ? row.category_slugs.join(", ").replaceAll("-", " ") : MISSING] as [string, string]] : []),
+              ...(!researched ? [[t("Trading venues on official lists"), row.venues ? String(row.venues) : MISSING] as [string, React.ReactNode], [t("Labels, inferred from its name"), row.category_slugs.length ? <span className="flex flex-wrap gap-x-2.5 gap-y-0.5">{row.category_slugs.map((slug) => { const theme = themeBySlug(slug); return theme ? <Link key={slug} className="prose-link" href={`/themes/${slug}`}>{t(theme.label)}</Link> : <span key={slug}>{slug.replaceAll("-", " ")}</span>; })}</span> : MISSING] as [string, React.ReactNode]] : []),
             ]} />
             <p className="mt-2 max-w-[68ch] text-[0.85rem] text-muted">{t("Share class currency is the fund's accounting currency for this class. It is not your currency risk, which comes from what the fund holds.")}</p>
           </Section>

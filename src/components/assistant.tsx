@@ -137,6 +137,7 @@ export function Assistant({ initial, hero = false, home }: { initial?: string; h
           <div className="grid gap-3 md:grid-cols-2">
             {reply.applied.length ? <section className="panel p-4"><h2 className="mb-2 text-[1.05rem]">{t("What we took into account")}</h2><ul className="list-disc space-y-1 pl-5">{reply.applied.map((a) => <li key={a}>{a}</li>)}<li>{t("Ranked by fee, size, UCITS status and data available")}</li></ul></section> : null}
             <section className="panel p-4"><h2 className="mb-2 text-[1.05rem]">{t("What we could not check")}</h2><ul className="list-disc space-y-1 pl-5">{reply.notChecked.map((a) => <li key={a}>{a}</li>)}</ul>
+              {reply?.theme && reply.etfs.length ? <p className="mt-2"><Link className="prose-link" href={`/themes/${reply.theme.slug}`}>{t("See every ETF on this theme: {theme}", { theme: t(reply.theme.label) })}</Link></p> : null}
               {taxHref ? <p className="mt-2"><Link className="prose-link" href={taxHref}>{t("Read the tax notes")}</Link></p> : null}
             </section>
           </div>

@@ -27,7 +27,7 @@ export function Mosaic({ items, restLabel, label, className = "" }: { items: Mos
         return (
           <li key={item.holding_key} className="mosaic-tile" data-size={size} data-deep={item.weight_pct / top > 0.32 ? "" : undefined} style={style}>
             <Link href={`/holdings?key=${encodeURIComponent(item.holding_key)}`} data-tip={`${short} ${item.weight_pct.toFixed(2)}%`} aria-label={`${item.name}, ${item.weight_pct.toFixed(2)}%`}>
-              {size !== "s" ? <span className="mosaic-name">{size === "l" ? short : item.ticker || short.split(/[\s,]/)[0]}</span> : null}
+              {size !== "s" ? <span className="mosaic-name">{size === "l" ? short : item.ticker && /^[A-Z.]{1,6}$/.test(item.ticker) ? item.ticker : short.split(/[\s,]/)[0]}</span> : null}
               {size === "l" ? <span className="mosaic-weight data">{item.weight_pct.toFixed(2)}%</span> : null}
             </Link>
           </li>

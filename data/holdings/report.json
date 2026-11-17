@@ -1,5 +1,5 @@
 {
- "on": "2026-11-15",
+ "on": "2026-11-16",
  "ssga_errors": [
   "GLDM: HTTPError: HTTP Error 404: Not Found",
   "GLD: HTTPError: HTTP Error 404: Not Found"
@@ -28,6 +28,23 @@
   "failed": 116,
   "errors": []
  },
+ "global_x": {
+  "funds": 117,
+  "ok": 115,
+  "failed": 2,
+  "errors": [
+   "COMD: RuntimeError: no file: no weights column",
+   "BITS: RuntimeError: no file: no weights column"
+  ],
+  "sample": "Global X Gold Miners ETF\nFund Holdings Data as of 11/13/2026\n% of Net Assets,Ticker,Name,SEDOL,Market Price ($),Shares Held,Market Value ($)\n0.74,OR,OR ROYALTIES INC,BPJJWN9,34.89,\"1,199.00\",\"41,833.11\"\n0.73,LUG CN,LUNDIN GOLD INC,BTKSSY6,64.369671875,640.00,\"41,196.59\"\n0.71,2259 HK,ZIJIN GOLD INTERNATIONAL CO,BSD3B20,15.4497253384913,\"2,585.00\",\"39,937.54\"\n0.70,TFPM,TRIPLE FLAG PRECIOUS MET,BMDVH"
+ },
+ "kraneshares": {
+  "funds": 28,
+  "ok": 28,
+  "failed": 0,
+  "errors": [],
+  "sample": "\"BUYO Holdings\",\"As of 2026-11-13\",\"Holdings Are Subject To Change\"\nRank,\"Company Name\",\"% of Net Assets\",Ticker,Identifier,\"Shares Held\",\"Market Value($)\"\n1,\"NEWS CORP - CLASS A\",1.53,NWSA,US65249B1098,\"9,483\",\"255,757\"\n2,\"ENCOMPASS HEALTH CORP\",1.39,EHC,US29261A1007,\"1,642\",\"231,506\"\n3,\"AFFILIATED MANAGERS GROUP\",1.19,AMG,US0082521081,503,\"198,579\"\n4,\"MORNINGSTAR INC\",1.10,MORN,US6177001095,747,"
+ },
  "probe": {
   "spdr_eu_sample": [
    [
@@ -44,7 +61,7 @@
    ],
    [
     "Holdings As Of:",
-    "12-Nov-2026"
+    "13-Nov-2026"
    ],
    [],
    [
@@ -66,12 +83,12 @@
     "Apple Inc.",
     "USD",
     "8215.0",
-    "2.611508",
+    "2.629835",
     "United States",
-    "354.88",
+    "356.27",
     "Information Technology",
     "Technology Hardware Storage & Peripherals",
-    "2915339.3"
+    "2926758.0"
    ],
    [
     "US5949181045",
@@ -79,15 +96,15 @@
     "Microsoft Corporation",
     "USD",
     "5301.0",
-    "2.483486",
+    "2.495349",
     "United States",
-    "523.0",
+    "523.88",
     "Information Technology",
     "Software",
-    "2772423.0"
+    "2777088.0"
    ]
   ]
  },
- "etfs": 337,
- "rows": 86586
+ "etfs": 482,
+ "rows": 98980
 }

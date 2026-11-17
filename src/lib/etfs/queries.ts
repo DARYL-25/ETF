@@ -1,4 +1,5 @@
 import { query } from "@/lib/db/client";
+import { themeBySlug } from "./themes";
 import { SORT_COLUMNS, buildScreenerWhere, defaultDirection, type ScreenerParams } from "./screener-params";
 
 export type EtfRow = {
@@ -264,13 +265,23 @@ export async function getIndex(slug: string): Promise<{ index: IndexRow; etfs: E
   return { index, etfs };
 }
 
-export const getSimilarEtfs = (row: EtfRow, limit = 6) =>
-  query<EtfRow>(
+/**
+ * Funds close to this one: first those on the same index, then those sharing the most labels.
+ * A fund's themes count before its region, so a defence fund is matched with defence funds, not with
+ * every fund from the same country. Leveraged and inverse products are only matched with each other.
+ */
+export const getSimilarEtfs = (row: EtfRow, limit = 6) => {
+  const themes = row.category_slugs.filter((slug) => themeBySlug(slug)?.kind === "theme");
+  const labels = themes.length ? themes : row.category_slugs;
+  return query<EtfRow>(
     `select * from public.etf_directory
-     where etf_key <> $1 and (index_slug = $2 or ($2::text is null and asset_class = $3 and category_slugs && $4::text[] and cardinality($4::text[]) > 0))
-     order by (index_slug = $2) desc nulls last, headline_fee_pct asc nulls last, size_eur desc nulls last limit ${limit}`,
-    [row.etf_key ?? row.isin, row.index_slug, row.asset_class, row.category_slugs],
+     where etf_key <> $1 and ('leveraged-inverse' = any(category_slugs)) = $5
+       and (index_slug = $2 or ($2::text is null and coalesce(asset_class, '') = coalesce($3, '') and category_slugs && $4::text[] and cardinality($4::text[]) > 0))
+     order by (index_slug = $2) desc nulls last, (select count(*) from unnest(category_slugs) c where c = any($4::text[])) desc,
+       (headline_fee_pct is null), size_eur desc nulls last, headline_fee_pct asc limit ${limit}`,
+    [row.etf_key ?? row.isin, row.index_slug, row.asset_class, labels, row.category_slugs.includes("leveraged-inverse")],
   );
+};
 
 export async function getDashboard() {
   const [largest, cheapest, coverage, sp500, fees] = await Promise.all([
@@ -362,3 +373,40 @@ export const getIndexTiles = (limit = 8) =>
      from public.indices i join public.etf_directory d on d.index_slug = i.slug
      group by i.slug, i.name order by count(d.*) desc limit ${limit}`,
   );
+
+export type ThemeCount = { slug: string; n: number; with_fee: number; min_fee: number | null };
+
+/** How many ETFs each theme holds, and the lowest published fee among them. */
+export async function getThemeCounts(): Promise<Map<string, ThemeCount>> {
+  const rows = await query<ThemeCount>(
+    `select s as slug, count(*)::int as n, count(d.headline_fee_pct)::int as with_fee, min(d.headline_fee_pct) filter (where d.headline_fee_pct > 0) as min_fee
+     from public.etf_directory d cross join lateral unnest(d.category_slugs) as s group by 1`);
+  return new Map(rows.map((r) => [r.slug, r]));
+}
+
+export const THEME_MARKETS = {
+  europe: { label: "Europe (UCITS)", where: "ucits is true" },
+  us: { label: "United States", where: "ticker_exchange in ('ARCX','XNAS','XNYS','BATS','XASE','IEXG')" },
+  asia: { label: "Asia-Pacific", where: "ticker_exchange in ('XTKS','XHKG','XSHG','XSHE','XKRX','XTAI','XNSE','XSES','XASX')" },
+} as const;
+export type ThemeMarket = keyof typeof THEME_MARKETS;
+
+const THEME_SORTS = {
+  size: "size_eur desc nulls last, headline_fee_pct asc nulls last, name asc",
+  fee: "headline_fee_pct asc nulls last, size_eur desc nulls last, name asc",
+  return: "return_1y desc nulls last, size_eur desc nulls last, name asc",
+} as const;
+export type ThemeSort = keyof typeof THEME_SORTS;
+
+/** The ETFs filed under one theme, with a count per market so the page can offer them as choices. */
+export async function getThemeEtfs(slug: string, market: ThemeMarket | null, sort: ThemeSort, limit: number) {
+  // Market and sort come from fixed maps above, never from user text.
+  const filter = market ? `and ${THEME_MARKETS[market].where}` : "";
+  const [rows, counts] = await Promise.all([
+    query<EtfRow>(`select * from public.etf_directory where $1 = any(category_slugs) ${filter} order by ${THEME_SORTS[sort]} limit ${Math.floor(limit)}`, [slug]),
+    query<{ all: number; europe: number; us: number; asia: number }>(
+      `select count(*)::int as all, count(*) filter (where ${THEME_MARKETS.europe.where})::int as europe, count(*) filter (where ${THEME_MARKETS.us.where})::int as us,
+       count(*) filter (where ${THEME_MARKETS.asia.where})::int as asia from public.etf_directory where $1 = any(category_slugs)`, [slug]),
+  ]);
+  return { rows, counts: counts[0] };
+}

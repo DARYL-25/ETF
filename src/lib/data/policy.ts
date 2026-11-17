@@ -62,6 +62,8 @@ export const DATASETS: Dataset[] = [
     sources: [
       { name: "State Street holdings files", covers: "About 310 ETFs in the US and Europe", url: "https://www.ssga.com/us/en/intermediary/etfs", state: "automatic" },
       { name: "ARK Invest holdings files", covers: "ARK's US ETFs", url: "https://www.ark-funds.com/", state: "automatic" },
+      { name: "Global X holdings files", covers: "About 115 Global X ETFs in the US, many of them thematic", url: "https://www.globalxetfs.com/", state: "automatic" },
+      { name: "KraneShares holdings files", covers: "KraneShares ETFs, mostly Chinese shares", url: "https://kraneshares.com/", state: "automatic" },
       { name: "Direxion holdings files", covers: "Direxion funds that hold their securities directly", url: "https://www.direxion.com/", state: "automatic", note: "Leveraged funds built on swaps are left out, because their file does not show the real exposure." },
       { name: "iShares holdings files", covers: "iShares ETFs", url: "https://www.ishares.com/", state: "not working", note: "The file is only served after a visitor accepts the site's terms, which a job cannot do on anyone's behalf." },
     ],

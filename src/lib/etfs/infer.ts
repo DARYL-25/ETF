@@ -1,5 +1,7 @@
 /** Classification of basic records from fund names. Inferred, labelled as such, and deliberately cautious. */
 
+import { inferThemes } from "./themes";
+
 const KEEP = new Set(["ETF", "ETFS", "UCITS", "MSCI", "FTSE", "S&P", "USD", "EUR", "GBP", "CHF", "JPY", "PLC", "ESG", "SRI", "EM", "US", "UK", "EU", "II", "III", "IV", "VI", "VII", "SICAV", "AG", "SA", "UBS", "HSBC", "BNP", "DAX", "CAC", "SMI", "NYSE", "REIT", "TIPS", "ACWI", "IMI", "AI", "SPDR", "DR", "PEA", "ARK", "JPM", "PIMCO", "CLO", "AAA", "ADR", "ETC", "ETN", "1C", "1D", "2C", "2D", "ACC", "DIST", "HD", "ISHARES"]);
 const SPECIAL: Record<string, string> = { ISHARES: "iShares", ACC: "Acc", DIST: "Dist", ETFS: "ETF", HD: "Hdg" };
 
@@ -31,19 +33,14 @@ const RULES: [string, RegExp][] = [
   ["momentum", /\bMomentum\b/i],
   ["min-vol", /\b(Min(imum)? Vol|Low Vol)/i],
   ["high-dividend", /\b(Dividend|High Income)\b/i],
-  ["shariah", /\b(Islamic|Shariah|Sharia)\b/i],
-  ["technology", /\b(Technology|Tech\b|Information Tech|Nasdaq|Digital|Software|Cyber|Artificial Intelligence)/i],
-  ["semiconductors", /\bSemiconductor/i],
-  ["healthcare", /\b(Health ?Care|Biotech|Pharma)/i],
-  ["clean-energy", /\b(Clean Energy|Renewable|Solar|Hydrogen)\b/i],
-  ["robotics", /\b(Robotics|Automation)\b/i],
-  ["gold", /\bGold\b/i],
   ["government-bonds", /\b(Govt|Government|Treasur|Sovereign|Gilt)/i],
   ["corporate-bonds", /\b(Corp(orate)?( Bond)?)\b.*\b(Bond|Bd|Debt)|Corporate Bond/i],
   ["aggregate-bonds", /\bAggregate\b/i],
 ];
 
-export const inferCategories = (name: string): string[] => RULES.filter(([, re]) => re.test(name)).map(([slug]) => slug);
+/** Regions, factors and bond types from the basic rules, then the themes. `source` is the fund's register, when known. */
+export const inferCategories = (name: string, source?: string): string[] =>
+  [...new Set([...RULES.filter(([, re]) => re.test(name)).map(([slug]) => slug), ...inferThemes(name, source)])];
 
 /** Only flagship indices, and never a narrower variant of one, so a sector or factor fund is not misfiled. */
 const VARIANT = "(?!.*\\b(Small|Mid|Value|Growth|Quality|Momentum|Min|Low|Equal|Dividend|Climate|ESG|SRI|Screened|Paris|PAB|Leveraged|Short|Inverse|2x|3x|Sector|Financials|Energy|Health|Technology|Utilities|Materials|Industrials|Consumer|Communication|Top|Buffer|Covered|Income|Hedged Equity|ex\\b))";

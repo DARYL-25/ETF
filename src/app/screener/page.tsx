@@ -92,6 +92,7 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
     { label: "UCITS", on: params.ucits === "yes", href: screenerHref(params, { ucits: params.ucits === "yes" ? "" : "yes" }) },
     { label: t("Accumulating"), on: has(params.distribution, "accumulating"), href: screenerHref(params, { distribution: flip(params.distribution, "accumulating") }) },
     { label: t("Distributing"), on: has(params.distribution, "distributing"), href: screenerHref(params, { distribution: flip(params.distribution, "distributing") }) },
+    { label: t("Actively managed"), on: has(params.factor, "active"), href: screenerHref(params, { factor: flip(params.factor, "active") }) },
     { label: t("Fee known"), on: Boolean(params.hasFee), href: screenerHref(params, { hasFee: params.hasFee ? "" : "1" }) },
     { label: t("Fee up to 0.10%"), on: params.feeMax === 0.1, href: screenerHref(params, { feeMax: params.feeMax === 0.1 ? undefined : 0.1 }) },
     { label: t("Listed on SIX"), on: Boolean(params.six), href: screenerHref(params, { six: params.six ? "" : "1" }) },

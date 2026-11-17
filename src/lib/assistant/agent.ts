@@ -1,4 +1,5 @@
 import { GLOSSARY, LESSONS } from "@/lib/academy/content";
+import { themeBySlug } from "@/lib/etfs/themes";
 import { getEtfs } from "@/lib/etfs/queries";
 import { parseIntent } from "./intent";
 import { findBestEtfs, taxNotesHref, type Ranked } from "./rank";
@@ -6,7 +7,7 @@ import { TAX_CHECKED_ON, taxCountry } from "@/lib/tax/content";
 import { lensCountry } from "@/lib/lens";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
-export type AssistantReply = { text: string; aiUsed: boolean; etfs: Ranked[]; applied: string[]; notChecked: string[]; lessons: { slug: string; title: string }[]; taxHref?: string | null };
+export type AssistantReply = { text: string; aiUsed: boolean; etfs: Ranked[]; applied: string[]; notChecked: string[]; lessons: { slug: string; title: string }[]; theme?: { slug: string; label: string } | null; taxHref?: string | null };
 
 const SYSTEM = `You are the research assistant of ETF Intelligence, an ETF research site.
 Rules you must follow:
@@ -51,7 +52,9 @@ export async function answer(messages: ChatMessage[], fetchFn: typeof fetch = fe
   const read = (text: string) => { const i = parseIntent(text); return i.investorCountry || !home ? i : { ...i, investorCountry: home }; };
   const outcome = await findBestEtfs(read(latest), 10);
   const lessons = academyHits(latest).lessons.map(({ slug, title }) => ({ slug, title }));
-  const base = { etfs: outcome.results, applied: outcome.applied, notChecked: outcome.notChecked, lessons, taxHref: taxNotesHref(outcome.intent.investorCountry) };
+  // When the question names a theme, the reply links to that theme's page, where every fund on it is listed.
+  const themed = outcome.intent.categories.map((c) => themeBySlug(c)).find((x) => x && x.kind !== "region");
+  const base = { etfs: outcome.results, applied: outcome.applied, notChecked: outcome.notChecked, lessons, theme: themed ? { slug: themed.slug, label: themed.label } : null, taxHref: taxNotesHref(outcome.intent.investorCountry) };
 
   if (!key) {
     const text = outcome.results.length

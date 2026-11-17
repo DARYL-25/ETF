@@ -4,7 +4,8 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { PageTitle } from "@/components/etf-bits";
 import { MISSING, formatPct } from "@/lib/format";
-import { getHolders, searchSecurities } from "@/lib/etfs/holdings";
+import { getHolders, getMostHeld, searchSecurities } from "@/lib/etfs/holdings";
+import { shortName } from "@/lib/etfs/treemap";
 import { query } from "@/lib/db/client";
 
 
@@ -16,7 +17,8 @@ const eur = (v: number | null) => (v === null ? MISSING : v >= 1e9 ? `€${(v / 
 export default async function Page({ searchParams }: { searchParams: Promise<{ q?: string; key?: string }> }) {
   const t = await getT();
   const { q = "", key } = await searchParams;
-  const [securities, holders, coverage] = await Promise.all([
+  const [mostHeld, securities, holders, coverage] = await Promise.all([
+    !q && !key ? getMostHeld(24) : [],
     q && !key ? searchSecurities(q.slice(0, 60)) : [],
     key ? getHolders(key.slice(0, 80)) : [],
     query<{ etfs: number; securities: number }>("select (select count(*)::int from public.holdings_summary) as etfs, (select count(distinct holding_key)::int from public.holdings) as securities"),
@@ -34,6 +36,18 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
         <button className="btn btn-primary" type="submit">{t("Search")}</button>
       </form>
       <p className="mt-2 text-[0.85rem] text-muted">{t("Covers the ")}{coverage[0].etfs.toLocaleString("en-GB")}{t(" ETFs whose issuers publish a holdings file, and ")}{coverage[0].securities.toLocaleString("en-GB")}{t(" securities. Other ETFs may hold it too.")}</p>
+
+      {mostHeld.length ? (
+        <section className="mt-10">
+          <h2 className="mb-1 text-[1.3rem]">{t("Held by the most ETFs")}</h2>
+          <p className="mb-3 text-muted">{t("Select a company to see every fund that owns it.")}</p>
+          <ul className="flex flex-wrap gap-2">
+            {mostHeld.map((h) => (
+              <li key={h.holding_key}><Link href={`/holdings?key=${encodeURIComponent(h.holding_key)}`} className="chip">{shortName(h.name)} <span className="data text-muted">{h.etfs}</span></Link></li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {q && !key ? (
         <section className="mt-8">

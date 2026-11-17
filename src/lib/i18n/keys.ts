@@ -2,6 +2,8 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { DATASETS } from "../data/policy";
 import { TAX_COUNTRIES } from "../tax/content";
+import { THEMES } from "../etfs/themes";
+import { LEGAL_PAGES } from "../legal/content";
 
 /**
  * Every English string the interface can show, gathered from t("…") calls and from the data tables whose
@@ -44,5 +46,8 @@ export function collectKeys(root: string): string[] {
     for (const x of c.compare) { add(x.fact); add(x.matters); }
     for (const o of c.open) add(o);
   }
+  for (const p of LEGAL_PAGES) { add(p.title); add(p.summary); for (const sec of p.sections) { add(sec.heading); sec.paragraphs.forEach(add); } }
+  for (const x of THEMES) { add(x.label); add(x.blurb); add(x.caution); }
+  for (const text of ["Europe (UCITS)", "United States", "Asia-Pacific", "Largest first", "Lowest fee first", "Best 1-year return first"]) add(text);
   return [...keys].sort();
 }

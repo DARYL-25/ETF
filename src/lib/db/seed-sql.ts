@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { cleanName, inferCategories, inferEquity, inferIndex, prettyName } from "../etfs/infer";
+import { THEMES, themeBySlug } from "../etfs/themes";
 import { brandOf } from "../etfs/brands";
 import { z } from "zod";
 
@@ -105,7 +106,9 @@ export function buildSeedSql(root: string): string {
 
   for (const i of reference.issuers) out.push(`insert into public.issuers (slug, name, website) values (${q(i.slug)}, ${q(i.name)}, ${q(i.website)});`);
   for (const e of reference.exchanges) out.push(`insert into public.exchanges (mic, name, country) values (${q(e.mic)}, ${q(e.name)}, ${q(e.country)});`);
-  for (const c of reference.categories) out.push(`insert into public.categories (slug, kind, label) values (${q(c.slug)}, ${q(c.kind)}, ${q(c.label)});`);
+  // Themes are defined in code, with their matching rules. The reference file supplies the remaining categories.
+  for (const c of reference.categories) if (!themeBySlug(c.slug)) out.push(`insert into public.categories (slug, kind, label) values (${q(c.slug)}, ${q(c.kind)}, ${q(c.label)});`);
+  for (const c of THEMES) out.push(`insert into public.categories (slug, kind, label) values (${q(c.slug)}, ${q(c.kind)}, ${q(c.label)});`);
   for (const x of reference.indices) out.push(`insert into public.indices (slug, name, provider, asset_class, geography, description) values (${q(x.slug)}, ${q(x.name)}, ${q(x.provider)}, ${q(x.assetClass)}, ${q(x.geography)}, ${q(x.description)});`);
 
   const publisher = new Map(reference.issuers.map((i) => [i.slug, i.name]));
@@ -265,7 +268,7 @@ export function buildSeedSql(root: string): string {
         if (ticker && mic) oldKeys.set(`${mic}-${ticker}`, key);
         const full = prettyName(name.replace(/[®™]|<[^>]+>/g, ""));
         const pretty = cleanName(full);
-        const slugs = inferCategories(full);
+        const slugs = inferCategories(full, source);
         // A brand in the fund's name is a surer guide to the issuer than the register's legal entity, which can be a platform.
         // The register's issuer field sometimes holds a trading platform, a broker, or the fund itself. Those are not issuers.
         const notAnIssuer = /TRADEWEB|RESIDUAL|VIRTU |BLOOMBERG TRADING|\bCBOE\b|AQUIS|TURQUOISE|STOCK EXCHANGE|\bMTF\b|BROKER|\bETF\b|\bFUND\b(?! MANAGE)|\bUCITS\b/i.test(issuer) || issuer.toLowerCase() === name.toLowerCase();
