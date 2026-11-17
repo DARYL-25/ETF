@@ -12,6 +12,7 @@ import { drift } from "@/lib/portfolio/rebalance";
 import { COPILOT_EXAMPLES } from "@/lib/assistant/copilot";
 import { frequencyLabel } from "@/lib/format";
 import type { Portfolio } from "./portfolio-tools";
+import { netPositions } from "@/lib/portfolio/performance";
 
 /** Questions about the reader's own portfolio, answered from its computed figures. */
 export function Copilot({ portfolio, watch }: { portfolio: Portfolio; watch: Watchlist[] }) {
@@ -23,7 +24,7 @@ export function Copilot({ portfolio, watch }: { portfolio: Portfolio; watch: Wat
     if (q.trim().length < 2) return;
     setBusy(true);
     try {
-      const r = await fetch("/api/v1/portfolio/copilot", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question: q, positions: portfolio.positions.map((x) => ({ key: x.key, quantity: x.quantity })), watch: watch.flatMap((l) => l.items).filter((i) => i.seen).slice(0, 300) }) });
+      const r = await fetch("/api/v1/portfolio/copilot", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question: q, positions: netPositions(portfolio.positions), watch: watch.flatMap((l) => l.items).filter((i) => i.seen).slice(0, 300) }) });
       const b = await r.json();
       setAnswer(r.ok ? { q, lines: b.lines, text: b.text, aiUsed: b.aiUsed } : { q, lines: [b.error ?? t("Something went wrong. Try again.")], text: null, aiUsed: false });
     } catch {

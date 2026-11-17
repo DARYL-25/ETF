@@ -9,7 +9,7 @@ describe("tax notes", () => {
     for (const c of TAX_COUNTRIES) {
       for (const r of [...c.rules, ...c.wrappers]) {
         expect(r.sources.length, `${c.name}: ${"title" in r ? r.title : r.name}`).toBeGreaterThan(0);
-        for (const s of r.sources) expect(s.url).toMatch(/^https:\/\/([a-z0-9-]+\.)*(admin\.ch|gouv\.fr)\//);
+        for (const s of r.sources) expect(s.url).toMatch(/^https:\/\/([a-z0-9-]+\.)*(admin\.ch|gouv\.fr|gov\.uk|revenue\.ie|belgium\.be|wikifin\.be|gesetze-im-internet\.de|finanzamt\.nrw\.de|bmf\.gv\.at|usp\.gv\.at|cnmv\.es|agenziaentrate\.gov\.it)\//);
       }
     }
   });
@@ -33,7 +33,7 @@ describe("tax notes", () => {
   });
 
   it("has nothing to say for a country without written rules", () => {
-    expect(taxNotes(base, "DE")).toEqual([]);
+    expect(taxNotes(base, "NL")).toEqual([]);
   });
 });
 
@@ -48,5 +48,21 @@ describe("update policy", () => {
     const fresh = getFreshness();
     expect(fresh.find((f) => f.id === "prices")!.lastRun).toMatch(/^\d{4}-\d\d-\d\d$/);
     expect(fresh.find((f) => f.id === "list")!.lastRun).toMatch(/^\d{4}-\d\d-\d\d$/);
+  });
+});
+
+describe("more countries", () => {
+  it("covers nine countries, each rule with an official source and a read date", () => {
+    expect(TAX_COUNTRIES.map((c) => c.code).sort()).toEqual(["AT", "BE", "CH", "DE", "ES", "FR", "GB", "IE", "IT"]);
+  });
+  it("tells a German investor about the equity fund exemption and an Irish one about deemed disposal", () => {
+    expect(taxNotes({ ...base, asset_class: "equity" }, "DE").map((n) => n.text).join(" ")).toMatch(/30% of its income/);
+    expect(taxNotes(base, "IE").map((n) => n.text).join(" ")).toMatch(/every eight years/);
+    expect(taxNotes(base, "GB")[0].kind).toBe("check");
+  });
+  it("gives holding periods where the law sets one", () => {
+    const fr = TAX_COUNTRIES.find((c) => c.code === "FR")!;
+    expect(fr.wrappers.find((w) => w.name === "PEA")?.holding?.years).toBe(5);
+    expect(fr.wrappers.find((w) => w.name === "Assurance-vie")?.holding?.years).toBe(8);
   });
 });

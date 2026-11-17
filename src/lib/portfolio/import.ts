@@ -3,7 +3,7 @@
  * spreadsheet, or text taken out of a PDF statement. Nothing is guessed silently: every row says what it
  * found, and rows without an identifier and a quantity are reported, not dropped without a word.
  */
-export type ImportedRow = { line: number; identifier: string; quantity: number | null; price: number | null; date: string | null; note: string | null };
+export type ImportedRow = { line: number; identifier: string; quantity: number | null; price: number | null; date: string | null; note: string | null; side?: "buy" | "sell"; fee?: number | null };
 export type ImportResult = { rows: ImportedRow[]; skipped: { line: number; text: string; reason: string }[]; columns: Record<string, number | null> };
 
 const ISIN = /\b([A-Z]{2}[A-Z0-9]{9}\d)\b/;
@@ -53,6 +53,8 @@ export function parseDate(raw: string | undefined | null): string | null {
 }
 
 const HEADERS: Record<keyof Omit<ImportedRow, "line" | "note">, RegExp> = {
+  side: /^(side|type|sens|operation|opération|op[ée]ration type|action|buy\/sell|achat\/vente|transaction|transaktion|typ)$/i,
+  fee: /^(fee|fees|frais|commission|courtage|commissions|gebühr|gebühren|kosten|costs)$/i,
   identifier: /^(isin|code isin|ticker|symbol|symbole|mnémo|mnemo|code|valeur|instrument|wkn|security|titre)$/i,
   quantity: /^(quantity|qty|quantité|quantite|qté|qte|nombre|nb|shares|units|parts|anzahl|stück|stuck|position)$/i,
   price: /^(price|prix|prix moyen|pru|cost|avg price|average price|purchase price|prix d'achat|prix de revient|kurs|einstandskurs)$/i,
@@ -90,7 +92,7 @@ export function parsePositions(text: string): ImportResult {
   if (!sep) return parseLoose(lines);
   const table = lines.map((l) => splitLine(l, sep));
   const headerAt = table.findIndex((cells) => cells.some((c) => HEADERS.identifier.test(c)) && cells.some((c) => HEADERS.quantity.test(c)));
-  const columns: ImportResult["columns"] = { identifier: null, quantity: null, price: null, date: null };
+  const columns: ImportResult["columns"] = { identifier: null, quantity: null, price: null, date: null, side: null, fee: null };
   if (headerAt >= 0) {
     for (const [field, re] of Object.entries(HEADERS)) {
       // An ISIN column beats a name or ticker column when both are present.
@@ -108,8 +110,13 @@ export function parsePositions(text: string): ImportResult {
     }
     let qty = columns.quantity !== null ? parseNumber(cells[columns.quantity]) : null;
     if (qty === null && headerAt < 0) qty = cells.map(parseNumber).find((v, j) => v !== null && v > 0 && cells[j] !== id) ?? null;
-    if (!id || qty === null || qty <= 0) { skipped.push({ line: i + 1, text: lines[i].slice(0, 120), reason: !id ? "No ISIN or ticker found" : "No positive quantity found" }); return; }
-    rows.push({ line: i + 1, identifier: id.toUpperCase(), quantity: qty, price: columns.price !== null ? parseNumber(cells[columns.price]) : null, date: columns.date !== null ? parseDate(cells[columns.date]) : null, note: null });
+    const negative = qty !== null && qty < 0;
+    if (negative && columns.side === null) qty = Math.abs(qty!);
+    if (!id || qty === null || qty === 0) { skipped.push({ line: i + 1, text: lines[i].slice(0, 120), reason: !id ? "No ISIN or ticker found" : "No positive quantity found" }); return; }
+    const sideText = columns.side !== null ? (cells[columns.side] ?? "").toLowerCase() : "";
+    const sell = /sell|vente|vendu|verkauf|sale|cession|rachat/.test(sideText) || negative;
+    const price = columns.price !== null ? parseNumber(cells[columns.price]) : null;
+    rows.push({ line: i + 1, identifier: id.toUpperCase(), quantity: Math.abs(qty), price: price !== null ? Math.abs(price) : null, date: columns.date !== null ? parseDate(cells[columns.date]) : null, note: null, side: sell ? "sell" : "buy", fee: columns.fee !== null ? Math.abs(parseNumber(cells[columns.fee]) ?? 0) : null });
   });
   return { rows, skipped, columns };
 }
@@ -136,5 +143,5 @@ export function parseLoose(lines: string[]): ImportResult {
     if (qty === null) { skipped.push({ line: i + 1, text: line.slice(0, 120), reason: "No positive quantity found" }); return; }
     rows.push({ line: i + 1, identifier: isin, quantity: qty, price, date: null, note: "Read from text: check the quantity" });
   });
-  return { rows, skipped, columns: { identifier: null, quantity: null, price: null, date: null } };
+  return { rows, skipped, columns: { identifier: null, quantity: null, price: null, date: null, side: null, fee: null } };
 }

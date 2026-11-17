@@ -8,6 +8,7 @@ import { useLocal } from "./local-store";
 import type { Portfolio } from "./portfolio-tools";
 import type { FullReview } from "@/lib/portfolio/review-server";
 import type { Finding, Severity } from "@/lib/portfolio/doctor";
+import { netPositions } from "@/lib/portfolio/performance";
 
 /** The reader's saved portfolios and the one picked, from ?p= in the address or the first one. */
 export function usePickedPortfolio() {
@@ -35,7 +36,7 @@ export function PortfolioPicker({ portfolios, current, pick }: ReturnType<typeof
 export function useReview(current: Portfolio | null, costs: { spreadPct: number; orderFeeEur: number } = { spreadPct: 0.1, orderFeeEur: 2 }) {
   const [data, setData] = useState<FullReview | null>(null);
   const [loading, setLoading] = useState(false);
-  const positions = (current?.positions ?? []).map((x) => ({ key: x.key, quantity: x.quantity }));
+  const positions = netPositions(current?.positions ?? []);
   const signature = JSON.stringify([positions, costs]);
   useEffect(() => {
     if (!positions.length) { setData(null); return; }

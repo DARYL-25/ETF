@@ -8,7 +8,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Bookmark, Trash2 } from "lucide-react";
 import { formatDate, formatMoney, formatPct, formatSignedPct, MISSING } from "@/lib/format";
 import { useLocal } from "./local-store";
-import { ImportPanel, JournalPanel, RebalancePanel, ShareButton, type Portfolio } from "./portfolio-tools";
+import { AccountPanel, ImportPanel, JournalPanel, PerformancePanel, RebalancePanel, ShareButton, type Portfolio } from "./portfolio-tools";
+import { netPositions } from "@/lib/portfolio/performance";
 import { snapshotOf, type Change, type Snapshot } from "@/lib/portfolio/watch";
 
 type Row0 = { etf_key: string; name: string; ticker: string | null; isin: string | null; headline_fee_pct: number | null; fund_aum: number | null; fund_aum_currency: string | null; nav: number | null; nav_currency: string | null; nav_as_of: string | null; return_1y: number | null };
@@ -148,14 +149,14 @@ export function WatchChanges({ changes }: { changes: Change[] }) {
   );
 }
 
-export function PortfolioTracker() {
+export function PortfolioTracker({ lens = null }: { lens?: string | null }) {
   const t = useT();
   const [portfolios, save, inAccount] = useLocal<Portfolio[]>("portfolios", []);
   const keys = useMemo(() => [...new Set(portfolios.flatMap((p) => p.positions.map((x) => x.key)))], [portfolios]);
   const rows = useRows(keys);
   const [search, setSearch] = useState("");
   const [hits, setHits] = useState<{ etf_key: string; name: string; ticker: string | null }[]>([]);
-  const [draft, setDraft] = useState({ portfolio: "", key: "", name: "", quantity: 10, price: 100, date: new Date().toISOString().slice(0, 10) });
+  const [draft, setDraft] = useState({ portfolio: "", key: "", name: "", quantity: 10, price: 100, date: new Date().toISOString().slice(0, 10), side: "buy" as "buy" | "sell", fee: 0 });
 
   useEffect(() => {
     if (search.trim().length < 2) { setHits([]); return; }
@@ -165,7 +166,7 @@ export function PortfolioTracker() {
 
   const addPosition = (id: string) => {
     if (!draft.key || draft.quantity <= 0 || draft.price <= 0) return;
-    save(portfolios.map((p) => p.id !== id ? p : { ...p, positions: [...p.positions, { id: newId(), key: draft.key, quantity: draft.quantity, price: draft.price, date: draft.date }] }));
+    save(portfolios.map((p) => p.id !== id ? p : { ...p, positions: [...p.positions, { id: newId(), key: draft.key, quantity: draft.quantity, price: draft.price, date: draft.date, side: draft.side, fee: draft.fee }] }));
     setDraft({ ...draft, key: "", name: "" });
     setSearch("");
   };
@@ -176,9 +177,10 @@ export function PortfolioTracker() {
       <div><button type="button" className="btn btn-primary" onClick={() => save([...portfolios, { id: newId(), name: `Portfolio ${portfolios.length + 1}`, positions: [] }])}>{t("Create portfolio")}</button></div>
       {portfolios.length === 0 ? <p>{t("You have no portfolios yet.")}</p> : null}
       {portfolios.map((p) => {
+        const hasSales = p.positions.some((x) => x.side === "sell");
         const lines = p.positions.map((x) => {
           const r = rows[x.key];
-          const value = r?.nav != null ? r.nav * x.quantity : null;
+          const value = r?.nav != null && x.side !== "sell" ? r.nav * x.quantity : null;
           const cost = x.price * x.quantity;
           return { x, r, value, cost, gain: value != null ? value - cost : null };
         });
@@ -193,17 +195,18 @@ export function PortfolioTracker() {
               <input aria-label={t("Portfolio name")} className="field max-w-xs font-semibold" value={p.name} onChange={(e) => save(portfolios.map((o) => (o.id === p.id ? { ...o, name: e.target.value } : o)))} />
               <button type="button" className="btn btn-quiet" onClick={() => save(portfolios.filter((o) => o.id !== p.id))}>{t("Delete portfolio")}</button>
             </div>
-            {priced.length && single ? (
+            {priced.length && single && !hasSales ? (
               <p className="data mb-2 font-semibold" role="status">{t("Value ")}{totalValue.toLocaleString("en-GB", { maximumFractionDigits: 0 })} {single}, {totalValue - totalCost >= 0 ? "up" : "down"} {Math.abs(totalValue - totalCost).toLocaleString("en-GB", { maximumFractionDigits: 0 })} {single} ({formatSignedPct(((totalValue - totalCost) / totalCost) * 100)}){priced.length < lines.length ? t(", for the {n} of {total} positions with a NAV", { n: priced.length, total: lines.length }) : ""}</p>
             ) : priced.length ? <p className="mb-2 text-muted">{t("This portfolio mixes currencies, so no total is shown yet.")}</p> : null}
             {lines.length ? (
               <div className="overflow-x-auto">
                 <table className="table-data">
-                  <thead><tr><th>{t("ETF")}</th><th className="num">{t("Quantity")}</th><th className="num">{t("Your price")}</th><th className="num">{t("Latest NAV")}</th><th className="num">{t("Value")}</th><th className="num">{t("Gain or loss")}</th><th aria-label={t("Remove")} /></tr></thead>
+                  <thead><tr><th>{t("ETF")}</th><th>{t("Operation")}</th><th className="num">{t("Quantity")}</th><th className="num">{t("Your price")}</th><th className="num">{t("Latest NAV")}</th><th className="num">{t("Value")}</th><th className="num">{t("Gain or loss")}</th><th aria-label={t("Remove")} /></tr></thead>
                   <tbody>
                     {lines.map(({ x, r, value, gain }) => (
                       <tr key={x.id}>
-                        <td className="min-w-[14rem]"><Link className="font-medium no-underline hover:underline" href={`/etfs/${x.key}`}>{r?.name ?? x.key}</Link><span className="block text-[0.85rem] text-muted">{t("Bought ")}{formatDate(x.date, t.lang)}</span></td>
+                        <td className="min-w-[14rem]"><Link className="font-medium no-underline hover:underline" href={`/etfs/${x.key}`}>{r?.name ?? x.key}</Link><span className="block text-[0.85rem] text-muted">{x.side === "sell" ? t("Sold ") : t("Bought ")}{formatDate(x.date, t.lang)}</span></td>
+                        <td>{x.side === "sell" ? t("Sale") : t("Purchase")}{x.fee ? <span className="block text-[0.75rem] text-muted">{t("Fee")} {x.fee}</span> : null}</td>
                         <td className="num">{x.quantity}</td>
                         <td className="num">{x.price.toFixed(2)}</td>
                         <td className="num whitespace-nowrap">{r?.nav != null ? `${r.nav.toFixed(2)} ${r.nav_currency}` : MISSING}</td>
@@ -216,7 +219,7 @@ export function PortfolioTracker() {
                 </table>
               </div>
             ) : null}
-            <PortfolioInsight positions={p.positions.map((x) => ({ key: x.key, quantity: x.quantity }))} />
+            <PortfolioInsight positions={netPositions(p.positions)} />
             {p.positions.length ? (
               <p className="mt-3 flex flex-wrap gap-2">
                 <Link className="btn btn-quiet" href={`/portfolio/doctor?p=${p.id}`}>{t("Review this portfolio")}</Link>
@@ -224,13 +227,15 @@ export function PortfolioTracker() {
                 <Link className="btn btn-quiet" href={`/dashboard?p=${p.id}`}>{t("Open the dashboard")}</Link>
               </p>
             ) : null}
+            <PerformancePanel portfolio={p} rows={rows} />
+            <AccountPanel portfolio={p} lens={lens} onChange={(next) => save(portfolios.map((o) => (o.id === p.id ? next : o)))} />
             <RebalancePanel portfolio={p} rows={rows} onChange={(next) => save(portfolios.map((o) => (o.id === p.id ? next : o)))} />
             <JournalPanel portfolio={p} rows={rows} onChange={(next) => save(portfolios.map((o) => (o.id === p.id ? next : o)))} />
             <ImportPanel onImport={(positions) => save(portfolios.map((o) => (o.id === p.id ? { ...o, positions: [...o.positions, ...positions] } : o)))} />
             {p.positions.length ? <ShareButton portfolio={p} rows={rows} /> : null}
             <div className="mt-3 rounded-xl border border-line bg-surface p-3">
               <p className="mb-2 font-semibold">{t("Add a position")}</p>
-              <div className="grid gap-2 md:grid-cols-[2fr_1fr_1fr_1fr_auto]">
+              <div className="grid gap-2 md:grid-cols-[2fr_auto_1fr_1fr_0.7fr_1fr_auto]">
                 <div className="relative">
                   <input aria-label={t("Find an ETF")} placeholder={t("Find an ETF")} className="field" value={draft.portfolio === p.id ? (draft.name || search) : ""} onFocus={() => setDraft({ ...draft, portfolio: p.id })} onChange={(e) => { setDraft({ ...draft, portfolio: p.id, key: "", name: "" }); setSearch(e.target.value); }} />
                   {draft.portfolio === p.id && hits.length && !draft.key ? (
@@ -239,12 +244,14 @@ export function PortfolioTracker() {
                     </ul>
                   ) : null}
                 </div>
+                <select aria-label={t("Operation")} className="field" value={draft.side} onChange={(e) => setDraft({ ...draft, side: e.target.value as "buy" | "sell" })}><option value="buy">{t("Purchase")}</option><option value="sell">{t("Sale")}</option></select>
                 <input aria-label={t("Quantity")} className="field data" type="number" min="0" value={draft.quantity} onChange={(e) => setDraft({ ...draft, quantity: Number(e.target.value) })} />
                 <input aria-label={t("Purchase price")} className="field data" type="number" min="0" step="0.01" value={draft.price} onChange={(e) => setDraft({ ...draft, price: Number(e.target.value) })} />
+                <input aria-label={t("Fee")} placeholder={t("Fee")} className="field data" type="number" min="0" step="0.01" value={draft.fee} onChange={(e) => setDraft({ ...draft, fee: Math.max(0, Number(e.target.value)) })} />
                 <input aria-label={t("Purchase date")} className="field data" type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} />
                 <button type="button" className="btn btn-primary" disabled={!draft.key || draft.portfolio !== p.id} onClick={() => addPosition(p.id)}>{t("Add")}</button>
               </div>
-              <p className="mt-2 text-[0.85rem] text-muted">{t("Enter your price in the ETF's NAV currency. Value uses the latest issuer NAV, so ETFs without one show a dash.")}</p>
+              <p className="mt-2 text-[0.85rem] text-muted">{t("Enter each purchase and sale with its exact date, price and broker fee, in the ETF's NAV currency. Value uses the latest issuer NAV, so ETFs without one show a dash. Gains and the yearly return (XIRR) appear above.")}</p>
             </div>
           </section>
         );

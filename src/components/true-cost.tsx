@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { HORIZONS, trueCost, type CostInput } from "@/lib/tools/true-cost";
+import { CostChart } from "./cost-chart";
 
 type Fund = { key: string; name: string; fee: number; tracking: number; spread: number; currency: string | null; measured: number | null; gapAsOf: string | null };
 type Facts = { key: string; name: string; fee_pct: number | null; currency: string | null; tracking_beyond_fee_pct: number | null; gap_as_of: string | null };
@@ -124,6 +125,15 @@ export function TrueCostCalculator() {
                 ))}
               </tbody>
             </table>
+          </div>
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {results.map(({ f, chosen: r }, i) => (
+              <figure key={f.key} className="panel p-3" style={{ borderTop: `3px solid ${COLORS[i]}` }}>
+                <figcaption className="mb-1 text-[0.9rem] font-semibold">{f.name}</figcaption>
+                <CostChart series={r.yearly.map((p) => ({ year: p.year, noCost: p.noCost, value: p.value, paid: common.initial + common.monthly * 12 * p.year }))} start={{ noCost: common.initial, value: common.initial, paid: common.initial }} money={money} />
+                <p className="text-[0.8rem] text-muted">{t("Shaded: what fees, tracking, spreads, broker and currency costs take over the years. The thin line is what you paid in.")}</p>
+              </figure>
+            ))}
           </div>
           <h3 className="mt-5 font-semibold">{t("Total cost over each period")}</h3>
           <div className="mt-2 overflow-x-auto">

@@ -57,6 +57,11 @@ export default async function Page() {
         <ul className="mt-2 list-disc space-y-1.5 pl-5">{REVIEW_RULES.map((r) => <li key={r}>{t(r)}</li>)}</ul>
         <p className="mt-2">{t("Options to simplify appear where two funds overlap by 60% or more or share an index. The cheaper fund is kept, the larger one on a tie, and the switching cost counts the spread on both trades and two broker orders.")}</p>
       </section>
+      <section className="mt-8" id="find">
+        <h2 className="text-[1.3rem]">{t("FindMyETF and estimated tax cost")}</h2>
+        <p className="mt-1">{t("FindMyETF keeps the funds on the index or theme you chose that fit your account, then ranks them by an estimated yearly cost: the fund's fee, plus US dividend tax lost inside the fund (15% for Irish physical funds, 30% for physical funds domiciled elsewhere in Europe, none for swap-based funds), plus yearly tax on the fund's income in your account at the rate stated in the tax notes or the rate you enter. The dividend yield is the fund's own when known, otherwise 1.5% for shares and 3% for bonds. Tax on the final gain is described with the account's holding periods, not spread into the yearly figure.")}</p>
+        <p className="mt-2">{t("Strengths and weaknesses compare a fund with the others on its index, or its theme: fee against the median, size rank, age, listings, replication and domicile, and points specific to your country and account.")}</p>
+      </section>
       <section className="mt-8" id="watch">
         <h2 className="text-[1.3rem]">{t("Watchlist alerts")}</h2>
         <p className="mt-1">{t("When you add an ETF to a list, we keep its fee, size and name. Later visits report a fee change of 0.005 points or more, a fall in size of 25% or more, a rise of 50% or more, a new name, and a fund that is no longer in our database.")}</p>

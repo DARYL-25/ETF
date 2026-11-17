@@ -1,3 +1,4 @@
+import { accountsFor } from "@/lib/tax/drag";
 import { countryName } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import { use } from "react";
@@ -33,7 +34,7 @@ export default async function Page({ params }: Props) {
       <p className="mb-2"><Link href="/tax" className="prose-link">{t("Tax")}</Link></p>
       <PageTitle title={t("ETFs for a private investor in {country}", { country: countryName(c.code, t.lang) })}>{t(c.summary)}</PageTitle>
       <p className="mb-8 max-w-[76ch] rounded-xl bg-warn-bg px-3.5 py-2.5 text-warn-ink">
-        {t("General rules, read from official sources on ")}{formatDate(TAX_CHECKED_ON, t.lang)}{t(". No tax adviser has reviewed this page. It is not advice, and it does not replace the ")}{t(c.authority)}{t(" or a qualified adviser.")}
+        {t("General rules, read from official sources on ")}{formatDate(c.readOn ?? TAX_CHECKED_ON, t.lang)}{t(". No tax adviser has reviewed this page. It is not advice, and it does not replace the ")}{t(c.authority)}{t(" or a qualified adviser.")}
       </p>
 
       <section>
@@ -74,7 +75,8 @@ export default async function Page({ params }: Props) {
           </table>
         </div>
         <p className="mt-3 flex flex-wrap gap-2">
-          {c.code === "CH" ? <Link className="btn btn-primary" href="/screener?six=1">{t("ETFs listed on SIX")}</Link> : <Link className="btn btn-primary" href="/screener?pea=1">{t("ETFs presented as PEA-eligible")}</Link>}
+          {c.code === "CH" ? <Link className="btn btn-primary" href="/screener?six=1">{t("ETFs listed on SIX")}</Link> : c.code === "FR" ? <Link className="btn btn-primary" href="/screener?pea=1">{t("ETFs presented as PEA-eligible")}</Link> : null}
+          <Link className="btn" href={`/find?account=${accountsFor(c.code)[0]?.id ?? `${c.code}-NONE`}`}>{t("Find ETFs")}</Link>
           <Link className="btn btn-quiet" href={`/assistant?q=${encodeURIComponent(`MSCI World ETF for a ${c.adjective} investor`)}`}>{t("Ask for an investor in {country}", { country: countryName(c.code, t.lang) })}</Link>
         </p>
       </section>

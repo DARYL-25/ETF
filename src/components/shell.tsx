@@ -11,16 +11,17 @@ import { getLens } from "@/lib/lens-server";
 
 const MAIN: { href: string; label: string; also?: string[]; not?: string[]; wide?: boolean }[] = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/screener", label: "Screener", also: ["/etfs", "/launches"] },
+  { href: "/find", label: "FindMyETF" },
+  { href: "/screener", label: "Screener", also: ["/etfs", "/launches", "/fees"] },
   { href: "/themes", label: "Themes", wide: true },
-  { href: "/compare", label: "Compare" },
+  { href: "/compare", label: "Compare", wide: true },
   { href: "/tools", label: "Tools", also: ["/portfolio/doctor"] },
   { href: "/academy", label: "Learn" },
   { href: "/tax", label: "Tax", wide: true },
   { href: "/watchlists", label: "My lists", also: ["/portfolio"], not: ["/portfolio/doctor"] },
 ];
 const MORE = [
-  { href: "/dashboard", label: "Dashboard" }, { href: "/tools", label: "Tools" }, { href: "/portfolio/doctor", label: "Portfolio review" }, { href: "/tools/true-cost", label: "True cost" }, { href: "/tools/simulator", label: "Simulator" }, { href: "/launches", label: "New ETFs" },
+  { href: "/dashboard", label: "Dashboard" }, { href: "/tools", label: "Tools" }, { href: "/portfolio/doctor", label: "Portfolio review" }, { href: "/tools/true-cost", label: "True cost" }, { href: "/tools/simulator", label: "Simulator" }, { href: "/launches", label: "New ETFs" }, { href: "/find", label: "FindMyETF" }, { href: "/fees", label: "Fees by index" }, { href: "/compare", label: "Compare" },
   { href: "/assistant", label: "Ask" }, { href: "/themes", label: "Themes" }, { href: "/holdings", label: "Which ETFs hold it" }, { href: "/indices", label: "Indices" }, { href: "/tax", label: "Tax" }, { href: "/portfolio", label: "Portfolio" },
   { href: "/pricing", label: "Pricing" }, { href: "/profile", label: "Account" }, { href: "/data", label: "Data and updates" }, { href: "/methodology", label: "Methodology" },
 ];

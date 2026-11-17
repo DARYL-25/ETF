@@ -7,6 +7,8 @@ import { PageTitle } from "@/components/etf-bits";
 export const metadata: Metadata = { title: "Tools" };
 
 const TOOLS = [
+  { href: "/find", title: "FindMyETF", text: "Your country, your account and the index or theme you want: matching ETFs ranked by what they cost you a year, fees and tax included." },
+  { href: "/fees", title: "Fees by index and theme", text: "The median and average fee of every group of comparable ETFs, with the cheapest and the largest." },
   { href: "/dashboard", title: "Dashboard", text: "Your portfolio, what stands out in it, what changed on your watchlists, and questions answered from your own figures." },
   { href: "/portfolio/doctor", title: "Portfolio review", text: "The three biggest weaknesses of a portfolio, its overlaps and costs, and options to simplify it." },
   { href: "/tools/true-cost", title: "True ETF cost calculator", text: "Fee, tracking, spread, broker and currency conversion, in money over 5 to 30 years." },

@@ -21,7 +21,7 @@ export function collectKeys(root: string): string[] {
         for (const m of text.matchAll(/\bt\(\s*"((?:[^"\\]|\\.)*)"/g)) add(JSON.parse(`"${m[1]}"`));
         for (const m of text.matchAll(/\b(?:hint=|const (?:DEVICE|ACCOUNT)_NOTE = )"((?:[^"\\]|\\.)*)"/g)) add(JSON.parse(`"${m[1]}"`));
         // Files whose sentences are data rendered through t(): every prose string literal in them is a key.
-        if (/lib\/(portfolio\/(doctor|import|watch)|etfs\/(xray|quality)|tax\/envelopes|academy\/suggest|assistant\/copilot)\.ts$|components\/(portfolio-tools|portfolio-doctor|simulator|dashboard|portfolio-insight|quality-panel)\.tsx$|app\/(tools|methodology|tax\/envelopes)\/page\.tsx$/.test(path)) {
+        if (/lib\/(portfolio\/(doctor|import|watch|performance)|etfs\/(xray|quality|assess)|tax\/(envelopes|drag|replication)|academy\/suggest|assistant\/copilot)\.ts$|components\/(portfolio-tools|portfolio-doctor|simulator|dashboard|portfolio-insight|quality-panel)\.tsx$|app\/(tools|methodology|tax\/envelopes)\/page\.tsx$/.test(path)) {
           for (const m of text.split("\n").filter((l) => !l.includes("'\"'")).join("\n").matchAll(/"((?:[^"\\\n]|\\.)*)"/g)) {
             let v = "";
             try { v = JSON.parse(`"${m[1]}"`); } catch { continue; }
@@ -50,7 +50,7 @@ export function collectKeys(root: string): string[] {
   for (const c of TAX_COUNTRIES) {
     add(c.summary); add(c.authority);
     for (const r of c.rules) { add(r.title); add(r.body); add(r.why); }
-    for (const w of c.wrappers) { add(w.name); add(w.body); }
+    for (const w of c.wrappers) { add(w.name); add(w.body); add(w.holding?.effect); }
     for (const x of c.compare) { add(x.fact); add(x.matters); }
     for (const o of c.open) add(o);
   }

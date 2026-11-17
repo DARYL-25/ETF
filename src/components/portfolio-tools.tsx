@@ -6,17 +6,19 @@ import { useMemo, useRef, useState } from "react";
 import { Check, Copy, FileUp, Share2, Trash2 } from "lucide-react";
 import { drift } from "@/lib/portfolio/rebalance";
 import { encodeShared } from "@/lib/portfolio/share";
+import { netPositions, performance, milestones } from "@/lib/portfolio/performance";
+import { ACCOUNTS, accountById, holdingFor } from "@/lib/tax/drag";
 import { formatDate } from "@/lib/format";
 
-export type Position = { id: string; key: string; quantity: number; price: number; date: string };
+export type Position = { id: string; key: string; quantity: number; price: number; date: string; side?: "buy" | "sell"; fee?: number };
 export type JournalEntry = { id: string; date: string; key: string; action: "buy" | "sell" | "hold" | "note"; reason: string };
-export type Portfolio = { id: string; name: string; positions: Position[]; targets?: Record<string, number>; threshold?: number; journal?: JournalEntry[]; note?: string };
+export type Portfolio = { id: string; name: string; positions: Position[]; targets?: Record<string, number>; threshold?: number; journal?: JournalEntry[]; note?: string; account?: string; opened?: string };
 type Row = { name: string; nav: number | null; nav_currency: string | null };
 
 const newId = () => Math.random().toString(36).slice(2, 10);
 const today = () => new Date().toISOString().slice(0, 10);
 
-type Imported = { line: number; identifier: string; quantity: number; price: number | null; date: string | null; note: string | null; match: { key: string; name: string; nav_currency: string | null } | null };
+type Imported = { line: number; identifier: string; quantity: number; price: number | null; date: string | null; note: string | null; side?: "buy" | "sell"; fee?: number | null; match: { key: string; name: string; nav_currency: string | null } | null };
 
 /** Positions from a broker file or pasted cells. Every row is shown for checking before it is added. */
 export function ImportPanel({ onImport }: { onImport: (positions: Position[]) => void }) {
@@ -44,7 +46,7 @@ export function ImportPanel({ onImport }: { onImport: (positions: Position[]) =>
   const add = () => {
     if (!result) return;
     const rows = result.rows.filter((r) => r.match && picked[r.line]);
-    onImport(rows.map((r) => ({ id: newId(), key: r.match!.key, quantity: r.quantity, price: r.price ?? 0, date: r.date ?? today() })));
+    onImport(rows.map((r) => ({ id: newId(), key: r.match!.key, quantity: r.quantity, price: r.price ?? 0, date: r.date ?? today(), side: r.side ?? "buy", fee: r.fee ?? 0 })));
     setResult(null); setText("");
   };
   return (
@@ -64,15 +66,17 @@ export function ImportPanel({ onImport }: { onImport: (positions: Position[]) =>
           {result.rows.length ? (
             <div className="overflow-x-auto">
               <table className="table-data">
-                <thead><tr><th>{t("Add")}</th><th>{t("Found")}</th><th>{t("ETF")}</th><th className="num">{t("Quantity")}</th><th className="num">{t("Price")}</th><th>{t("Date")}</th></tr></thead>
+                <thead><tr><th>{t("Add")}</th><th>{t("Found")}</th><th>{t("ETF")}</th><th>{t("Operation")}</th><th className="num">{t("Quantity")}</th><th className="num">{t("Price")}</th><th className="num">{t("Fee")}</th><th>{t("Date")}</th></tr></thead>
                 <tbody>
                   {result.rows.map((r) => (
                     <tr key={r.line}>
                       <td><input type="checkbox" aria-label={t("Add this row")} className="accent-(--pine)" disabled={!r.match} checked={Boolean(picked[r.line])} onChange={(e) => setPicked({ ...picked, [r.line]: e.target.checked })} /></td>
                       <td className="data">{r.identifier}</td>
                       <td className="min-w-[12rem]">{r.match ? r.match.name : <span className="text-down">{t("Not in our database")}</span>}{r.note ? <span className="block text-[0.8rem] text-muted">{t(r.note)}</span> : null}</td>
+                      <td>{r.side === "sell" ? t("Sale") : t("Purchase")}</td>
                       <td className="num">{r.quantity}</td>
                       <td className="num">{r.price ?? "—"}</td>
+                      <td className="num">{r.fee ?? "—"}</td>
                       <td>{r.date ? formatDate(r.date, t.lang) : "—"}</td>
                     </tr>
                   ))}
@@ -95,7 +99,7 @@ export function RebalancePanel({ portfolio, rows, onChange }: { portfolio: Portf
   const [contribution, setContribution] = useState(0);
   const holdings = useMemo(() => {
     const by = new Map<string, number>();
-    for (const x of portfolio.positions) { const r = rows[x.key]; if (r?.nav != null) by.set(x.key, (by.get(x.key) ?? 0) + r.nav * x.quantity); }
+    for (const x of netPositions(portfolio.positions)) { const r = rows[x.key]; if (r?.nav != null) by.set(x.key, (by.get(x.key) ?? 0) + r.nav * x.quantity); }
     return [...by.entries()].map(([key, value]) => ({ key, name: rows[key]?.name ?? key, value }));
   }, [portfolio.positions, rows]);
   const currencies = new Set(portfolio.positions.map((x) => rows[x.key]?.nav_currency).filter(Boolean));
@@ -179,7 +183,7 @@ export function ShareButton({ portfolio, rows }: { portfolio: Portfolio; rows: R
   const [copied, setCopied] = useState(false);
   const make = () => {
     const by = new Map<string, number>();
-    for (const x of portfolio.positions) { const r = rows[x.key]; if (r?.nav != null) by.set(x.key, (by.get(x.key) ?? 0) + r.nav * x.quantity); }
+    for (const x of netPositions(portfolio.positions)) { const r = rows[x.key]; if (r?.nav != null) by.set(x.key, (by.get(x.key) ?? 0) + r.nav * x.quantity); }
     const total = [...by.values()].reduce((s, v) => s + v, 0);
     if (!total) return;
     const code = encodeShared({ name: portfolio.name, note: portfolio.note ?? "", weights: [...by.entries()].map(([k, v]) => [k, (v / total) * 100]) });
@@ -196,5 +200,84 @@ export function ShareButton({ portfolio, rows }: { portfolio: Portfolio; rows: R
         </div>
       ) : null}
     </div>
+  );
+}
+
+const pctFmt = (v: number | null) => (v === null ? "—" : `${v >= 0 ? "+" : ""}${(v * 100).toFixed(1)}%`);
+
+/** The account a portfolio sits in and its opening date, with the holding periods that follow from them. */
+export function AccountPanel({ portfolio, onChange, lens }: { portfolio: Portfolio; onChange: (p: Portfolio) => void; lens: string | null }) {
+  const t = useT();
+  const account = accountById(portfolio.account);
+  const holding = holdingFor(account);
+  const perPurchase = account?.id === "IE-BROKER";
+  const marks = milestones(account, portfolio.opened ?? null, portfolio.positions, holding?.years ?? null, perPurchase);
+  const options = ACCOUNTS.filter((a) => !lens || a.country === lens || a.id === portfolio.account);
+  return (
+    <details className="mt-3 rounded-xl border border-line bg-surface p-3" open={Boolean(account)}>
+      <summary className="cursor-pointer font-semibold">{t("Account and tax clock")}{account ? <span className="ml-2 text-muted">{t(account.label)}</span> : null}</summary>
+      <div className="mt-2 flex flex-wrap gap-3">
+        <label className="text-[0.85rem] text-muted">{t("Account type")}
+          <select className="field mt-1" value={portfolio.account ?? ""} onChange={(e) => onChange({ ...portfolio, account: e.target.value || undefined })}>
+            <option value="">{t("Not set")}</option>
+            {options.map((a) => <option key={a.id} value={a.id}>{a.country} · {t(a.label)}</option>)}
+          </select>
+        </label>
+        {!perPurchase ? <label className="text-[0.85rem] text-muted">{t("Opened on")}<input className="field mt-1" type="date" value={portfolio.opened ?? ""} onChange={(e) => onChange({ ...portfolio, opened: e.target.value || undefined })} /></label> : null}
+      </div>
+      {account ? <p className="mt-2">{t(account.note)}</p> : <p className="mt-2 text-muted">{t("Choose the account to see its tax clock. The country list follows the country chosen at the top of the page.")}</p>}
+      {holding?.effect ? <p className="mt-1">{t(holding.effect)}</p> : null}
+      {marks.length ? (
+        <ul className="mt-2 space-y-1">
+          {marks.slice(0, 12).map((m, i) => <li key={i} className={m.passed ? "text-up" : ""}>{m.key ? `${m.key} · ` : ""}{m.passed ? t("Reached on {date}", { date: formatDate(m.date, t.lang) }) : t("Reaches {years} years on {date}", { years: holding!.years, date: formatDate(m.date, t.lang) })}</li>)}
+        </ul>
+      ) : account && holding?.years && !perPurchase && !portfolio.opened ? <p className="mt-1 text-muted">{t("Enter the opening date to see when the period ends.")}</p> : null}
+    </details>
+  );
+}
+
+/** Gains, fees and the money-weighted return (XIRR) from the reader's own buys and sells. */
+export function PerformancePanel({ portfolio, rows }: { portfolio: Portfolio; rows: Record<string, Row> }) {
+  const t = useT();
+  const prices = Object.fromEntries(Object.entries(rows).map(([k, r]) => [k, { nav: r.nav, currency: r.nav_currency, name: r.name }]));
+  const perf = performance(portfolio.positions, prices);
+  const m = (v: number | null, ccy: string | null) => (v === null ? "—" : `${Math.round(v).toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB")}${ccy ? ` ${ccy}` : ""}`);
+  if (!perf.funds.length) return null;
+  return (
+    <details className="mt-3 rounded-xl border border-line bg-surface p-3" open>
+      <summary className="cursor-pointer font-semibold">{t("Performance from your transactions")}</summary>
+      <div className="mt-2 grid gap-3 md:grid-cols-3">
+        {perf.currencies.map((c) => (
+          <div key={c.currency} className="rounded-xl bg-sunken p-3">
+            <p className="text-[0.85rem] text-muted">{t("In {ccy}", { ccy: c.currency })}</p>
+            <p className="stat-value">{pctFmt(c.xirr)}<span className="ml-1 text-[0.8rem] font-normal text-muted">{t("a year (XIRR)")}</span></p>
+            <p className="text-[0.9rem]">{t("Paid in {in}, taken out {out}, worth {value}: gain {gain}.", { in: m(c.paidIn, null), out: m(c.takenOut, null), value: m(c.value, null), gain: m(c.gain, null) })}</p>
+            {!c.complete ? <p className="text-[0.8rem] text-muted">{t("Some funds have no NAV, so the return is not shown.")}</p> : null}
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 overflow-x-auto">
+        <table className="table-data">
+          <thead><tr><th>{t("ETF")}</th><th className="num">{t("Units held")}</th><th className="num">{t("Average cost")}</th><th className="num">{t("Value")}</th><th className="num">{t("Unrealised")}</th><th className="num">{t("Realised")}</th><th className="num">{t("Fees paid")}</th><th className="num">{t("XIRR")}</th><th className="num">{t("Held for")}</th></tr></thead>
+          <tbody>
+            {perf.funds.map((f) => (
+              <tr key={f.key}>
+                <td className="min-w-[12rem]">{f.name}</td>
+                <td className="num">{Number(f.held.toFixed(4))}</td>
+                <td className="num">{f.avgCost === null ? "—" : f.avgCost.toFixed(2)}</td>
+                <td className="num">{m(f.value, f.currency)}</td>
+                <td className={`num ${f.unrealised === null ? "" : f.unrealised >= 0 ? "text-up" : "text-down"}`}>{m(f.unrealised, null)}</td>
+                <td className={`num ${f.realised >= 0 ? "" : "text-down"}`}>{f.realised ? m(f.realised, null) : "—"}</td>
+                <td className="num">{f.fees ? f.fees.toFixed(2) : "—"}</td>
+                <td className="num">{pctFmt(f.xirr)}</td>
+                <td className="num whitespace-nowrap">{f.days === null ? "—" : f.days >= 365 ? t("{n} years", { n: (f.days / 365.25).toFixed(1) }) : t("{n} days", { n: f.days })}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {perf.warnings.map((w) => <p key={w.text + JSON.stringify(w.vars)} className="mt-1 text-[0.85rem] text-muted">{t(w.text, w.vars)}</p>)}
+      <p className="mt-2 text-[0.82rem] text-muted">{t("Average cost method; fees are added to purchases and deducted from sales. XIRR is the yearly return that balances your payments, withdrawals and today's value at their dates; it is shown once a fund has been held for more than a day. Values use the latest NAV in the fund's currency, before tax.")}</p>
+    </details>
   );
 }

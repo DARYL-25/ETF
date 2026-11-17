@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CompareToggle } from "@/components/compare-tray";
 import { Change, EtfName, Fee, PageTitle } from "@/components/etf-bits";
+import { GroupFeeLine } from "@/components/group-fee-line";
+import { themeStats } from "@/lib/etfs/stats";
 import { Mosaic } from "@/components/mosaic";
 import { getHoldingsSummary, getThemeCommon, getTopHoldingsFull, largestWithHoldings } from "@/lib/etfs/holdings";
 import { shortName } from "@/lib/etfs/treemap";
@@ -56,6 +58,7 @@ export default async function ThemePage({ params, searchParams }: Props) {
     <div>
       <p className="mb-2"><Link className="prose-link" href="/themes">{t("Themes")}</Link></p>
       <PageTitle title={t("{theme} ETFs", { theme: t(theme.label) })}>{t(theme.blurb)}</PageTitle>
+      <GroupFeeLine stats={await themeStats(theme.slug)} find={`/find?theme=${theme.slug}`} />
       {theme.caution ? <p className="mb-5 max-w-[72ch] rounded-xl bg-warn-bg px-3.5 py-2.5 text-warn-ink">{t(theme.caution)}</p> : null}
 
       <div className="mb-3 flex flex-wrap items-center gap-2" role="group" aria-label={t("Market")}>

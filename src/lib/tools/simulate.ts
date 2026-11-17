@@ -58,6 +58,8 @@ export type SimResult = {
   /** Share of paths where the money lasts through the withdrawal years. Null without a withdrawal phase. */
   lastsPct: number | null;
   deterministic: number;
+  /** What the fund fees take over the saving years, at the expected return: no-fee value minus value after fees. */
+  feeCost: number;
 };
 
 /** Mulberry32: a small seeded generator, so the same inputs always show the same result. */
@@ -134,6 +136,9 @@ export function simulate(x: SimInput): SimResult {
   const r = Math.pow(1 + expected / 100, 1 / 12) - 1;
   let det = x.initial;
   for (let m = 0; m < months; m++) det = det * (1 + r) + x.monthly;
+  const r0 = Math.pow(1 + (expected + x.feePct) / 100, 1 / 12) - 1;
+  let noFee = x.initial;
+  for (let m = 0; m < months; m++) noFee = noFee * (1 + r0) + x.monthly;
   return {
     expectedPct: expected, volPct: stats.volPct, bands,
     end: { p10: quantile(sorted, 0.1), p50: quantile(sorted, 0.5), p90: quantile(sorted, 0.9), p10Real: quantile(sorted, 0.1) / deflate, p50Real: quantile(sorted, 0.5) / deflate, p90Real: quantile(sorted, 0.9) / deflate },
@@ -141,5 +146,6 @@ export function simulate(x: SimInput): SimResult {
     drawdown: { median: quantile(dd, 0.5), p90: quantile(dd, 0.9) },
     lastsPct: wMonths > 0 ? (lasted / paths) * 100 : null,
     deterministic: det,
+    feeCost: noFee - det,
   };
 }

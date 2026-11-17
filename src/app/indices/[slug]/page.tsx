@@ -6,6 +6,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CompareToggle } from "@/components/compare-tray";
 import { EtfName, Fee, PageTitle } from "@/components/etf-bits";
+import { GroupFeeLine } from "@/components/group-fee-line";
+import { indexStats } from "@/lib/etfs/stats";
 import { getIndex } from "@/lib/etfs/queries";
 import { returnGaps } from "@/lib/etfs/cost";
 import { Change } from "@/components/etf-bits";
@@ -35,6 +37,7 @@ export default async function IndexPage({ params, searchParams }: Props) {
   return (
     <div>
       <PageTitle title={index.name}>{t(index.description ?? "")}</PageTitle>
+      <GroupFeeLine stats={await indexStats(index.slug, index.name)} find={`/find?index=${index.slug}`} />
       <dl className="mb-6 flex flex-wrap gap-x-8 gap-y-1">
         <div><dt className="inline text-muted">{t("Provider: ")}</dt><dd className="inline">{index.provider}</dd></div>
         <div><dt className="inline text-muted">{t("Asset class: ")}</dt><dd className="inline">{t(assetClassLabel(index.asset_class))}</dd></div>

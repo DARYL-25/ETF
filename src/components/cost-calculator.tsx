@@ -2,7 +2,8 @@
 
 import { useT } from "@/lib/i18n/client";
 import { useState } from "react";
-import { feeImpact } from "@/lib/academy/calc";
+import { feeImpact, futureValue } from "@/lib/academy/calc";
+import { CostChart } from "./cost-chart";
 
 /** Turns a yearly fee into money, on an amount and period the reader chooses. An illustration, not a forecast. */
 export function CostCalculator({ feePct, cheapestPct, currency }: { feePct: number; cheapestPct: number | null; currency: string }) {
@@ -29,6 +30,7 @@ export function CostCalculator({ feePct, cheapestPct, currency }: { feePct: numb
           {cheapest !== null ? <> {t("The cheapest fund on the same index, at {fee}%, would take about", { fee: cheapestPct!.toFixed(2) })} <strong className="data">{money(cheapest)}</strong>.</> : null}
         </p>
       ) : <p className="mt-3 text-muted">{t("Enter an amount, a period of 1 to 60 years and a growth rate.")}</p>}
+      {valid ? <div className="mt-2"><CostChart series={Array.from({ length: years }, (_, i) => ({ year: i + 1, noCost: futureValue(amount, 0, growth, i + 1), value: futureValue(amount, 0, growth, i + 1) - feeImpact(amount, 0, growth, feePct, i + 1).cost }))} start={{ noCost: amount, value: amount }} money={money} label={t("Growth with and without this fee")} /></div> : null}
       <p className="mt-2 text-[0.82rem] text-muted">{t("An illustration with a constant growth rate you choose. Real returns vary, and the fee is not the only cost: see how funds on the same index actually compared on the index page.")}</p>
     </div>
   );

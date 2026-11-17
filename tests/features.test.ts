@@ -31,7 +31,7 @@ describe("import", () => {
   });
   it("finds columns by their French or English names", () => {
     const r = parsePositions("Libellé;Code ISIN;Quantité;PRU;Date\niShares Core MSCI World;IE00B4L5Y983;12,5;80,10;03/02/2025\nTotal;;;;\n");
-    expect(r.rows).toEqual([{ line: 2, identifier: "IE00B4L5Y983", quantity: 12.5, price: 80.1, date: "2025-02-03", note: null }]);
+    expect(r.rows).toEqual([{ line: 2, identifier: "IE00B4L5Y983", quantity: 12.5, price: 80.1, date: "2025-02-03", note: null, side: "buy", fee: null }]);
     expect(r.skipped).toHaveLength(1);
   });
   it("reads tab-separated cells copied from a spreadsheet", () => {
@@ -196,5 +196,87 @@ describe("statement text", () => {
   it("does not take numbers in a fund's name for a quantity", () => {
     const r = parseLoose(["SPDR S&P 500 UCITS ETF Dist IE00B6YX5C33 Qté 6 Cours 758,56", "SPDR Trust US78462F1030 10 757,04"]);
     expect(r.rows.map((x) => [x.quantity, x.price])).toEqual([[6, 758.56], [10, 757.04]]);
+  });
+});
+
+import { xirr, performance, netPositions, milestones } from "@/lib/portfolio/performance";
+import { taxDrag, ACCOUNTS, fitsAccount, usWithholdingRate, accountById } from "@/lib/tax/drag";
+import { replicationAdvice } from "@/lib/tax/replication";
+import { aiChat } from "@/lib/ai/provider";
+
+describe("performance", () => {
+  it("solves XIRR for a simple doubling", () => {
+    expect(xirr([{ date: "2020-01-01", amount: -100 }, { date: "2030-01-01", amount: 200 }])!).toBeCloseTo(Math.pow(2, 1 / 10) - 1, 3);
+    expect(xirr([{ date: "2020-01-01", amount: -100 }])).toBeNull();
+  });
+  it("tracks average cost, realised gains and fees", () => {
+    const p = performance([
+      { key: "A", quantity: 10, price: 100, date: "2024-01-01", fee: 2 },
+      { key: "A", quantity: 10, price: 120, date: "2025-01-01", fee: 2 },
+      { key: "A", quantity: 5, price: 150, date: "2025-06-01", side: "sell", fee: 1 },
+    ], { A: { nav: 160, currency: "EUR", name: "Fund A" } }, "2026-01-01");
+    const a = p.funds[0];
+    expect(a.held).toBe(15);
+    expect(a.avgCost).toBeCloseTo((2204 - 5 * 110.2) / 15);
+    expect(a.realised).toBeCloseTo(5 * 150 - 1 - 5 * 110.2);
+    expect(a.fees).toBe(5);
+    expect(a.xirr!).toBeGreaterThan(0.1);
+    expect(p.currencies[0].gain).toBeCloseTo(15 * 160 + 749 - 2204);
+  });
+  it("nets sells and dates holding periods", () => {
+    expect(netPositions([{ key: "A", quantity: 10, price: 1, date: "2024-01-01" }, { key: "A", quantity: 4, price: 1, date: "2025-01-01", side: "sell" }])).toEqual([{ key: "A", quantity: 6 }]);
+    expect(milestones({ id: "FR-PEA" }, "2022-03-10", [], 5, false, "2026-11-17")).toEqual([{ key: null, from: "2022-03-10", date: "2027-03-10", passed: false }]);
+    expect(milestones({ id: "IE-BROKER" }, null, [{ key: "A", quantity: 1, price: 1, date: "2018-05-01" }], 8, true, "2026-11-17")[0].passed).toBe(true);
+  });
+});
+
+describe("tax drag", () => {
+  const row = { headline_fee_pct: 0.07, distribution_policy: "distributing", replication: "physical_full", isin: "IE00B5BMR087", domicile: "IE", asset_class: "equity", index_slug: "sp-500", trailing_yield_pct: null, name: "Example S&P 500 UCITS ETF" };
+  const cto = ACCOUNTS.find((a) => a.id === "FR-CTO")!, pea = ACCOUNTS.find((a) => a.id === "FR-PEA")!;
+  it("adds US withholding and yearly tax on payouts in a taxable account", () => {
+    const d = taxDrag({ row, account: cto });
+    expect(d.parts.find((p) => p.id === "withholding")!.pct).toBeCloseTo(1.5 * 0.15);
+    expect(d.parts.find((p) => p.id === "income")!.pct).toBeCloseTo(1.5 * 0.314);
+    expect(taxDrag({ row, account: pea }).parts.find((p) => p.id === "income")).toBeUndefined();
+  });
+  it("knows synthetic funds avoid US withholding and US funds cannot go in EU accounts", () => {
+    expect(usWithholdingRate({ ...row, replication: "synthetic_swap" })).toBe(0);
+    expect(usWithholdingRate({ ...row, isin: "LU0000000000" })).toBe(30);
+    expect(fitsAccount({ name: "SPY", pea_eligible: null, ucits: null, isin: "US78462F1030" }, cto)).toBe("no");
+  });
+  it("advises synthetic for US shares and in a PEA for non-European indices", () => {
+    expect(replicationAdvice({ usSharePct: 100, european: false, account: cto, yieldPct: 1.5 }).verdict).toBe("synthetic");
+    expect(replicationAdvice({ usSharePct: 0, european: true, account: cto, yieldPct: 3 }).verdict).toBe("physical");
+    expect(replicationAdvice({ usSharePct: 70, european: false, account: pea, yieldPct: 1.5 }).points[0].text).toMatch(/PEA/);
+  });
+});
+
+describe("AI provider", () => {
+  it("speaks the OpenAI-compatible format for open-source models, tools included", async () => {
+    const seen: { url: string; body: Record<string, unknown> }[] = [];
+    const fake = (async (url: string, init: { body: string }) => {
+      seen.push({ url, body: JSON.parse(init.body) });
+      return new Response(JSON.stringify({ choices: [{ message: { content: null, tool_calls: [{ id: "c1", function: { name: "search_etfs", arguments: "{\"request\":\"S&P 500\"}" } }] } }] }), { status: 200 });
+    }) as unknown as typeof fetch;
+    const r = await aiChat({ system: "S", turns: [{ role: "user", text: "hi" }], tools: [{ name: "search_etfs", description: "d", input_schema: { type: "object" } }], config: { provider: "openai", model: "qwen3:14b", baseUrl: "http://localhost:11434/v1", key: null }, fetchFn: fake });
+    expect(seen[0].url).toBe("http://localhost:11434/v1/chat/completions");
+    expect((seen[0].body.messages as { role: string }[])[0].role).toBe("system");
+    expect(r).toEqual({ ok: true, text: "", toolCalls: [{ id: "c1", name: "search_etfs", input: { request: "S&P 500" } }] });
+  });
+});
+
+describe("import of sales and fees", () => {
+  it("reads the operation and fee columns, and negative quantities as sales", () => {
+    const r = parsePositions("ISIN;Sens;Quantité;Cours;Frais;Date\nIE00B4L5Y983;Achat;10;80;1,50;03/02/2025\nIE00B4L5Y983;Vente;4;95;1;05/06/2026");
+    expect(r.rows.map((x) => [x.side, x.quantity, x.fee])).toEqual([["buy", 10, 1.5], ["sell", 4, 1]]);
+    expect(parsePositions("ISIN\tQty\nIE00B4L5Y983\t-3").rows[0]).toMatchObject({ side: "sell", quantity: 3 });
+  });
+});
+
+describe("account fit for funds listed outside Europe", () => {
+  it("excludes a fund with no ISIN that is not UCITS outside Switzerland", () => {
+    const row = { name: "iShares S&P 500 ETF", isin: null, ucits: null, pea_eligible: null };
+    expect(fitsAccount(row as never, accountById("FR-CTO"))).toBe("no");
+    expect(fitsAccount(row as never, accountById("CH-SEC"))).toBe("check");
   });
 });

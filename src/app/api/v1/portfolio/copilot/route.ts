@@ -6,6 +6,7 @@ import { fundExposures, recentMoves, watchChanges } from "@/lib/etfs/portfolio-d
 import { answerLocally, COPILOT_SYSTEM, type CopilotContext } from "@/lib/assistant/copilot";
 import { getLens } from "@/lib/lens-server";
 import { makeT, pickLang } from "@/lib/i18n";
+import { aiChat, aiConfig } from "@/lib/ai/provider";
 
 const body = z.object({ question: z.string().min(2).max(500), positions: positionsSchema, watch: watchSchema.optional() });
 
@@ -26,8 +27,8 @@ export async function POST(request: NextRequest) {
   const ctx: CopilotContext = { insight: full.insight, review: full.review, exposures, moves, watch, alternatives: full.alternatives };
   const local = answerLocally(parsed.data.question, ctx);
   const lines = local.lines.map((l) => t(l.text, l.vars));
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) return NextResponse.json({ topic: local.topic, lines, text: null, aiUsed: false });
+  const config = aiConfig();
+  if (!config) return NextResponse.json({ topic: local.topic, lines, text: null, aiUsed: false });
   try {
     const summary = {
       value_eur: Math.round(full.insight.total_eur), blended_fee_pct: full.insight.fee_pct, seen_through_pct: full.insight.look.covered_pct,
@@ -36,14 +37,9 @@ export async function POST(request: NextRequest) {
       us_pct: full.insight.xray.us_pct, tech_pct: full.insight.xray.tech_pct, currencies: full.insight.xray.currencies.slice(0, 5),
       weaknesses: full.review.weaknesses.map((w) => t(w.detail, w.vars)), exposures, moves, watch_changes: watch.map((c) => t(c.text, c.vars)),
     };
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: process.env.ASSISTANT_MODEL ?? "claude-haiku-5-5", max_tokens: 500, system: COPILOT_SYSTEM, messages: [{ role: "user", content: `QUESTION: ${parsed.data.question}\n\nCONTEXT: ${JSON.stringify(summary)}\n\nDRAFT_ANSWER: ${lines.join(" ")}` }] }),
-    });
-    if (!res.ok) return NextResponse.json({ topic: local.topic, lines, text: null, aiUsed: false });
-    const out = (await res.json()) as { content: { type: string; text?: string }[] };
-    const text = out.content.filter((c) => c.type === "text").map((c) => c.text).join("\n").trim();
+    const reply = await aiChat({ system: COPILOT_SYSTEM, config, maxTokens: 500, turns: [{ role: "user", text: `QUESTION: ${parsed.data.question}\n\nCONTEXT: ${JSON.stringify(summary)}\n\nDRAFT_ANSWER: ${lines.join(" ")}` }] });
+    if (!reply.ok) return NextResponse.json({ topic: local.topic, lines, text: null, aiUsed: false });
+    const text = reply.text;
     return NextResponse.json({ topic: local.topic, lines, text: text || null, aiUsed: Boolean(text) });
   } catch {
     return NextResponse.json({ topic: local.topic, lines, text: null, aiUsed: false });

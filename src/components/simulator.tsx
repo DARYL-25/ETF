@@ -7,6 +7,7 @@ import { ASSET_CLASSES, DEFAULT_ASSUMPTIONS, simulate, type AssetClass, type Ass
 import { useLocal } from "./local-store";
 import type { Portfolio } from "./portfolio-tools";
 import type { PortfolioInsight } from "@/lib/etfs/portfolio";
+import { netPositions } from "@/lib/portfolio/performance";
 
 const LABEL: Record<AssetClass, string> = { equity: "Shares", fixed_income: "Bonds", money_market: "Money market", commodities: "Commodities" };
 type Strategy = { name: string; mix: Mix; fee: number };
@@ -63,7 +64,7 @@ export function Simulator() {
   const fromPortfolio = async (id: string) => {
     const p = portfolios.find((x) => x.id === id);
     if (!p?.positions.length) return;
-    const r = await fetch("/api/v1/portfolio/insight", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ positions: p.positions.map((x) => ({ key: x.key, quantity: x.quantity })) }) });
+    const r = await fetch("/api/v1/portfolio/insight", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ positions: netPositions(p.positions) }) });
     if (!r.ok) return;
     const ins = (await r.json()) as PortfolioInsight;
     const mix: Mix = {};
@@ -94,6 +95,7 @@ export function Simulator() {
     ["Typical largest fall along the way", (r) => `−${r.drawdown.median.toFixed(0)}%`],
     ["Largest fall, 1 in 10 bad case", (r) => `−${r.drawdown.p90.toFixed(0)}%`],
     ["Constant return, no ups and downs", (r) => money(r.deterministic)],
+    ["Fund fees paid over the period", (r) => money(r.feeCost)],
   ];
   if (plan.withdrawYears > 0 && plan.withdrawMonthly > 0) rows.push(["Money lasts through the withdrawals", (r) => (r.lastsPct === null ? "—" : `${r.lastsPct.toFixed(0)}%`)]);
 

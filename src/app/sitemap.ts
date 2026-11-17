@@ -24,7 +24,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...TAX_COUNTRIES.map((c) => page(`/tax/${c.slug}`, 0.8, "monthly")),
     ...LESSONS.map((l) => page(`/academy/${l.slug}`, 0.6, "monthly")),
     ...indices.map((i) => page(`/indices/${i.slug}`, 0.8, "weekly")),
-    page("/themes", 0.9, "weekly"), page("/tools", 0.7, "monthly"), page("/tools/true-cost", 0.7, "monthly"), page("/tools/simulator", 0.7, "monthly"), page("/portfolio/doctor", 0.6, "monthly"), page("/launches", 0.7, "weekly"), page("/tax/envelopes", 0.8, "monthly"), page("/methodology", 0.4, "monthly"), page("/legal/terms", 0.2, "monthly"), page("/legal/privacy", 0.2, "monthly"), page("/legal/notice", 0.2, "monthly"),
+    page("/themes", 0.9, "weekly"), page("/tools", 0.7, "monthly"), page("/tools/true-cost", 0.7, "monthly"), page("/tools/simulator", 0.7, "monthly"), page("/portfolio/doctor", 0.6, "monthly"), page("/launches", 0.7, "weekly"), page("/tax/envelopes", 0.8, "monthly"), page("/methodology", 0.4, "monthly"), page("/find", 0.9, "weekly"), page("/fees", 0.8, "weekly"), page("/legal/terms", 0.2, "monthly"), page("/legal/privacy", 0.2, "monthly"), page("/legal/notice", 0.2, "monthly"),
     ...THEMES.map((x) => page(`/themes/${x.slug}`, 0.8, "weekly")),
     ...etfs.map((e) => page(`/etfs/${encodeURIComponent(e.etf_key)}`, e.rich ? 0.6 : 0.3, "weekly")),
   ];

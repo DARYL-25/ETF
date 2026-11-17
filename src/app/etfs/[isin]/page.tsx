@@ -20,6 +20,12 @@ import { envelopeFit } from "@/lib/tax/envelopes";
 import { peerFacts } from "@/lib/etfs/peers";
 import { cheaperOnSameIndex } from "@/lib/etfs/alternatives";
 import { QualityPanel } from "@/components/quality-panel";
+import { peerPosition } from "@/lib/etfs/stats";
+import { assessEtf } from "@/lib/etfs/assess";
+import { fundExposures } from "@/lib/etfs/portfolio-data";
+import { replicationAdvice, isEuropeanIndex } from "@/lib/tax/replication";
+import { DEFAULT_YIELD } from "@/lib/tax/drag";
+import { ProsCons } from "@/components/pros-cons";
 import { MISSING, exchangeName, assetClassLabel, countryName, distributionLabel, formatDate, formatMoney, formatPct, frequencyLabel, productLabel, replicationLabel, styleLabel, yesNoUnknown } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -97,7 +103,7 @@ async function LensCard({ row }: { row: EtfRow }) {
     return (
       <section className="panel p-4">
         <h2 className="text-[1.05rem]">{t("Where do you live?")}</h2>
-        <p className="mt-1.5 text-muted">{t("Choose your country at the top of the page, and this panel shows what matters there for this fund. Tax notes cover Switzerland and France so far.")}</p>
+        <p className="mt-1.5 text-muted">{t("Choose your country at the top of the page, and this panel shows what matters there for this fund. Tax notes cover nine European countries so far.")}</p>
       </section>
     );
   }
@@ -109,7 +115,7 @@ async function LensCard({ row }: { row: EtfRow }) {
           <li>{row.ucits ? t("UCITS fund, the kind brokers in Europe can generally offer to private investors.") : lens.code === "US" ? t("Check that your broker offers this fund.") : t("Not marked UCITS, so check that your broker can offer it to you.")}</li>
           <li>{t("Fund currency {fund}. Your home currency is {home}.", { fund: row.currency ?? t("not known"), home: lens.currency })}</li>
         </ul>
-        <p className="mt-2 text-[0.85rem] text-muted">{t("Tax notes are written for Switzerland and France so far.")}</p>
+        <p className="mt-2 text-[0.85rem] text-muted">{t("Tax notes cover Switzerland, France, the United Kingdom, Germany, Ireland, Belgium, Spain, Italy and Austria so far.")}</p>
       </section>
     );
   }
@@ -139,7 +145,7 @@ async function LensCard({ row }: { row: EtfRow }) {
           {country.code === "FR" ? <p className="mt-1.5 text-[0.85rem]"><Link className="prose-link" href="/tax/envelopes">{t("Compare the French accounts")}</Link></p> : null}
         </>
       ) : null}
-      <p className="mt-3 text-[0.85rem] text-muted">{t("General rules read from official sources on ")}{formatDate(TAX_CHECKED_ON, t.lang)}{t(". No tax adviser has reviewed them, and they are not advice for your situation. ")}<Link className="prose-link" href={`/tax/${country.slug}`}>{t("All notes for {country}", { country: countryName(country.code, t.lang) })}</Link></p>
+      <p className="mt-3 text-[0.85rem] text-muted">{t("General rules read from official sources on ")}{formatDate(country.readOn ?? TAX_CHECKED_ON, t.lang)}{t(". No tax adviser has reviewed them, and they are not advice for your situation. ")}<Link className="prose-link" href={`/tax/${country.slug}`}>{t("All notes for {country}", { country: countryName(country.code, t.lang) })}</Link></p>
     </section>
   );
 }
@@ -157,6 +163,10 @@ export default async function EtfPage({ params }: Props) {
     researched ? getPriceSeries(isin) : null, getSimilarEtfs(row), researched ? getFeePoints() : [], researched ? getTopHoldings(row.fund_key!) : [], getDailyPoints(key),
     peerFacts(row), cheaperOnSameIndex([row], 4),
   ]);
+  const [peers, exposure, lensNow] = await Promise.all([peerPosition(row), fundExposures([{ key, name: row.name }]), getLens()]);
+  const usShare = exposure[0]?.us_pct ?? null;
+  const assessment = assessEtf(row, peers, { country: lensNow?.code ?? null, usSharePct: usShare });
+  const replication = row.asset_class === "equity" || !row.asset_class ? replicationAdvice({ usSharePct: usShare ?? (row.index_slug === "sp-500" || row.index_slug === "nasdaq-100" ? 100 : null), european: isEuropeanIndex(row), account: null, yieldPct: row.trailing_yield_pct ?? DEFAULT_YIELD.equity }) : null;
   const full = await getHoldingsSummary(row.etf_key ?? key);
   const [fullTop, fullSectors, fullCountries] = full ? await Promise.all([getTopHoldingsFull(full.etf_key, 64), getBreakdown(full.etf_key, "sector"), getBreakdown(full.etf_key, "country")]) : [[], [], []];
   const sectors = exposures.filter((x) => x.dimension === "sector");
@@ -378,6 +388,10 @@ export default async function EtfPage({ params }: Props) {
               </div>
             </Section>
           ) : null}
+
+          <Section id="pros-cons" title={t("Strengths and weaknesses")}>
+            <ProsCons assessment={assessment} peers={peers} replication={replication} />
+          </Section>
 
           <Section id="quality" title={t("Quality score")}>
             <QualityPanel quality={facts.quality} />
