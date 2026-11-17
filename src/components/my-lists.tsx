@@ -8,11 +8,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Bookmark, Trash2 } from "lucide-react";
 import { formatDate, formatMoney, formatPct, formatSignedPct, MISSING } from "@/lib/format";
 import { useLocal } from "./local-store";
+import { ImportPanel, JournalPanel, RebalancePanel, ShareButton, type Portfolio } from "./portfolio-tools";
+import { snapshotOf, type Change, type Snapshot } from "@/lib/portfolio/watch";
 
-type Row = { etf_key: string; name: string; ticker: string | null; isin: string | null; headline_fee_pct: number | null; fund_aum: number | null; fund_aum_currency: string | null; nav: number | null; nav_currency: string | null; nav_as_of: string | null; return_1y: number | null };
-type Watchlist = { id: string; name: string; items: { key: string; note: string }[] };
-type Position = { id: string; key: string; quantity: number; price: number; date: string };
-type Portfolio = { id: string; name: string; positions: Position[] };
+type Row0 = { etf_key: string; name: string; ticker: string | null; isin: string | null; headline_fee_pct: number | null; fund_aum: number | null; fund_aum_currency: string | null; nav: number | null; nav_currency: string | null; nav_as_of: string | null; return_1y: number | null };
+type Row = Row0 & { size_eur?: number | null; fund_aum_eur?: number | null };
+export type WatchItem = { key: string; note: string; seen?: Snapshot };
+export type Watchlist = { id: string; name: string; items: WatchItem[] };
 
 const newId = () => Math.random().toString(36).slice(2, 10);
 
@@ -35,7 +37,14 @@ export function SaveToWatchlist({ etfKey }: { etfKey: string }) {
   const t = useT();
   const [lists, save] = useLocal<Watchlist[]>("watchlists", []);
   const inList = lists.filter((l) => l.items.some((i) => i.key === etfKey));
-  const toggle = (id: string) => save(lists.map((l) => l.id !== id ? l : { ...l, items: l.items.some((i) => i.key === etfKey) ? l.items.filter((i) => i.key !== etfKey) : [...l.items, { key: etfKey, note: "" }] }));
+  const seen = async (): Promise<Snapshot | undefined> => {
+    try { const b = await (await fetch(`/api/v1/etfs/batch?keys=${encodeURIComponent(etfKey)}`)).json(); const r = (b.rows as Row[])[0]; return r ? snapshotOf(r) : undefined; } catch { return undefined; }
+  };
+  const toggle = async (id: string) => {
+    const adding = !lists.find((l) => l.id === id)?.items.some((i) => i.key === etfKey);
+    const snap = adding ? await seen() : undefined;
+    save(lists.map((l) => l.id !== id ? l : { ...l, items: adding ? [...l.items, { key: etfKey, note: "", seen: snap }] : l.items.filter((i) => i.key !== etfKey) }));
+  };
   return (
     <details className="relative">
       <summary className="btn btn-quiet cursor-pointer list-none"><Bookmark size={16} aria-hidden /> {inList.length ? `In ${inList.length} watchlist${inList.length > 1 ? "s" : ""}` : t("Add to watchlist")}</summary>
@@ -45,7 +54,7 @@ export function SaveToWatchlist({ etfKey }: { etfKey: string }) {
             <input type="checkbox" className="accent-(--pine)" checked={l.items.some((i) => i.key === etfKey)} onChange={() => toggle(l.id)} />{l.name}
           </label>
         ))}
-        <button type="button" className="prose-link mt-1 cursor-pointer" onClick={() => save([...lists, { id: newId(), name: `Watchlist ${lists.length + 1}`, items: [{ key: etfKey, note: "" }] }])}>{t("Create a list with this ETF")}</button>
+        <button type="button" className="prose-link mt-1 cursor-pointer" onClick={async () => save([...lists, { id: newId(), name: `Watchlist ${lists.length + 1}`, items: [{ key: etfKey, note: "", seen: await seen() }] }])}>{t("Create a list with this ETF")}</button>
       </div>
     </details>
   );
@@ -57,6 +66,12 @@ export function Watchlists() {
   const keys = useMemo(() => [...new Set(lists.flatMap((l) => l.items.map((i) => i.key)))], [lists]);
   const rows = useRows(keys);
   const update = (id: string, change: Partial<Watchlist>) => save(lists.map((l) => (l.id === id ? { ...l, ...change } : l)));
+  // Items saved before snapshots existed get one now, so their changes are tracked from today.
+  useEffect(() => {
+    if (!Object.keys(rows).length || !lists.some((l) => l.items.some((i) => !i.seen && rows[i.key]))) return;
+    save(lists.map((l) => ({ ...l, items: l.items.map((i) => (i.seen || !rows[i.key] ? i : { ...i, seen: snapshotOf(rows[i.key]) })) })));
+  }, [rows, lists, save]);
+  const changes = useWatchChanges(lists);
   const move = (index: number, by: number) => {
     const next = [...lists];
     const [item] = next.splice(index, 1);
@@ -67,6 +82,7 @@ export function Watchlists() {
     <div className="flex flex-col gap-6">
       <p className="text-muted">{t(inAccount ? ACCOUNT_NOTE : DEVICE_NOTE)}</p>
       <div><button type="button" className="btn btn-primary" onClick={() => save([...lists, { id: newId(), name: `Watchlist ${lists.length + 1}`, items: [] }])}>{t("Create watchlist")}</button></div>
+      <WatchChanges changes={changes} />
       {lists.length === 0 ? <p>{t("You have no watchlists yet. Create one here, or use Add to watchlist on any ETF page.")}</p> : null}
       {lists.map((list, index) => (
         <section key={list.id}>
@@ -101,6 +117,33 @@ export function Watchlists() {
           )}
         </section>
       ))}
+    </div>
+  );
+}
+
+/** What changed for the watched ETFs since they were added, worked out on the server from today's records. */
+export function useWatchChanges(lists: Watchlist[]) {
+  const [changes, setChanges] = useState<Change[]>([]);
+  const items = lists.flatMap((l) => l.items).filter((i) => i.seen);
+  const signature = JSON.stringify(items.map((i) => [i.key, i.seen]));
+  useEffect(() => {
+    if (!items.length) { setChanges([]); return; }
+    const controller = new AbortController();
+    fetch("/api/v1/watch", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ items: items.slice(0, 300) }), signal: controller.signal })
+      .then((r) => (r.ok ? r.json() : { changes: [] })).then((b) => setChanges(b.changes)).catch(() => undefined);
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signature]);
+  return changes;
+}
+
+export function WatchChanges({ changes }: { changes: Change[] }) {
+  const t = useT();
+  if (!changes.length) return null;
+  return (
+    <div className="rounded-xl bg-warn-bg px-3.5 py-2.5 text-warn-ink" role="status">
+      <p className="font-semibold">{t("What changed since you added them")}</p>
+      <ul className="mt-1 list-disc space-y-0.5 pl-5">{changes.slice(0, 12).map((c, i) => <li key={c.key + c.kind + i}>{t(c.text, { ...c.vars, since: formatDate(c.vars.since, t.lang) })}</li>)}</ul>
     </div>
   );
 }
@@ -174,6 +217,17 @@ export function PortfolioTracker() {
               </div>
             ) : null}
             <PortfolioInsight positions={p.positions.map((x) => ({ key: x.key, quantity: x.quantity }))} />
+            {p.positions.length ? (
+              <p className="mt-3 flex flex-wrap gap-2">
+                <Link className="btn btn-quiet" href={`/portfolio/doctor?p=${p.id}`}>{t("Review this portfolio")}</Link>
+                <Link className="btn btn-quiet" href={`/tools/simulator?p=${p.id}`}>{t("Simulate its future")}</Link>
+                <Link className="btn btn-quiet" href={`/dashboard?p=${p.id}`}>{t("Open the dashboard")}</Link>
+              </p>
+            ) : null}
+            <RebalancePanel portfolio={p} rows={rows} onChange={(next) => save(portfolios.map((o) => (o.id === p.id ? next : o)))} />
+            <JournalPanel portfolio={p} rows={rows} onChange={(next) => save(portfolios.map((o) => (o.id === p.id ? next : o)))} />
+            <ImportPanel onImport={(positions) => save(portfolios.map((o) => (o.id === p.id ? { ...o, positions: [...o.positions, ...positions] } : o)))} />
+            {p.positions.length ? <ShareButton portfolio={p} rows={rows} /> : null}
             <div className="mt-3 rounded-xl border border-line bg-surface p-3">
               <p className="mb-2 font-semibold">{t("Add a position")}</p>
               <div className="grid gap-2 md:grid-cols-[2fr_1fr_1fr_1fr_auto]">

@@ -9,7 +9,7 @@ import { currentPlan } from "@/lib/billing/plan";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Pricing" };
 
-const FREE = ["Every ETF, with its source and date", "Screener, index pages and search", "Ask in plain words, ranked for your country", "Compare 2 ETFs side by side", "Lessons, calculators and tax notes", "Watchlists and a practice portfolio, kept on this device"];
+const FREE = ["Every ETF, with its source and date", "Screener, index pages and search", "Ask in plain words, ranked for your country", "Compare 2 ETFs side by side", "Lessons, calculators and tax notes", "Watchlists and a practice portfolio, kept on this device", "Portfolio X-Ray, review and dashboard", "True cost calculator and portfolio simulator"];
 const PREMIUM = ["Everything in Free", "Compare up to 5 ETFs side by side", "Export any screener search to CSV", "Supports independent, ad-free research"];
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ state?: string }> }) {

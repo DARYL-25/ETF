@@ -22,6 +22,7 @@ const FR_PV: Source = { label: "impots.gouv.fr, how a gain on securities is taxe
 const FR_SP: Source = { label: "service-public.gouv.fr, income tax on savings and investment income, verified 12 March 2026", url: "https://www.service-public.gouv.fr/particuliers/vosdroits/F2613" };
 const FR_PEA: Source = { label: "service-public.gouv.fr, plan d'épargne en actions, verified 22 May 2026", url: "https://www.service-public.gouv.fr/particuliers/vosdroits/F2385" };
 const FR_AV: Source = { label: "service-public.gouv.fr, how income from a life insurance contract is taxed, verified 1 January 2026", url: "https://www.service-public.gouv.fr/particuliers/vosdroits/F22414" };
+const FR_PER: Source = { label: "service-public.gouv.fr, plan d'épargne retraite (PER)", url: "https://www.service-public.gouv.fr/particuliers/vosdroits/F34982" };
 const FR_PEA_ECO: Source = { label: "economie.gouv.fr, what is a PEA", url: "https://www.economie.gouv.fr/particuliers/plan-epargne-actions-pea" };
 
 export const TAX_COUNTRIES: TaxCountry[] = [
@@ -57,6 +58,7 @@ export const TAX_COUNTRIES: TaxCountry[] = [
       { name: "PEA", body: "Deposits are capped at €150,000. It holds European company shares, and funds that keep at least 75% in eligible European securities. After five years, gains are exempt from income tax. Social levies apply whatever the withdrawal date. A withdrawal before five years normally closes the plan, and the net gain is then taxed at 12.8% unless you opt for the scale.", sources: [FR_PEA, FR_PEA_ECO] },
       { name: "Assurance-vie", body: "ETFs are held as units inside the contract, when the insurer offers them. For premiums paid since 27 September 2017, gains withdrawn before the contract is eight years old are taxed at 12.8%. After eight years, a yearly allowance of €4,600, or €9,200 for a couple, applies across all contracts, then 7.5% on gains from premiums up to €150,000 and 12.8% above. You can opt for the income tax scale. Social levies on life insurance are stated at 17.2%. The page warns that the 2026 Finance Law may change these rules.", sources: [FR_AV] },
       { name: "Compte-titres ordinaire", body: "No limit on deposits or on which ETFs you can hold. Dividends and gains follow the flat tax or, on option, the income tax scale.", sources: [FR_PV, FR_SP] },
+      { name: "PER", body: "The plan d'épargne retraite has existed since 1 October 2019, as an individual plan and two company plans. Voluntary payments can be deducted from taxable income within a yearly ceiling. Savings are in principle locked until retirement, apart from early releases the law allows. At exit, the tax depends on whether payments were deducted and on taking capital or an annuity. ETFs are available only when the provider offers them.", sources: [FR_PER] },
     ],
     compare: [
       { fact: "PEA eligibility", matters: "Decided fund by fund and published by the issuer. Some ETFs on world or US indices qualify because they hold European shares and swap the performance." },

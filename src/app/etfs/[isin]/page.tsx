@@ -16,6 +16,10 @@ import { getLens } from "@/lib/lens-server";
 import { CostCalculator } from "@/components/cost-calculator";
 import { getBreakdown, getHoldingsSummary, getTopHoldingsFull } from "@/lib/etfs/holdings";
 import { TAX_CHECKED_ON, taxCountry, taxNotes } from "@/lib/tax/content";
+import { envelopeFit } from "@/lib/tax/envelopes";
+import { peerFacts } from "@/lib/etfs/peers";
+import { cheaperOnSameIndex } from "@/lib/etfs/alternatives";
+import { QualityPanel } from "@/components/quality-panel";
 import { MISSING, exchangeName, assetClassLabel, countryName, distributionLabel, formatDate, formatMoney, formatPct, frequencyLabel, productLabel, replicationLabel, styleLabel, yesNoUnknown } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -121,6 +125,20 @@ async function LensCard({ row }: { row: EtfRow }) {
           </li>
         ))}
       </ul>
+      {envelopeFit(row, country.code).length ? (
+        <>
+          <h3 className="mt-4 font-semibold">{t("Which account it fits")}</h3>
+          <ul className="mt-1.5 space-y-1.5">
+            {envelopeFit(row, country.code).map((e) => (
+              <li key={e.envelope} className="flex items-start justify-between gap-3">
+                <span>{t(e.envelope)}<span className="block text-[0.82rem] text-muted">{t(e.reason)}</span></span>
+                <span className={`flex-none rounded-full px-2 py-0.5 text-[0.8rem] ${e.status === "yes" ? "bg-pine text-pine-ink" : e.status === "no" ? "bg-down/10 text-down" : "bg-sunken text-muted"}`}>{e.status === "yes" ? t("Yes") : e.status === "no" ? t("No") : e.status === "likely" ? t("Likely") : t("To check")}</span>
+              </li>
+            ))}
+          </ul>
+          {country.code === "FR" ? <p className="mt-1.5 text-[0.85rem]"><Link className="prose-link" href="/tax/envelopes">{t("Compare the French accounts")}</Link></p> : null}
+        </>
+      ) : null}
       <p className="mt-3 text-[0.85rem] text-muted">{t("General rules read from official sources on ")}{formatDate(TAX_CHECKED_ON, t.lang)}{t(". No tax adviser has reviewed them, and they are not advice for your situation. ")}<Link className="prose-link" href={`/tax/${country.slug}`}>{t("All notes for {country}", { country: countryName(country.code, t.lang) })}</Link></p>
     </section>
   );
@@ -134,9 +152,10 @@ export default async function EtfPage({ params }: Props) {
   const key = row.etf_key ?? row.isin!;
   const isin = row.isin;
 
-  const [listings, exposures, bond, series, similar, feePoints, topHoldings, daily] = await Promise.all([
+  const [listings, exposures, bond, series, similar, feePoints, topHoldings, daily, facts, cheaper] = await Promise.all([
     researched ? getListings(isin!) : [], researched ? getExposures(row.fund_key!) : [], researched ? getBondMetrics(row.fund_key!) : [],
     researched ? getPriceSeries(isin) : null, getSimilarEtfs(row), researched ? getFeePoints() : [], researched ? getTopHoldings(row.fund_key!) : [], getDailyPoints(key),
+    peerFacts(row), cheaperOnSameIndex([row], 4),
   ]);
   const full = await getHoldingsSummary(row.etf_key ?? key);
   const [fullTop, fullSectors, fullCountries] = full ? await Promise.all([getTopHoldingsFull(full.etf_key, 64), getBreakdown(full.etf_key, "sector"), getBreakdown(full.etf_key, "country")]) : [[], [], []];
@@ -357,6 +376,32 @@ export default async function EtfPage({ params }: Props) {
                   </tbody>
                 </table>
               </div>
+            </Section>
+          ) : null}
+
+          <Section id="quality" title={t("Quality score")}>
+            <QualityPanel quality={facts.quality} />
+          </Section>
+
+          {cheaper[key]?.length ? (
+            <Section id="alternatives" title={t("Cheaper alternatives")}>
+              <p className="mb-2 max-w-[68ch] text-muted">{t("Funds on the same index that charge less, with the same income policy and currency hedging. Compare tracking, size and listings too before switching.")}</p>
+              <div className="overflow-x-auto">
+                <table className="table-data">
+                  <thead><tr><th>{t("ETF")}</th><th className="num">{t("Yearly fee")}</th><th className="num">{t("Fee difference")}</th><th className="num">{t("Size")}</th></tr></thead>
+                  <tbody>
+                    {cheaper[key].map((a) => (
+                      <tr key={a.key}>
+                        <td className="min-w-[14rem]"><Link className="font-medium no-underline hover:underline" href={`/etfs/${a.key}`}>{a.name}</Link>{a.same_fund ? <span className="block text-[0.8rem] text-muted">{t("Another share class of the same fund")}</span> : null}</td>
+                        <td className="num">{a.fee_pct.toFixed(2)}%</td>
+                        <td className="num">−{(row.headline_fee_pct! - a.fee_pct).toFixed(2)}</td>
+                        <td className="num whitespace-nowrap">{formatMoney(a.size_eur, "EUR", t.lang)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-2 text-[0.85rem]"><Link className="prose-link" href={`/tools/true-cost?a=${encodeURIComponent(key)}&b=${encodeURIComponent(cheaper[key][0].key)}`}>{t("Compare the true cost of both")}</Link></p>
             </Section>
           ) : null}
 
