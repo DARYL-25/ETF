@@ -16,7 +16,7 @@
   "ok": true,
   "result": {
    "uk": {
-    "etfs": 925,
+    "etfs": 926,
     "unmatched": 6,
     "unmatched_sample": [
      "IE00B4NCWG09",
@@ -44,7 +44,7 @@
    "not_in_universe": 0
   }
  },
- "fees": 1775,
- "fund_size": 1775,
- "on": "2026-11-17"
+ "fees": 1776,
+ "fund_size": 1776,
+ "on": "2026-11-18"
 }
