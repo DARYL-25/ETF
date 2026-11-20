@@ -20,6 +20,14 @@ export function collectKeys(root: string): string[] {
         const text = readFileSync(path, "utf8");
         for (const m of text.matchAll(/\bt\(\s*"((?:[^"\\]|\\.)*)"/g)) add(JSON.parse(`"${m[1]}"`));
         for (const m of text.matchAll(/\b(?:hint=|const (?:DEVICE|ACCOUNT)_NOTE = )"((?:[^"\\]|\\.)*)"/g)) add(JSON.parse(`"${m[1]}"`));
+        // Files whose sentences are data rendered through t(): every prose string literal in them is a key.
+        if (/lib\/(portfolio\/(doctor|import|watch|performance)|etfs\/(xray|quality|assess)|tax\/(envelopes|drag|replication)|academy\/suggest|assistant\/copilot)\.ts$|components\/(portfolio-tools|portfolio-doctor|simulator|dashboard|portfolio-insight|quality-panel)\.tsx$|app\/(tools|methodology|tax\/envelopes)\/page\.tsx$/.test(path)) {
+          for (const m of text.split("\n").filter((l) => !l.includes("'\"'")).join("\n").matchAll(/"((?:[^"\\\n]|\\.)*)"/g)) {
+            let v = "";
+            try { v = JSON.parse(`"${m[1]}"`); } catch { continue; }
+            if (/^[A-Z{]/.test(v) && /[a-z]{2}/.test(v) && !/^[A-Z0-9_]{2,6}$/.test(v) && !/:\/\//.test(v) && !/^[A-Z][a-z]+[A-Z]/.test(v)) add(v);
+          }
+        }
         // Label tables that are translated where they are rendered.
         if (/components\/(shell|palette|assistant)\.tsx$|app\/(pricing|compare|data)\/page\.tsx$|etfs\/screener-params\.ts$|lib\/format\.ts$|components\/etf-bits\.tsx$/.test(path)) {
           for (const m of text.matchAll(/(?:label|title): "((?:[^"\\]|\\.)*)"/g)) add(JSON.parse(`"${m[1]}"`));
@@ -42,7 +50,7 @@ export function collectKeys(root: string): string[] {
   for (const c of TAX_COUNTRIES) {
     add(c.summary); add(c.authority);
     for (const r of c.rules) { add(r.title); add(r.body); add(r.why); }
-    for (const w of c.wrappers) { add(w.name); add(w.body); }
+    for (const w of c.wrappers) { add(w.name); add(w.body); add(w.holding?.effect); }
     for (const x of c.compare) { add(x.fact); add(x.matters); }
     for (const o of c.open) add(o);
   }

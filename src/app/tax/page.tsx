@@ -30,7 +30,7 @@ export default async function Page() {
       <section className="mt-10 max-w-[70ch]">
         <h2 className="text-[1.3rem]">{t("How to read these notes")}</h2>
         <ul className="mt-3 list-disc space-y-1.5 pl-5">
-          <li>{t("They were read from official sources on ")}{formatDate(TAX_CHECKED_ON, t.lang)}{t(". No tax adviser has reviewed them yet.")}</li>
+          <li>{t("They were read from official sources between ")}{formatDate(TAX_CHECKED_ON, t.lang)}{t(" and ")}{formatDate("2026-11-17", t.lang)}{t(". No tax adviser has reviewed them yet.")}</li>
           <li>{t("They describe general rules. They do not calculate your tax, and they are not advice for your situation.")}</li>
           <li>{t("Tax has layers: inside the fund, on what it pays you, and on what you gain when you sell. A note says which layer it covers.")}</li>
           <li>{t("Other countries are not written yet. For them, an ETF page shows only structural facts such as domicile and income treatment.")}</li>

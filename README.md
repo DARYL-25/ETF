@@ -30,6 +30,17 @@ On GitHub, choose **Code**, then **Codespaces**, then **Create codespace**. Wait
 - **Tax notes** for Switzerland and France, each rule quoted from an official source, including PEA and assurance-vie
 - **Learn**: lessons with quizzes, a glossary and calculators
 - **Watchlists and a practice portfolio** with look-through, overlap warnings and yearly cost. Kept in the browser, and in the account when signed in
+- **Dashboard**: one portfolio at a glance, what needs attention, watchlist changes, distributions and lessons matched to what it holds
+- **Portfolio X-Ray**: concentration in the largest companies, US, technology and currency exposure, with plain sentences built from the numbers
+- **Portfolio review**: the three biggest weaknesses, every finding with its rule, cheaper funds on the same index, and options to fold overlapping funds with their switching cost
+- **Copilot**: questions about your own portfolio answered from computed figures; AI only rephrases them when `ANTHROPIC_API_KEY` is set
+- **Import** positions from a CSV, Excel or PDF broker statement, or pasted cells, with every row checked before it is added
+- **Target allocation and rebalancing**, an **investment journal**, and **public links** that share each fund's share only
+- **True cost calculator**: fee, tracking, spread, broker and currency conversion, in money over 5 to 30 years, for up to three ETFs
+- **Simulator**: saving and withdrawing, 2,000 random paths, inflation, two strategies side by side, with editable assumptions
+- **Quality score** and **cheaper alternatives** on every ETF page, and **which account it fits** (PEA, compte-titres, assurance-vie, PER, Swiss 3a)
+- **Watchlist alerts**: fee changes, funds shrinking, renamed, or gone from the database (possible closure or merger)
+- **New ETFs**: recent launches, and **French accounts compared**, and a **methodology** page for every score and rule
 - **Data and updates**: the refresh schedule with each job's last run
 - Sign-in through Supabase and subscriptions through Stripe, both off until configured
 - Public JSON API under `/api/v1`

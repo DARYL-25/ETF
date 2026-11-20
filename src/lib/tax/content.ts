@@ -1,4 +1,5 @@
 import type { EtfRow } from "@/lib/etfs/queries";
+import { MORE_COUNTRIES, MORE_SOURCES } from "./countries-more";
 
 /**
  * Tax notes for private investors. Every rule quotes an official source and the day we read it.
@@ -9,10 +10,12 @@ export const TAX_CHECKED_ON = "2026-11-14";
 
 export type Source = { label: string; url: string };
 export type Rule = { title: string; body: string; why: string; sources: Source[] };
-export type Wrapper = { name: string; body: string; sources: Source[] };
+export type Wrapper = { name: string; body: string; sources: Source[]; holding?: { years: number; effect: string } };
 export type TaxCountry = {
   code: string; slug: string; name: string; adjective: string; authority: string;
   summary: string; rules: Rule[]; wrappers: Wrapper[]; compare: { fact: string; matters: string }[]; open: string[];
+  /** The day these rules were read from their sources, when it differs from TAX_CHECKED_ON. */
+  readOn?: string;
 };
 
 const ESTV_TAXES: Source = { label: "Federal Tax Administration, taxes in force, law as of 1 January 2026", url: "https://www.estv2.admin.ch/stp/ds/c-geltende-steuern-de.pdf" };
@@ -22,6 +25,7 @@ const FR_PV: Source = { label: "impots.gouv.fr, how a gain on securities is taxe
 const FR_SP: Source = { label: "service-public.gouv.fr, income tax on savings and investment income, verified 12 March 2026", url: "https://www.service-public.gouv.fr/particuliers/vosdroits/F2613" };
 const FR_PEA: Source = { label: "service-public.gouv.fr, plan d'épargne en actions, verified 22 May 2026", url: "https://www.service-public.gouv.fr/particuliers/vosdroits/F2385" };
 const FR_AV: Source = { label: "service-public.gouv.fr, how income from a life insurance contract is taxed, verified 1 January 2026", url: "https://www.service-public.gouv.fr/particuliers/vosdroits/F22414" };
+const FR_PER: Source = { label: "service-public.gouv.fr, plan d'épargne retraite (PER)", url: "https://www.service-public.gouv.fr/particuliers/vosdroits/F34982" };
 const FR_PEA_ECO: Source = { label: "economie.gouv.fr, what is a PEA", url: "https://www.economie.gouv.fr/particuliers/plan-epargne-actions-pea" };
 
 export const TAX_COUNTRIES: TaxCountry[] = [
@@ -54,9 +58,10 @@ export const TAX_COUNTRIES: TaxCountry[] = [
       { title: "You can opt for the income tax scale", body: "The option is made in the income tax return by ticking box 2OP, and it applies to all your investment income and gains for the year. It gives access to the 40% allowance on eligible dividends, which the flat tax does not.", why: "The option can help households in low tax brackets. It is all or nothing for the year.", sources: [FR_PV, FR_SP] },
     ],
     wrappers: [
-      { name: "PEA", body: "Deposits are capped at €150,000. It holds European company shares, and funds that keep at least 75% in eligible European securities. After five years, gains are exempt from income tax. Social levies apply whatever the withdrawal date. A withdrawal before five years normally closes the plan, and the net gain is then taxed at 12.8% unless you opt for the scale.", sources: [FR_PEA, FR_PEA_ECO] },
-      { name: "Assurance-vie", body: "ETFs are held as units inside the contract, when the insurer offers them. For premiums paid since 27 September 2017, gains withdrawn before the contract is eight years old are taxed at 12.8%. After eight years, a yearly allowance of €4,600, or €9,200 for a couple, applies across all contracts, then 7.5% on gains from premiums up to €150,000 and 12.8% above. You can opt for the income tax scale. Social levies on life insurance are stated at 17.2%. The page warns that the 2026 Finance Law may change these rules.", sources: [FR_AV] },
+      { name: "PEA", holding: { years: 5, effect: "After five years from the plan's opening, withdrawals no longer close it and gains are free of income tax; social levies still apply." }, body: "Deposits are capped at €150,000. It holds European company shares, and funds that keep at least 75% in eligible European securities. After five years, gains are exempt from income tax. Social levies apply whatever the withdrawal date. A withdrawal before five years normally closes the plan, and the net gain is then taxed at 12.8% unless you opt for the scale.", sources: [FR_PEA, FR_PEA_ECO] },
+      { name: "Assurance-vie", holding: { years: 8, effect: "After eight years from the contract's opening, a yearly allowance applies to gains withdrawn and the rate falls." }, body: "ETFs are held as units inside the contract, when the insurer offers them. For premiums paid since 27 September 2017, gains withdrawn before the contract is eight years old are taxed at 12.8%. After eight years, a yearly allowance of €4,600, or €9,200 for a couple, applies across all contracts, then 7.5% on gains from premiums up to €150,000 and 12.8% above. You can opt for the income tax scale. Social levies on life insurance are stated at 17.2%. The page warns that the 2026 Finance Law may change these rules.", sources: [FR_AV] },
       { name: "Compte-titres ordinaire", body: "No limit on deposits or on which ETFs you can hold. Dividends and gains follow the flat tax or, on option, the income tax scale.", sources: [FR_PV, FR_SP] },
+      { name: "PER", holding: { years: 0, effect: "Locked until retirement, apart from early releases the law allows." }, body: "The plan d'épargne retraite has existed since 1 October 2019, as an individual plan and two company plans. Voluntary payments can be deducted from taxable income within a yearly ceiling. Savings are in principle locked until retirement, apart from early releases the law allows. At exit, the tax depends on whether payments were deducted and on taking capital or an annuity. ETFs are available only when the provider offers them.", sources: [FR_PER] },
     ],
     compare: [
       { fact: "PEA eligibility", matters: "Decided fund by fund and published by the issuer. Some ETFs on world or US indices qualify because they hold European shares and swap the performance." },
@@ -65,6 +70,7 @@ export const TAX_COUNTRIES: TaxCountry[] = [
     ],
     open: ["Which ETFs an assurance-vie contract offers and what the contract charges each year, which depend on the insurer.", "Reporting duties for accounts held with brokers outside France.", "Withholding tax on dividends inside the fund."],
   },
+  ...MORE_COUNTRIES,
 ];
 
 export const taxCountry = (codeOrSlug: string | null | undefined) =>
@@ -73,7 +79,7 @@ export const taxCountry = (codeOrSlug: string | null | undefined) =>
 export type TaxNote = { text: string; vars?: Record<string, string>; source?: Source; kind: "fact" | "check" };
 
 /** Notes for one ETF and one country of residence, built only from structural facts we hold. */
-export function taxNotes(row: Pick<EtfRow, "name" | "domicile" | "distribution_policy" | "replication" | "ucits" | "isin" | "listed_on_six" | "fund_key" | "pea_eligible">, code: string): TaxNote[] {
+export function taxNotes(row: Pick<EtfRow, "name" | "domicile" | "distribution_policy" | "replication" | "ucits" | "isin" | "listed_on_six" | "fund_key" | "pea_eligible"> & { asset_class?: string | null }, code: string): TaxNote[] {
   const notes: TaxNote[] = [];
   const policy = row.distribution_policy;
   // On basic records the domicile field is the issuer's registered country, so use the ISIN prefix as a hint only when it is a fund domicile we can trust.
@@ -98,5 +104,20 @@ export function taxNotes(row: Pick<EtfRow, "name" | "domicile" | "distribution_p
     notes.push({ kind: "fact", text: "In a compte-titres, the flat tax on gains is 31.4% for 2026 income, unless you opt for the income tax scale.", source: FR_PV });
     if (row.replication === "synthetic_swap") notes.push({ kind: "fact", text: "Synthetic replication, which is typically how ETFs on non-European indices qualify for a PEA." });
   }
+  const ucitsLike = row.ucits === true || (row.isin ? !row.isin.startsWith("US") : false);
+  if (code === "GB") {
+    notes.push({ kind: "check", text: "Check that this share class is on HMRC's reporting fund list: otherwise a gain outside an ISA is taxed as income.", source: MORE_SOURCES.UK_HS265 });
+    notes.push({ kind: "fact", text: "Inside a stocks and shares ISA, its income and gains are free of UK tax.", source: MORE_SOURCES.UK_ISA });
+  }
+  if (code === "DE") {
+    if (row.asset_class === "equity") notes.push({ kind: "fact", text: "An equity fund for German tax if it keeps more than 50% in shares: 30% of its income and gains are then exempt.", source: MORE_SOURCES.DE_NRW });
+    else notes.push({ kind: "check", text: "The partial exemption depends on the fund's equity ratio: check whether it counts as an equity or mixed fund.", source: MORE_SOURCES.DE_NRW });
+    if (policy === "accumulating") notes.push({ kind: "fact", text: "Accumulating: the yearly Vorabpauschale applies, a small tax on a notional return.", source: MORE_SOURCES.DE_INVSTG });
+  }
+  if (code === "IE" && ucitsLike) notes.push({ kind: "fact", text: "Exit tax of 38% on gains and distributions, and a deemed sale every eight years.", source: MORE_SOURCES.IE_EBRIEF });
+  if (code === "BE") notes.push({ kind: "fact", text: policy === "accumulating" ? "Accumulating: the stock exchange tax can reach 1.32% on each purchase and sale, depending on the share class's registration." : "Stock exchange tax on each purchase and sale; distributing share classes usually pay the 0.12% rate.", source: MORE_SOURCES.BE_WIKIFIN });
+  if (code === "ES") notes.push({ kind: "fact", text: "An ETF cannot be switched to another fund without tax: a sale realises the gain in the savings base.", source: MORE_SOURCES.ES_CNMV });
+  if (code === "IT") notes.push({ kind: "fact", text: row.ucits === true ? "Harmonised fund: income and gains taxed at 26%." : "Check that the fund is harmonised (UCITS): non-harmonised funds follow different rules.", source: MORE_SOURCES.IT_19E });
+  if (code === "AT") notes.push({ kind: "check", text: "Check on my.oekb.at that this fund reports to Austria (Meldefonds): otherwise its income is taxed on a flat estimate.", source: MORE_SOURCES.AT_INVFR });
   return notes;
 }

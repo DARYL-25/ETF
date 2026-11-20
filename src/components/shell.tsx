@@ -9,18 +9,21 @@ import { LangSwitch } from "./lang-switch";
 import { ThemeToggle } from "./theme-toggle";
 import { getLens } from "@/lib/lens-server";
 
-const MAIN: { href: string; label: string; also?: string[] }[] = [
-  { href: "/screener", label: "Screener", also: ["/etfs"] },
-  { href: "/themes", label: "Themes" },
-  { href: "/compare", label: "Compare" },
-  { href: "/indices", label: "Indices" },
+const MAIN: { href: string; label: string; also?: string[]; not?: string[]; wide?: boolean }[] = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/find", label: "FindMyETF" },
+  { href: "/screener", label: "Screener", also: ["/etfs", "/launches", "/fees"] },
+  { href: "/themes", label: "Themes", wide: true },
+  { href: "/compare", label: "Compare", wide: true },
+  { href: "/tools", label: "Tools", also: ["/portfolio/doctor"] },
   { href: "/academy", label: "Learn" },
-  { href: "/tax", label: "Tax" },
-  { href: "/watchlists", label: "My lists", also: ["/portfolio"] },
+  { href: "/tax", label: "Tax", wide: true },
+  { href: "/watchlists", label: "My lists", also: ["/portfolio"], not: ["/portfolio/doctor"] },
 ];
 const MORE = [
+  { href: "/dashboard", label: "Dashboard" }, { href: "/tools", label: "Tools" }, { href: "/portfolio/doctor", label: "Portfolio review" }, { href: "/tools/true-cost", label: "True cost" }, { href: "/tools/simulator", label: "Simulator" }, { href: "/launches", label: "New ETFs" }, { href: "/find", label: "FindMyETF" }, { href: "/fees", label: "Fees by index" }, { href: "/compare", label: "Compare" },
   { href: "/assistant", label: "Ask" }, { href: "/themes", label: "Themes" }, { href: "/holdings", label: "Which ETFs hold it" }, { href: "/indices", label: "Indices" }, { href: "/tax", label: "Tax" }, { href: "/portfolio", label: "Portfolio" },
-  { href: "/pricing", label: "Pricing" }, { href: "/profile", label: "Account" }, { href: "/data", label: "Data and updates" },
+  { href: "/pricing", label: "Pricing" }, { href: "/profile", label: "Account" }, { href: "/data", label: "Data and updates" }, { href: "/methodology", label: "Methodology" },
 ];
 
 function Wordmark() {
@@ -42,8 +45,8 @@ export async function Shell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-30 border-b border-line bg-paper/85 backdrop-blur-md">
         <div className="mx-auto flex h-[3.75rem] max-w-[84rem] items-center gap-4 px-4 lg:gap-7 lg:px-8">
           <Wordmark />
-          <nav aria-label={t("Main")} className="nav-top hidden items-center gap-6 lg:flex">
-            {MAIN.map((item) => <NavLink key={item.href} {...item} />)}
+          <nav aria-label={t("Main")} className="nav-top hidden items-center gap-5 lg:flex">
+            {MAIN.map(({ wide, ...item }) => <NavLink key={item.href} {...item} className={wide ? "hidden 2xl:inline-flex" : undefined} />)}
           </nav>
           <div className="ml-auto min-w-0 flex-1 sm:max-w-[15rem] lg:flex-none lg:w-[15rem]"><Palette /></div>
           <LensPicker current={lens?.code ?? null} />
@@ -51,7 +54,7 @@ export async function Shell({ children }: { children: React.ReactNode }) {
           <details className="relative hidden lg:block">
             <summary className="chip list-none" aria-label={t("More pages")}><Menu size={15} aria-hidden /></summary>
             <div className="panel absolute right-0 top-full z-50 mt-2 w-56 p-2 shadow-xl">
-              <ul>{MORE.filter((m) => !MAIN.some((x) => x.href === m.href)).map((m) => <li key={m.href}><Link href={m.href} className="block rounded-lg px-2 py-1.5 no-underline hover:bg-sunken">{t(m.label)}</Link></li>)}</ul>
+              <ul>{MORE.filter((m) => !MAIN.some((x) => x.href === m.href && !x.wide)).map((m) => <li key={m.href}><Link href={m.href} className="block rounded-lg px-2 py-1.5 no-underline hover:bg-sunken">{t(m.label)}</Link></li>)}</ul>
               <div className="mt-1 border-t border-line px-2 pt-2"><ThemeToggle /></div>
             </div>
           </details>

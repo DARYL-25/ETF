@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
-  serverExternalPackages: ["@electric-sql/pglite", "pg"],
+  serverExternalPackages: ["@electric-sql/pglite", "pg", "pdfjs-dist", "read-excel-file"],
   outputFileTracingIncludes: { "/**": ["./data/**/*", "./supabase/**/*"] },
   poweredByHeader: false,
   async headers() {

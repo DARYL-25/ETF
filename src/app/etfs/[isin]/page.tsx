@@ -16,6 +16,16 @@ import { getLens } from "@/lib/lens-server";
 import { CostCalculator } from "@/components/cost-calculator";
 import { getBreakdown, getHoldingsSummary, getTopHoldingsFull } from "@/lib/etfs/holdings";
 import { TAX_CHECKED_ON, taxCountry, taxNotes } from "@/lib/tax/content";
+import { envelopeFit } from "@/lib/tax/envelopes";
+import { peerFacts } from "@/lib/etfs/peers";
+import { cheaperOnSameIndex } from "@/lib/etfs/alternatives";
+import { QualityPanel } from "@/components/quality-panel";
+import { peerPosition } from "@/lib/etfs/stats";
+import { assessEtf } from "@/lib/etfs/assess";
+import { fundExposures } from "@/lib/etfs/portfolio-data";
+import { replicationAdvice, isEuropeanIndex } from "@/lib/tax/replication";
+import { DEFAULT_YIELD } from "@/lib/tax/drag";
+import { ProsCons } from "@/components/pros-cons";
 import { MISSING, exchangeName, assetClassLabel, countryName, distributionLabel, formatDate, formatMoney, formatPct, frequencyLabel, productLabel, replicationLabel, styleLabel, yesNoUnknown } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -93,7 +103,7 @@ async function LensCard({ row }: { row: EtfRow }) {
     return (
       <section className="panel p-4">
         <h2 className="text-[1.05rem]">{t("Where do you live?")}</h2>
-        <p className="mt-1.5 text-muted">{t("Choose your country at the top of the page, and this panel shows what matters there for this fund. Tax notes cover Switzerland and France so far.")}</p>
+        <p className="mt-1.5 text-muted">{t("Choose your country at the top of the page, and this panel shows what matters there for this fund. Tax notes cover nine European countries so far.")}</p>
       </section>
     );
   }
@@ -105,7 +115,7 @@ async function LensCard({ row }: { row: EtfRow }) {
           <li>{row.ucits ? t("UCITS fund, the kind brokers in Europe can generally offer to private investors.") : lens.code === "US" ? t("Check that your broker offers this fund.") : t("Not marked UCITS, so check that your broker can offer it to you.")}</li>
           <li>{t("Fund currency {fund}. Your home currency is {home}.", { fund: row.currency ?? t("not known"), home: lens.currency })}</li>
         </ul>
-        <p className="mt-2 text-[0.85rem] text-muted">{t("Tax notes are written for Switzerland and France so far.")}</p>
+        <p className="mt-2 text-[0.85rem] text-muted">{t("Tax notes cover Switzerland, France, the United Kingdom, Germany, Ireland, Belgium, Spain, Italy and Austria so far.")}</p>
       </section>
     );
   }
@@ -121,7 +131,21 @@ async function LensCard({ row }: { row: EtfRow }) {
           </li>
         ))}
       </ul>
-      <p className="mt-3 text-[0.85rem] text-muted">{t("General rules read from official sources on ")}{formatDate(TAX_CHECKED_ON, t.lang)}{t(". No tax adviser has reviewed them, and they are not advice for your situation. ")}<Link className="prose-link" href={`/tax/${country.slug}`}>{t("All notes for {country}", { country: countryName(country.code, t.lang) })}</Link></p>
+      {envelopeFit(row, country.code).length ? (
+        <>
+          <h3 className="mt-4 font-semibold">{t("Which account it fits")}</h3>
+          <ul className="mt-1.5 space-y-1.5">
+            {envelopeFit(row, country.code).map((e) => (
+              <li key={e.envelope} className="flex items-start justify-between gap-3">
+                <span>{t(e.envelope)}<span className="block text-[0.82rem] text-muted">{t(e.reason)}</span></span>
+                <span className={`flex-none rounded-full px-2 py-0.5 text-[0.8rem] ${e.status === "yes" ? "bg-pine text-pine-ink" : e.status === "no" ? "bg-down/10 text-down" : "bg-sunken text-muted"}`}>{e.status === "yes" ? t("Yes") : e.status === "no" ? t("No") : e.status === "likely" ? t("Likely") : t("To check")}</span>
+              </li>
+            ))}
+          </ul>
+          {country.code === "FR" ? <p className="mt-1.5 text-[0.85rem]"><Link className="prose-link" href="/tax/envelopes">{t("Compare the French accounts")}</Link></p> : null}
+        </>
+      ) : null}
+      <p className="mt-3 text-[0.85rem] text-muted">{t("General rules read from official sources on ")}{formatDate(country.readOn ?? TAX_CHECKED_ON, t.lang)}{t(". No tax adviser has reviewed them, and they are not advice for your situation. ")}<Link className="prose-link" href={`/tax/${country.slug}`}>{t("All notes for {country}", { country: countryName(country.code, t.lang) })}</Link></p>
     </section>
   );
 }
@@ -134,10 +158,15 @@ export default async function EtfPage({ params }: Props) {
   const key = row.etf_key ?? row.isin!;
   const isin = row.isin;
 
-  const [listings, exposures, bond, series, similar, feePoints, topHoldings, daily] = await Promise.all([
+  const [listings, exposures, bond, series, similar, feePoints, topHoldings, daily, facts, cheaper] = await Promise.all([
     researched ? getListings(isin!) : [], researched ? getExposures(row.fund_key!) : [], researched ? getBondMetrics(row.fund_key!) : [],
     researched ? getPriceSeries(isin) : null, getSimilarEtfs(row), researched ? getFeePoints() : [], researched ? getTopHoldings(row.fund_key!) : [], getDailyPoints(key),
+    peerFacts(row), cheaperOnSameIndex([row], 4),
   ]);
+  const [peers, exposure, lensNow] = await Promise.all([peerPosition(row), fundExposures([{ key, name: row.name }]), getLens()]);
+  const usShare = exposure[0]?.us_pct ?? null;
+  const assessment = assessEtf(row, peers, { country: lensNow?.code ?? null, usSharePct: usShare });
+  const replication = row.asset_class === "equity" || !row.asset_class ? replicationAdvice({ usSharePct: usShare ?? (row.index_slug === "sp-500" || row.index_slug === "nasdaq-100" ? 100 : null), european: isEuropeanIndex(row), account: null, yieldPct: row.trailing_yield_pct ?? DEFAULT_YIELD.equity }) : null;
   const full = await getHoldingsSummary(row.etf_key ?? key);
   const [fullTop, fullSectors, fullCountries] = full ? await Promise.all([getTopHoldingsFull(full.etf_key, 64), getBreakdown(full.etf_key, "sector"), getBreakdown(full.etf_key, "country")]) : [[], [], []];
   const sectors = exposures.filter((x) => x.dimension === "sector");
@@ -357,6 +386,36 @@ export default async function EtfPage({ params }: Props) {
                   </tbody>
                 </table>
               </div>
+            </Section>
+          ) : null}
+
+          <Section id="pros-cons" title={t("Strengths and weaknesses")}>
+            <ProsCons assessment={assessment} peers={peers} replication={replication} />
+          </Section>
+
+          <Section id="quality" title={t("Quality score")}>
+            <QualityPanel quality={facts.quality} />
+          </Section>
+
+          {cheaper[key]?.length ? (
+            <Section id="alternatives" title={t("Cheaper alternatives")}>
+              <p className="mb-2 max-w-[68ch] text-muted">{t("Funds on the same index that charge less, with the same income policy and currency hedging. Compare tracking, size and listings too before switching.")}</p>
+              <div className="overflow-x-auto">
+                <table className="table-data">
+                  <thead><tr><th>{t("ETF")}</th><th className="num">{t("Yearly fee")}</th><th className="num">{t("Fee difference")}</th><th className="num">{t("Size")}</th></tr></thead>
+                  <tbody>
+                    {cheaper[key].map((a) => (
+                      <tr key={a.key}>
+                        <td className="min-w-[14rem]"><Link className="font-medium no-underline hover:underline" href={`/etfs/${a.key}`}>{a.name}</Link>{a.same_fund ? <span className="block text-[0.8rem] text-muted">{t("Another share class of the same fund")}</span> : null}</td>
+                        <td className="num">{a.fee_pct.toFixed(2)}%</td>
+                        <td className="num">−{(row.headline_fee_pct! - a.fee_pct).toFixed(2)}</td>
+                        <td className="num whitespace-nowrap">{formatMoney(a.size_eur, "EUR", t.lang)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-2 text-[0.85rem]"><Link className="prose-link" href={`/tools/true-cost?a=${encodeURIComponent(key)}&b=${encodeURIComponent(cheaper[key][0].key)}`}>{t("Compare the true cost of both")}</Link></p>
             </Section>
           ) : null}
 

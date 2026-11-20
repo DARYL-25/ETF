@@ -25,9 +25,11 @@
     "lightweight-charts": "^5.2.1",
     "lucide-react": "^1.68.0",
     "next": "^16.4.5",
+    "pdfjs-dist": "^6.5.438",
     "pg": "^8.23.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "read-excel-file": "^9.3.17",
     "tailwind-merge": "^3.7.0",
     "zod": "^4.6.7"
   },
