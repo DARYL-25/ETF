@@ -11,6 +11,7 @@ import { getLens } from "@/lib/lens-server";
 import { Wordmark as Brand } from "./logo";
 import { PriceTape } from "./price-tape";
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 
 const MAIN: { href: string; label: string; also?: string[]; not?: string[]; wide?: boolean }[] = [
   { href: "/dashboard", label: "Dashboard" },
@@ -49,6 +50,8 @@ const FOOTER: { title: string; links: [string, string][] }[] = [
 export async function Shell({ children }: { children: React.ReactNode }) {
   const t = await getT();
   const lens = await getLens();
+  // A session cookie is enough to pick the header's words; pages that show private data check the session properly.
+  const signedIn = (await cookies()).getAll().some((c) => c.name.startsWith("sb-") && c.name.includes("auth-token"));
   const tab = "flex flex-1 flex-col items-center gap-0.5 py-2 text-[0.72rem] font-medium text-muted no-underline aria-[current=page]:text-pine";
   return (
     <div className="flex min-h-dvh flex-col">
@@ -61,8 +64,8 @@ export async function Shell({ children }: { children: React.ReactNode }) {
           <div className="ml-auto min-w-0 flex-1 sm:max-w-[13rem] lg:max-w-[20rem] xl:max-w-none xl:flex-none xl:w-[11.5rem] 2xl:w-[12rem]"><Palette /></div>
           <LensPicker current={lens?.code ?? null} />
           <div className="hidden md:block"><LangSwitch /></div>
-          <Link href="/profile" className="hidden whitespace-nowrap px-1 font-semibold text-ink no-underline hover:text-pine min-[1840px]:inline">{t("Sign in")}</Link>
-          <Link href="/find" className="btn btn-navy hidden whitespace-nowrap no-underline min-[1600px]:inline-flex">{t("Get started")}</Link>
+          <Link href={signedIn ? "/profile" : "/login"} className="hidden whitespace-nowrap px-1 font-semibold text-ink no-underline hover:text-pine min-[1840px]:inline">{signedIn ? t("My account") : t("Sign in")}</Link>
+          <Link href={signedIn ? "/dashboard" : "/login?mode=signup"} className="btn btn-navy hidden whitespace-nowrap no-underline min-[1600px]:inline-flex">{signedIn ? t("Dashboard") : t("Get started")}</Link>
           <details className="relative hidden lg:block">
             <summary className="chip list-none" aria-label={t("More pages")}><Menu size={15} aria-hidden /></summary>
             <div className="panel absolute right-0 top-full z-50 mt-2 w-56 p-2 shadow-xl">

@@ -1,0 +1,29 @@
+# Loads the live database (Supabase) from the data in the repo: on demand, and whenever the schema or loader changes on main.
+# Needs the SYNC_DATABASE_URL secret (Settings, Secrets and variables, Actions). Without it the job says so and stops.
+name: Sync live database
+on:
+  push:
+    branches: [main]
+    paths: ["supabase/migrations/**", "scripts/sync-db.ts", "src/lib/db/seed-sql.ts", ".github/workflows/sync-db.yml"]
+  workflow_dispatch:
+concurrency:
+  group: data
+permissions:
+  contents: read
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Load the database
+        env:
+          SYNC_DATABASE_URL: ${{ secrets.SYNC_DATABASE_URL }}
+        run: |
+          if [ -z "$SYNC_DATABASE_URL" ]; then echo "::warning::No SYNC_DATABASE_URL secret, nothing loaded."; exit 0; fi
+          npm ci --no-audit --no-fund
+          npx tsx scripts/sync-db.ts

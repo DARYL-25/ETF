@@ -13,7 +13,7 @@ async function siteUrl() {
   return `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
 }
 
-const back = (message: string): never => redirect(`/login?message=${encodeURIComponent(message)}`);
+const back = (message: string, mode?: "signup"): never => redirect(`/login?${mode ? "mode=signup&" : ""}message=${encodeURIComponent(message)}`);
 
 export async function signIn(form: FormData) {
   if (!authConfigured()) back("Sign-in is not set up yet.");
@@ -26,16 +26,16 @@ export async function signIn(form: FormData) {
 }
 
 export async function signUp(form: FormData) {
-  if (!authConfigured()) back("Sign-in is not set up yet.");
+  if (!authConfigured()) back("Sign-in is not set up yet.", "signup");
   const parsed = credentials.safeParse(Object.fromEntries(form));
-  if (!parsed.success) back("Enter a valid email and a password of at least 8 characters.");
+  if (!parsed.success) back("Enter a valid email and a password of at least 8 characters.", "signup");
   const supabase = await supabaseServer();
   const { error } = await supabase.auth.signUp({
     ...parsed.data!,
     options: { emailRedirectTo: `${await siteUrl()}/auth/callback` },
   });
-  if (error) back("The account could not be created. Check the email address and try again.");
-  back("Check your email for a link to confirm your account.");
+  if (error) back("The account could not be created. Check the email address and try again.", "signup");
+  redirect(`/login?message=${encodeURIComponent("Check your email for a link to confirm your account.")}`);
 }
 
 export async function signInWithGoogle() {
