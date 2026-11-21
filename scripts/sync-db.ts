@@ -38,7 +38,7 @@ for (const name of readdirSync(dir).filter((n) => n.endsWith(".sql")).sort()) {
 const seed = buildSeedSql(root).replace(/^begin;$/m, "").replace(/^commit;\s*$/m, "");
 await db.query("begin");
 try {
-  await db.query(`truncate ${PUBLIC_DATA_TABLES.map((t) => `public.${t}`).join(", ")} restart identity cascade`);
+  await db.query(`truncate ${PUBLIC_DATA_TABLES.map((t) => `public.${t}`).join(", ")} cascade`);
   await db.query(seed);
   const { rows } = await db.query<{ n: number }>("select count(*)::int as n from public.etf_directory");
   if (rows[0].n < 10000) throw new Error(`Only ${rows[0].n} ETFs after loading, so the old data is kept.`);
