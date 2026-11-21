@@ -13,8 +13,12 @@ const root = process.cwd();
 const db = new Client({ connectionString: url });
 await db.connect();
 
-await db.query("create table if not exists public.applied_migrations (name text primary key, applied_at timestamptz not null default now())");
-await db.query("alter table public.applied_migrations enable row level security");
+// Created once by the owner. A loader role without schema rights can run this script after that.
+const { rows: [tracking] } = await db.query<{ t: string | null }>("select to_regclass('public.applied_migrations')::text as t");
+if (!tracking.t) {
+  await db.query("create table public.applied_migrations (name text primary key, applied_at timestamptz not null default now())");
+  await db.query("alter table public.applied_migrations enable row level security");
+}
 const done = new Set((await db.query<{ name: string }>("select name from public.applied_migrations")).rows.map((r) => r.name));
 const dir = join(root, "supabase/migrations");
 for (const name of readdirSync(dir).filter((n) => n.endsWith(".sql")).sort()) {
