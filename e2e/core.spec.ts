@@ -1,11 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-test("home shows the ask bar and the fee ruler opens a fund from a dot", async ({ page }) => {
+test("home shows the ask bar, looks inside a fund and opens a theme's fund", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Describe the ETF you need");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Every ETF in the world");
   await expect(page.getByLabel("Describe what you are looking for")).toBeVisible();
-  await page.getByRole("link", { name: /iShares Global Clean Energy.*TER 0\.65%/ }).click();
-  await expect(page).toHaveURL(/IE00B1XNHC34/);
+  await expect(page.getByRole("list", { name: /Largest holdings of/ }).getByRole("link").first()).toBeVisible();
+  await page.getByRole("tab", { name: "Semiconductors" }).click();
+  const row = page.getByRole("table").getByRole("link").first();
+  const name = await row.textContent();
+  await row.click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(name!);
 });
 
 test("search finds a fund by a secondary ticker", async ({ page }) => {
@@ -198,7 +202,7 @@ test("the AI search answers a Swiss Nasdaq-100 request", async ({ page }) => {
 test("the site switches to French and back, and French questions work", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Passer en français" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Décrivez l'ETF qu'il vous faut");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Tous les ETF du monde");
   await expect(page.locator("html")).toHaveAttribute("lang", "fr");
   await page.getByRole("button", { name: "ETF Nasdaq-100 pour un investisseur suisse" }).click();
   await expect(page.getByRole("heading", { name: "Meilleures correspondances" })).toBeVisible();

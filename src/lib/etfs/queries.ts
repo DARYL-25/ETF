@@ -410,3 +410,20 @@ export async function getThemeEtfs(slug: string, market: ThemeMarket | null, sor
   ]);
   return { rows, counts: counts[0] };
 }
+
+export type TapeItem = { etf_key: string; ticker: string; px: number; currency: string | null; chg: number; date: string };
+
+/** The largest ETFs with two daily prices on file: last close and its change, for the price tape under the header. */
+export const getTape = (limit = 16) =>
+  query<TapeItem>(
+    `with big as (
+       select etf_key, ticker, size_eur from public.etf_directory
+       where ticker is not null and etf_key in (select distinct etf_key from public.universe_prices)
+       order by size_eur desc nulls last limit ${Math.floor(limit) * 3}),
+     ranked as (
+       select p.etf_key, p.value, p.currency, p.price_date, row_number() over (partition by p.etf_key order by p.price_date desc) as rn
+       from public.universe_prices p where p.etf_key in (select etf_key from big))
+     select b.etf_key, b.ticker, a.value as px, a.currency, ((a.value / nullif(c.value, 0)) - 1) * 100 as chg, a.price_date::text as date
+     from big b join ranked a on a.etf_key = b.etf_key and a.rn = 1 join ranked c on c.etf_key = b.etf_key and c.rn = 2
+     where c.value > 0 order by b.size_eur desc nulls last limit ${Math.floor(limit)}`,
+  );

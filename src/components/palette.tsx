@@ -70,10 +70,10 @@ export function Palette() {
 
   return (
     <>
-      <button type="button" onClick={open} aria-label={t("Search ETFs, pages or ask a question")} className="flex h-10 w-full items-center gap-2 rounded-full border border-line bg-surface px-3.5 text-left text-muted transition-colors hover:border-pine">
+      <button type="button" onClick={open} aria-label={t("Search ETFs, pages or ask a question")} className="flex h-10 w-full items-center gap-2 rounded-xl border border-line bg-cloud px-3.5 text-left text-muted transition-colors hover:border-pine">
         <Search size={16} aria-hidden />
         <span className="flex-1 truncate">{t("Search or ask")}</span>
-        <kbd className="hidden rounded-md border border-line px-1.5 text-[0.75rem] sm:block">{t("Ctrl K")}</kbd>
+        <kbd className="hidden rounded-md border border-line px-1.5 text-[0.75rem] 2xl:block">{t("Ctrl K")}</kbd>
       </button>
       <dialog ref={dialog} className="palette" aria-label={t("Search")} onClose={() => { setText(""); setHits([]); }} onClick={(e) => { if (e.target === dialog.current) close(); }}>
         <form onSubmit={(e) => { e.preventDefault(); go(items[active]); }}>
