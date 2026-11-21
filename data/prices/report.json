@@ -1,16 +1,16 @@
 {
- "on": "2026-11-20",
+ "on": "2026-11-21",
  "fx": {
   "ok": true,
-  "rate_date": "2026-11-19",
+  "rate_date": "2026-11-20",
   "currencies": 29
  },
  "nav_points": 2278,
  "taiwan": {
   "ok": true,
-  "points": 237
+  "points": 236
  },
- "new_points": 1524,
- "etfs_priced": 2515,
- "latest_date": "2026-11-19"
+ "new_points": 1334,
+ "etfs_priced": 2514,
+ "latest_date": "2026-11-20"
 }
