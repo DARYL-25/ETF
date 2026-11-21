@@ -8,6 +8,9 @@ import { LensPicker } from "./lens-picker";
 import { LangSwitch } from "./lang-switch";
 import { ThemeToggle } from "./theme-toggle";
 import { getLens } from "@/lib/lens-server";
+import { Wordmark as Brand } from "./logo";
+import { PriceTape } from "./price-tape";
+import { Suspense } from "react";
 
 const MAIN: { href: string; label: string; also?: string[]; not?: string[]; wide?: boolean }[] = [
   { href: "/dashboard", label: "Dashboard" },
@@ -29,12 +32,19 @@ const MORE = [
 function Wordmark() {
   const t = use(getT());
   return (
-    <Link href="/" className="flex items-center gap-2 text-[1.1rem] font-semibold tracking-tight text-ink no-underline" aria-label={t("ETF Intelligence, home")}>
-      <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden><circle cx="11" cy="11" r="10" fill="var(--pine)" /><path d="M5.5 13.5 9 10l2.6 2.4 4.9-5" fill="none" stroke="var(--pine-ink)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-      <span className="hidden whitespace-nowrap sm:inline">{t("ETF Intelligence")}</span>
+    <Link href="/" className="flex flex-none items-center no-underline" aria-label={t("ETF Intelligence, home")}>
+      <span className="sm:hidden"><Brand size={32} text="hidden" /></span>
+      <span className="hidden sm:inline-flex"><Brand size={34} text="text-[1.3rem]" /></span>
     </Link>
   );
 }
+
+const FOOTER: { title: string; links: [string, string][] }[] = [
+  { title: "Explore", links: [["Screener", "/screener"], ["Themes", "/themes"], ["Compare", "/compare"], ["Indices", "/indices"], ["New ETFs", "/launches"]] },
+  { title: "Portfolio", links: [["Portfolio X-Ray", "/portfolio"], ["Portfolio review", "/portfolio/doctor"], ["True cost", "/tools/true-cost"], ["Simulator", "/tools/simulator"]] },
+  { title: "Learn", links: [["Lessons", "/academy"], ["Glossary", "/academy/glossary"], ["Tax", "/tax"], ["Methodology", "/methodology"]] },
+  { title: "Company", links: [["Pricing", "/pricing"], ["Data and updates", "/data"], ["Terms of use", "/legal/terms"], ["Privacy", "/legal/privacy"], ["Legal notice", "/legal/notice"]] },
+];
 
 export async function Shell({ children }: { children: React.ReactNode }) {
   const t = await getT();
@@ -42,15 +52,17 @@ export async function Shell({ children }: { children: React.ReactNode }) {
   const tab = "flex flex-1 flex-col items-center gap-0.5 py-2 text-[0.72rem] font-medium text-muted no-underline aria-[current=page]:text-pine";
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-30 border-b border-line bg-paper/85 backdrop-blur-md">
-        <div className="mx-auto flex h-[3.75rem] max-w-[84rem] items-center gap-4 px-4 lg:gap-7 lg:px-8">
+      <header className="sticky top-0 z-30 border-b border-line bg-surface/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-[4.1rem] max-w-[84rem] items-center gap-4 px-4 lg:gap-5 lg:px-8">
           <Wordmark />
-          <nav aria-label={t("Main")} className="nav-top hidden items-center gap-5 lg:flex">
-            {MAIN.map(({ wide, ...item }) => <NavLink key={item.href} {...item} className={wide ? "hidden 2xl:inline-flex" : undefined} />)}
+          <nav aria-label={t("Main")} className="nav-top hidden items-center gap-4 xl:flex">
+            {MAIN.map(({ wide, ...item }) => <NavLink key={item.href} {...item} className={wide ? "hidden" : undefined} />)}
           </nav>
-          <div className="ml-auto min-w-0 flex-1 sm:max-w-[15rem] lg:flex-none lg:w-[15rem]"><Palette /></div>
+          <div className="ml-auto min-w-0 flex-1 sm:max-w-[13rem] lg:max-w-[20rem] xl:max-w-none xl:flex-none xl:w-[11.5rem] 2xl:w-[12rem]"><Palette /></div>
           <LensPicker current={lens?.code ?? null} />
-          <LangSwitch />
+          <div className="hidden md:block"><LangSwitch /></div>
+          <Link href="/profile" className="hidden whitespace-nowrap px-1 font-semibold text-ink no-underline hover:text-pine min-[1840px]:inline">{t("Sign in")}</Link>
+          <Link href="/find" className="btn btn-navy hidden whitespace-nowrap no-underline min-[1600px]:inline-flex">{t("Get started")}</Link>
           <details className="relative hidden lg:block">
             <summary className="chip list-none" aria-label={t("More pages")}><Menu size={15} aria-hidden /></summary>
             <div className="panel absolute right-0 top-full z-50 mt-2 w-56 p-2 shadow-xl">
@@ -60,11 +72,23 @@ export async function Shell({ children }: { children: React.ReactNode }) {
           </details>
         </div>
       </header>
+      <Suspense><PriceTape /></Suspense>
       <main className="mx-auto w-full max-w-[84rem] flex-1 px-4 py-7 lg:px-8 lg:py-10">{children}</main>
-      <footer className="border-t border-line pb-24 lg:pb-0">
-        <div className="mx-auto flex max-w-[84rem] flex-col gap-2 px-4 py-6 text-[0.85rem] text-muted lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <p className="max-w-[72ch]">{t("General information, not investment or tax advice. Prices are end-of-day values, never real time. Figures come from issuers and official lists and can contain errors, so check the issuer's documents before you act.")}</p>
-          <p className="flex flex-none flex-wrap gap-x-4 gap-y-1"><Link href="/data" className="prose-link">{t("Data and updates")}</Link><Link href="/pricing" className="prose-link">{t("Pricing")}</Link><Link href="/legal/terms" className="prose-link">{t("Terms of use")}</Link><Link href="/legal/privacy" className="prose-link">{t("Privacy")}</Link><Link href="/legal/notice" className="prose-link">{t("Legal notice")}</Link></p>
+      <footer className="border-t border-line bg-surface pb-24 lg:pb-0">
+        <div className="mx-auto flex max-w-[84rem] flex-col gap-10 px-4 py-12 text-[0.9rem] text-muted lg:flex-row lg:justify-between lg:px-8">
+          <div className="flex max-w-[26rem] flex-col gap-3">
+            <Link href="/" className="no-underline" aria-label={t("ETF Intelligence, home")}><Brand size={30} text="text-[1.15rem]" /></Link>
+            <p className="leading-relaxed">{t("General information, not investment or tax advice. Prices are end-of-day values, never real time. Figures come from issuers and official lists and can contain errors, so check the issuer's documents before you act.")}</p>
+            <div className="md:hidden"><LangSwitch /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-x-12 gap-y-8 sm:grid-cols-4">
+            {FOOTER.map((col) => (
+              <div key={col.title} className="flex flex-col gap-2.5">
+                <b className="font-display text-ink">{t(col.title)}</b>
+                {col.links.map(([label, href]) => <Link key={href} href={href} className="no-underline hover:text-pine">{t(label)}</Link>)}
+              </div>
+            ))}
+          </div>
         </div>
       </footer>
       <nav aria-label={t("Main, phone")} className="fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-surface/95 backdrop-blur lg:hidden">

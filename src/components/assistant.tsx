@@ -3,6 +3,7 @@
 import { useT } from "@/lib/i18n/client";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowUp, RotateCcw } from "lucide-react";
 import { formatMoney, formatPct, formatSignedPct } from "@/lib/format";
 import type { AssistantReply, ChatMessage } from "@/lib/assistant/agent";
@@ -16,8 +17,9 @@ const EXAMPLES = [
 ];
 
 /** The ask bar and its answer. Works without AI: the ranked list always comes from the database. */
-export function Assistant({ initial, hero = false, home }: { initial?: string; hero?: boolean; home?: string | null }) {
+export function Assistant({ initial, hero = false, home, navigate = false, left = false }: { initial?: string; hero?: boolean; home?: string | null; navigate?: boolean; left?: boolean }) {
   const t = useT();
+  const router = useRouter();
   const [text, setText] = useState(initial ?? "");
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [asked, setAsked] = useState("");
@@ -30,6 +32,8 @@ export function Assistant({ initial, hero = false, home }: { initial?: string; h
   const ask = async (question: string) => {
     const q = question.trim();
     if (!q || busy) return;
+    // On the home page the question opens the full answer page, where results have room.
+    if (navigate) { setBusy(true); router.push(`/assistant?q=${encodeURIComponent(q)}`); return; }
     setBusy(true);
     setError("");
     setAsked(q);
@@ -80,7 +84,7 @@ export function Assistant({ initial, hero = false, home }: { initial?: string; h
 
   return (
     <div className="flex flex-col gap-8">
-      <form className={hero ? "mx-auto w-full max-w-3xl" : "w-full max-w-3xl"} onSubmit={(e) => { e.preventDefault(); void ask(text); }}>
+      <form className={hero && !left ? "mx-auto w-full max-w-3xl" : "w-full max-w-3xl"} onSubmit={(e) => { e.preventDefault(); void ask(text); }}>
         <div className="ask">
           <textarea id="ask" rows={1} maxLength={2000} value={text} aria-label={t("Describe what you are looking for")}
             onChange={(e) => { setText(e.target.value); e.target.style.height = "auto"; e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`; }}
@@ -89,7 +93,7 @@ export function Assistant({ initial, hero = false, home }: { initial?: string; h
           <button type="submit" disabled={busy || !text.trim()} aria-label={t("Search")}>{busy ? <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <ArrowUp size={19} aria-hidden />}</button>
         </div>
         {!history.length ? (
-          <div className={`mt-4 flex flex-wrap gap-2 ${hero ? "justify-center" : ""}`}>
+          <div className={`mt-4 flex flex-wrap gap-2 ${hero && !left ? "justify-center" : ""}`}>
             {EXAMPLES.map((ex) => <button key={ex} type="button" className="chip" onClick={() => { setText(t(ex)); void ask(t(ex)); }}>{t(ex)}</button>)}
           </div>
         ) : null}

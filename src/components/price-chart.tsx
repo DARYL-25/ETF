@@ -73,7 +73,7 @@ export function PriceChart({ series }: { series: ChartSeries[] }) {
     const colors = [cssVar("--pine"), cssVar("--saffron"), cssVar("--down"), cssVar("--ink"), cssVar("--muted")];
     const chart: IChartApi = createChart(holder.current, {
       autoSize: true,
-      layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: cssVar("--muted"), fontFamily: "Public Sans Variable, system-ui, sans-serif", attributionLogo: true },
+      layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: cssVar("--muted"), fontFamily: "Inter Variable, system-ui, sans-serif", attributionLogo: true },
       grid: { vertLines: { visible: false }, horzLines: { color: cssVar("--line"), style: LineStyle.Solid } },
       rightPriceScale: { borderVisible: false },
       timeScale: { borderColor: cssVar("--line"), fixLeftEdge: true, fixRightEdge: true },
@@ -83,7 +83,7 @@ export function PriceChart({ series }: { series: ChartSeries[] }) {
     const apis: ISeriesApi<"Area" | "Line">[] = inView.map((s, i) => {
       const color = colors[i % colors.length];
       const api = !multi && kind === "area"
-        ? chart.addSeries(AreaSeries, { lineColor: color, lineWidth: 2, topColor: `${color}44`, bottomColor: `${color}05`, priceLineVisible: false })
+        ? chart.addSeries(AreaSeries, { lineColor: color, lineWidth: 3, topColor: `${color}38`, bottomColor: `${color}05`, priceLineVisible: false })
         : chart.addSeries(LineSeries, { color, lineWidth: 2, priceLineVisible: false });
       api.setData(s.points.map((p) => ({ time: toTime(p.date), value: p.close })));
       return api;
@@ -110,22 +110,22 @@ export function PriceChart({ series }: { series: ChartSeries[] }) {
     return first && last ? ((last.close / first.close - 1) * 100) : null;
   }), [inView]);
 
-  const segment = "cursor-pointer rounded px-2.5 py-1 font-medium aria-pressed:bg-pine aria-pressed:text-pine-ink hover:bg-sunken aria-pressed:hover:bg-pine";
+  const segment = "";
 
   return (
     <div>
-      <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <div role="group" aria-label={t("Time range")} className="flex">
+      <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <div role="group" aria-label={t("Time range")} className="seg">
           {RANGES.map((r) => (
             <button key={r.key} type="button" className={segment} aria-pressed={range === r.key} onClick={() => setRange(r.key)}>{r.key}</button>
           ))}
         </div>
-        <div role="group" aria-label={t("Value shown")} className="flex">
+        <div role="group" aria-label={t("Value shown")} className="seg">
           <button type="button" className={segment} aria-pressed={view === "price"} onClick={() => setView("price")}>{t("Price")}</button>
           <button type="button" className={segment} aria-pressed={view === "rebased"} onClick={() => setView("rebased")}>{t("Start at 100")}</button>
         </div>
         {!multi ? (
-          <div role="group" aria-label={t("Chart type")} className="flex">
+          <div role="group" aria-label={t("Chart type")} className="seg">
             <button type="button" className={segment} aria-pressed={kind === "area"} onClick={() => setKind("area")}>{t("Area")}</button>
             <button type="button" className={segment} aria-pressed={kind === "line"} onClick={() => setKind("line")}>{t("Line")}</button>
           </div>

@@ -76,21 +76,41 @@ function Bars({ rows }: { rows: { label: string; weight_pct: number }[] }) {
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
-    <section id={id} data-nav className="scroll-mt-32">
-      <h2 className="mb-3 text-[1.3rem]">{title}</h2>
+    <section id={id} data-nav className="panel scroll-mt-32 p-5 sm:p-6">
+      <h2 className="mb-4 text-[1.2rem] tracking-[-0.025em]">{title}</h2>
       {children}
+    </section>
+  );
+}
+
+async function QualityCard({ quality }: { quality: Awaited<ReturnType<typeof peerFacts>>["quality"] }) {
+  const t = await getT();
+  return (
+    <section aria-labelledby="score-card" className="panel-navy flex flex-col gap-4 p-6">
+      <div className="flex items-center justify-between"><h2 id="score-card" className="text-[1.1rem] tracking-[-0.02em] text-white">{t("Quality score")}</h2><a href="#quality" className="text-[0.8rem] font-semibold text-ice no-underline hover:text-white">{t("Details")} →</a></div>
+      {quality.score !== null ? (
+        <div className="flex items-baseline gap-2"><span className="font-display text-[4rem] font-extrabold leading-none tracking-[-0.05em]" data-count={Math.round(quality.score)}>{quality.score.toFixed(0)}</span><span className="text-ice">/ 100</span>{quality.grade ? <span className="ml-auto rounded-full bg-pine px-3 py-1 font-display font-bold text-white">{quality.grade}</span> : null}</div>
+      ) : <p className="text-ice">{t("Not enough data to score this fund.")}</p>}
+      <ul className="flex flex-col gap-2.5 text-[0.9rem]" data-reveal>
+        {quality.parts.map((p, i) => (
+          <li key={p.id} className="flex flex-col gap-1.5">
+            <div className="flex justify-between"><span className="text-ice">{t(p.label)}</span><span className="data">{p.score === null ? "—" : p.score.toFixed(0)}</span></div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-white/10"><div className="bar-fill h-full rounded-full bg-pine" style={{ width: `${p.score ?? 0}%`, "--i": i } as React.CSSProperties} /></div>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
 
 const Note = ({ children }: { children: React.ReactNode }) => <p className="max-w-[68ch] text-muted">{children}</p>;
 
-function Stat({ label, value, note }: { label: string; value: React.ReactNode; note?: React.ReactNode }) {
+function FactTile({ label, value, note, small = false }: { label: string; value: React.ReactNode; note?: React.ReactNode; small?: boolean }) {
   return (
-    <div className="min-w-0">
-      <p className="text-[0.85rem] text-muted">{label}</p>
-      <p className="stat-value mt-1">{value}</p>
-      {note ? <p className="mt-1 text-[0.82rem] text-muted">{note}</p> : null}
+    <div className="fact-tile min-w-0">
+      <p className="text-[0.8rem] text-muted">{label}</p>
+      <p className={`font-display mt-1 font-bold tracking-[-0.02em] ${small ? "text-[1.05rem] leading-snug" : "text-[1.35rem]"}`}>{value}</p>
+      {note ? <p className="mt-1 text-[0.75rem] text-muted">{note}</p> : null}
     </div>
   );
 }
@@ -101,7 +121,7 @@ async function LensCard({ row }: { row: EtfRow }) {
   const country = taxCountry(lens?.code);
   if (!lens) {
     return (
-      <section className="panel p-4">
+      <section className="panel p-5">
         <h2 className="text-[1.05rem]">{t("Where do you live?")}</h2>
         <p className="mt-1.5 text-muted">{t("Choose your country at the top of the page, and this panel shows what matters there for this fund. Tax notes cover nine European countries so far.")}</p>
       </section>
@@ -109,7 +129,7 @@ async function LensCard({ row }: { row: EtfRow }) {
   }
   if (!country) {
     return (
-      <section className="panel p-4">
+      <section className="panel p-5">
         <h2 className="text-[1.05rem]">{t("For an investor in ")}{countryName(lens.code, t.lang)}</h2>
         <ul className="mt-2 space-y-1.5">
           <li>{row.ucits ? t("UCITS fund, the kind brokers in Europe can generally offer to private investors.") : lens.code === "US" ? t("Check that your broker offers this fund.") : t("Not marked UCITS, so check that your broker can offer it to you.")}</li>
@@ -121,7 +141,7 @@ async function LensCard({ row }: { row: EtfRow }) {
   }
   const notes = taxNotes(row, country.code);
   return (
-    <section className="panel p-4" id="tax">
+    <section className="panel p-5" id="tax">
       <h2 className="text-[1.05rem]">{t("For an investor in ")}{countryName(country.code, t.lang)}</h2>
       <ul className="mt-2.5 space-y-2.5">
         {notes.map((n) => (
@@ -183,26 +203,54 @@ export default async function EtfPage({ params }: Props) {
   const sameIndexFees = similar.filter((x) => x.index_slug && x.index_slug === row.index_slug && x.headline_fee_pct !== null).map((x) => x.headline_fee_pct!);
   const cheapest = sameIndexFees.length ? Math.min(...sameIndexFees) : null;
   const lensCurrency = (await getLens())?.currency ?? "EUR";
+  const lastDaily = daily.at(-1);
+  const prevDaily = daily.at(-2);
+  const lastPrice = lastDaily
+    ? { value: lastDaily.value, currency: lastDaily.currency ?? "", label: t("{kind} on {date}", { kind: kind, date: formatDate(lastDaily.date, t.lang) }) }
+    : row.nav !== null ? { value: row.nav, currency: row.nav_currency ?? "", label: t("NAV on {date}", { date: formatDate(row.nav_as_of, t.lang) }) } : null;
+  const priceChange = lastDaily && prevDaily && prevDaily.value > 0 ? (lastDaily.value / prevDaily.value - 1) * 100 : null;
 
   return (
-    <article className="flex flex-col gap-8">
+    <article className="flex flex-col gap-6">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org", "@type": "InvestmentFund", name: row.name, identifier: row.isin ?? row.ticker ?? key,
         ...(row.ticker ? { tickerSymbol: row.ticker } : {}), ...(row.issuer_name && row.issuer_name !== "Not identified" ? { provider: { "@type": "Organization", name: row.issuer_name } } : {}),
         ...(row.headline_fee_pct !== null ? { feesAndCommissionsSpecification: `Yearly fee ${row.headline_fee_pct.toFixed(2)}%` } : {}),
       }).replace(/</g, "\\u003c") }} />
-      <header>
-        <div className="flex items-center gap-2.5"><IssuerLogo name={row.name} /><p className="text-muted">{row.issuer_name === "Not identified" ? t("Issuer not identified") : row.issuer_name}</p></div>
-        <h1 className="mt-2 max-w-[32ch] text-[clamp(1.8rem,3.2vw,2.6rem)]">{row.name}</h1>
-        <p className="data mt-2 text-muted">{[row.ticker ? `${row.ticker}${exchange ? ` on ${exchange}` : ""}` : null, isin ? `ISIN ${isin}` : null].filter(Boolean).join(", ") || MISSING}</p>
-        <div className="mt-4 flex flex-wrap gap-2"><CompareToggle isin={key} wide /><SaveToWatchlist etfKey={key} /><Link className="btn btn-quiet" href={`/assistant?q=${encodeURIComponent(`Find ETFs similar to ${row.name}`)}`}>{t("Find similar")}</Link></div>
+      <nav aria-label={t("Breadcrumb")} className="text-[0.85rem] text-muted"><Link href="/" className="no-underline hover:text-pine">{t("Home")}</Link> / <Link href="/screener" className="no-underline hover:text-pine">{t("Screener")}</Link> / <span className="text-ink">{row.ticker ?? isin ?? row.name}</span></nav>
+      <header className="rise flex flex-wrap items-end justify-between gap-6">
+        <div className="flex min-w-0 max-w-[52rem] flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {row.ticker ? <span className="ticker-badge">{row.ticker}</span> : null}
+            {row.ucits ? <span className="badge">UCITS</span> : null}
+            {row.distribution_policy ? <span className="badge">{t(distributionLabel(row.distribution_policy))}</span> : null}
+            {row.domicile ? <span className="badge">{countryName(row.domicile, t.lang)}</span> : null}
+            {row.hedged ? <span className="badge">{t("Currency hedged")}</span> : null}
+          </div>
+          <h1 className="text-[clamp(1.9rem,3.8vw,3rem)] tracking-[-0.04em]">{row.name}</h1>
+          <div className="flex items-center gap-2.5 text-muted"><IssuerLogo name={row.name} /><span>{row.issuer_name === "Not identified" ? t("Issuer not identified") : row.issuer_name}</span><span aria-hidden>·</span><span className="data">{[row.ticker ? `${row.ticker}${exchange ? ` ${t("on")} ${exchange}` : ""}` : null, isin ? `ISIN ${isin}` : null].filter(Boolean).join(", ") || MISSING}</span></div>
+          {lastPrice ? (
+            <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1">
+              <span className="font-display text-[2.25rem] font-bold tracking-[-0.03em]">{lastPrice.value.toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-[0.55em] font-semibold text-muted">{lastPrice.currency}</span></span>
+              {priceChange !== null ? <span className={`font-semibold ${priceChange >= 0 ? "text-up" : "text-down"}`}>{priceChange >= 0 ? "+" : "−"}{Math.abs(priceChange).toFixed(2)}%</span> : null}
+              <span className="text-[0.82rem] text-muted">{lastPrice.label}</span>
+            </div>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap gap-2.5"><SaveToWatchlist etfKey={key} /><CompareToggle isin={key} wide /><Link className="btn btn-primary" href={`/assistant?q=${encodeURIComponent(`Find ETFs similar to ${row.name}`)}`}>{t("Find similar")}</Link></div>
       </header>
 
-      <section className="panel grid grid-cols-2 gap-x-6 gap-y-5 p-5 lg:grid-cols-4" aria-label={t("Key figures")}>
-        <Stat label={t("Yearly fee")} value={<Fee row={row} />} note={row.ter_as_of ?? row.ocf_as_of ? t("As of {date}", { date: formatDate(row.ter_as_of ?? row.ocf_as_of, t.lang) }) : row.headline_fee_pct === null ? t("No fee on file yet") : undefined} />
-        <Stat label={sizeIsClass ? t("Share class size") : t("Fund size")} value={formatMoney(size, sizeCurrency, t.lang)} note={row.fund_aum_as_of ?? row.class_aum_as_of ? t("As of {date}", { date: formatDate(row.fund_aum_as_of ?? row.class_aum_as_of, t.lang) }) : undefined} />
-        <Stat label={t("NAV return, 1 year")} value={<Change value={row.nav_return_1y} />} note={row.nav_return_1y !== null ? t("In {currency}, to {date}", { currency: returnCurrency ?? t("the fund's currency"), date: formatDate(row.nav_return_as_of, t.lang) }) : t("Not loaded yet")} />
-        <Stat label={t("Latest NAV")} value={row.nav !== null ? <>{row.nav.toFixed(2)} <span className="text-[0.6em] font-medium text-muted">{row.nav_currency}</span></> : MISSING} note={row.nav_as_of ? t("On {date}", { date: formatDate(row.nav_as_of, t.lang) }) : undefined} />
+      <section className="panel p-5 sm:p-6" aria-label={t("Key figures")}>
+        <h2 className="mb-4 text-[1.2rem] tracking-[-0.025em]">{t("Key facts")}</h2>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(10.5rem,1fr))] gap-3">
+          <FactTile label={t("Yearly fee")} value={<Fee row={row} />} note={row.ter_as_of ?? row.ocf_as_of ? t("As of {date}", { date: formatDate(row.ter_as_of ?? row.ocf_as_of, t.lang) }) : row.headline_fee_pct === null ? t("No fee on file yet") : undefined} />
+          <FactTile label={sizeIsClass ? t("Share class size") : t("Fund size")} value={formatMoney(size, sizeCurrency, t.lang)} note={row.fund_aum_as_of ?? row.class_aum_as_of ? t("As of {date}", { date: formatDate(row.fund_aum_as_of ?? row.class_aum_as_of, t.lang) }) : undefined} />
+          <FactTile label={t("NAV return, 1 year")} value={<Change value={row.nav_return_1y} />} note={row.nav_return_1y !== null ? t("In {currency}, to {date}", { currency: returnCurrency ?? t("the fund's currency"), date: formatDate(row.nav_return_as_of, t.lang) }) : t("Not loaded yet")} />
+          <FactTile label={t("Index")} value={row.index_slug ? <Link className="no-underline hover:text-pine" href={`/indices/${row.index_slug}`}>{row.index_name}</Link> : row.index_name ?? MISSING} small />
+          <FactTile label={t("Fund launched")} value={row.fund_launch_date ? row.fund_launch_date.slice(0, 4) : MISSING} />
+          <FactTile label={t("Holdings")} value={(full?.n_holdings ?? row.holdings_count)?.toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB") ?? MISSING} />
+          {row.headline_fee_pct !== null ? <FactTile label={t("On {amount}, the fee is", { amount: formatMoney(10000, lensCurrency, t.lang) })} value={t("{amount} a year", { amount: formatMoney(row.headline_fee_pct * 100, lensCurrency, t.lang) })} small /> : null}
+        </div>
       </section>
 
       {row.verification !== "reviewed" ? (
@@ -218,8 +266,8 @@ export default async function EtfPage({ params }: Props) {
 
       <SectionNav name={row.name} figure={row.headline_fee_pct !== null ? `${row.headline_fee_pct.toFixed(2)}%` : null} label={t("Sections of this page")} />
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start">
-        <div className="flex min-w-0 flex-col gap-10">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+        <div className="flex min-w-0 flex-col gap-6">
           <Section id="chart" title={t("Price history")}>
             {series ? (
               <>
@@ -355,7 +403,7 @@ export default async function EtfPage({ params }: Props) {
           ) : null}
 
           {!full && (sectors.length || countries.length) ? (
-            <div className="grid gap-10 md:grid-cols-2">
+            <div className={`grid gap-6 ${sectors.length && countries.length ? "md:grid-cols-2" : ""}`}>
               {sectors.length ? (
                 <Section id="sectors" title={t("Sectors")}>
                   <Bars rows={sectors} />
@@ -440,9 +488,10 @@ export default async function EtfPage({ params }: Props) {
           ) : null}
         </div>
 
-        <aside className="flex flex-col gap-3 lg:sticky lg:top-20">
+        <aside className="flex flex-col gap-5">
+          <QualityCard quality={facts.quality} />
           <LensCard row={row} />
-          <section className="panel p-4" id="documents">
+          <section className="panel p-5" id="documents">
             <h2 className="text-[1.05rem]">{t("Where these figures come from")}</h2>
             <dl className="mt-2 space-y-1.5">
               <div className="flex justify-between gap-3"><dt className="text-muted">{t("Source")}</dt><dd className="text-right">{row.source_url ? <a className="prose-link" href={row.source_url} rel="noreferrer" target="_blank">{researched ? (row.source_kind === "issuer_factsheet" ? t("Issuer factsheet") : t("Issuer website")) : row.headline_fee_pct !== null ? t("Issuer or regulator file") : t("Official list")}</a> : MISSING}</dd></div>
