@@ -1,0 +1,43 @@
+# Quarterly, a few weeks after each quarter ends: US fund sizes and holdings from the SEC's Form N-PORT data sets
+# (public domain), then the live database is reloaded. Also runs on demand and when the script changes.
+name: Quarterly SEC fund filings
+on:
+  schedule:
+    - cron: "29 6 3 2,5,8,11 *"
+  push:
+    branches: [main]
+    paths: ["scripts/universe/nport.py", ".github/workflows/nport.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: data
+jobs:
+  nport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: pip install pycountry
+      - run: python3 scripts/universe/nport.py
+        env:
+          SEC_CONTACT_EMAIL: ${{ secrets.SEC_CONTACT_EMAIL }}
+      - name: Commit results
+        run: |
+          git config user.name "etf-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || git commit -m "$MESSAGE"
+          git pull --rebase -X theirs origin "$GITHUB_REF_NAME"
+          git push
+        env:
+          MESSAGE: Update US fund sizes and holdings from SEC N-PORT
+      - name: Load into the live database, when one is configured
+        env:
+          SYNC_DATABASE_URL: ${{ secrets.SYNC_DATABASE_URL }}
+        run: |
+          if [ -n "$SYNC_DATABASE_URL" ]; then npm ci --no-audit --no-fund && npx tsx scripts/sync-db.ts; else echo "No SYNC_DATABASE_URL secret, skipped."; fi

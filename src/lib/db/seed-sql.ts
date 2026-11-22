@@ -364,6 +364,17 @@ export function buildSeedSql(root: string): string {
     }
   }
 
+  // US fund sizes from SEC Form N-PORT filings, used only where no issuer size exists.
+  const nportPath = join(root, "data/universe/sec_nport.csv.gz");
+  if (existsSync(nportPath)) {
+    const nportUrl = "https://www.sec.gov/data-research/sec-markets-data/form-n-port-data-sets";
+    for (const line of gunzipSync(readFileSync(nportPath)).toString("utf8").trim().split(/\r?\n/).slice(1)) {
+      const [rawKey, aum, currency, asOf] = parseLine(line);
+      const key = current(rawKey);
+      out.push(`insert into public.universe_details (etf_key, aum, aum_currency, aum_as_of, aum_level, source, source_url) select ${q(key)}, ${Number(aum)}, ${q(currency)}, ${q(asOf)}, 'fund', 'SEC N-PORT', ${q(nportUrl)} where exists (select 1 from public.universe_etfs u where u.etf_key = ${q(key)}) on conflict (etf_key) do update set aum_currency = case when public.universe_details.aum is null then excluded.aum_currency else public.universe_details.aum_currency end, aum_as_of = case when public.universe_details.aum is null then excluded.aum_as_of else public.universe_details.aum_as_of end, aum_level = case when public.universe_details.aum is null then excluded.aum_level else public.universe_details.aum_level end, aum = coalesce(public.universe_details.aum, excluded.aum);`);
+    }
+  }
+
   // Fees and sizes that an exchange publishes for its own listings, used only where nothing better exists.
   const exchangePath = join(root, "data/universe/exchange_facts.csv.gz");
   if (existsSync(exchangePath)) {
@@ -391,9 +402,12 @@ export function buildSeedSql(root: string): string {
   }
 
   // Full holdings, from scripts/universe/holdings.py.
-  const holdingsPath = join(root, "data/holdings/holdings.csv.gz");
-  const summaryPath = join(root, "data/holdings/summary.csv.gz");
-  if (existsSync(holdingsPath) && existsSync(summaryPath)) {
+  // Issuer files first, then SEC N-PORT holdings for the funds whose issuer publishes none.
+  for (const [holdingsFile, summaryFile] of [["holdings.csv.gz", "summary.csv.gz"], ["sec_holdings.csv.gz", "sec_summary.csv.gz"]]) {
+  const holdingsPath = join(root, "data/holdings", holdingsFile);
+  const summaryPath = join(root, "data/holdings", summaryFile);
+  if (!existsSync(holdingsPath) || !existsSync(summaryPath)) continue;
+  {
     const known = `where exists (select 1 from public.universe_etfs u where u.etf_key = v.etf_key) on conflict do nothing`;
     const summaries = gunzipSync(readFileSync(summaryPath)).toString("utf8").trim().split(/\r?\n/).slice(1).map((line) => {
       const [key, asOf, n, kept, covered, source, url] = parseLine(line);
@@ -421,6 +435,7 @@ export function buildSeedSql(root: string): string {
       ) m where m.holding_key = h.holding_key and (h.sector is null or h.sector in ('', '-'));`);
     out.push(`update public.holdings set sector = null where sector in ('', '-');`);
     out.push(`update public.holdings h set country = 'United States' from public.holdings x join public.universe_etfs u on u.etf_key = x.etf_key and u.ticker = 'SPY' where x.holding_key = h.holding_key and h.country is null;`);
+  }
   }
 
   out.push("commit;");
