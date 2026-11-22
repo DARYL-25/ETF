@@ -42,6 +42,8 @@ export const ACCOUNTS: Account[] = [
   { id: "BE-SEC", country: "BE", label: "Securities account", wrapper: "Securities account", incomeRate: 30, taxesRetained: false, sheltered: false, note: "Withholding tax on payouts and the stock exchange tax on each trade." },
   { id: "ES-SEC", country: "ES", label: "Securities account", wrapper: "Securities account", incomeRate: null, taxesRetained: false, sheltered: false, note: "Payouts and gains taxed in the savings base at progressive rates." },
   { id: "IT-SEC", country: "IT", label: "Securities account (regime amministrato)", wrapper: "Securities account (regime amministrato)", incomeRate: 26, taxesRetained: false, sheltered: false, note: "26% on payouts and gains of harmonised funds." },
+  { id: "LU-SEC", country: "LU", label: "Securities account", wrapper: "Securities account", incomeRate: null, taxesRetained: false, sheltered: false, note: "Gains exempt after six months for holdings below 10% of a company; payouts declared as income." },
+  { id: "NL-SEC", country: "NL", label: "Securities account", wrapper: "Securities account", incomeRate: 0, taxesRetained: false, sheltered: false, note: "Box 3: taxed each year on an assumed return on what you own, not on payouts or gains." },
   { id: "AT-SEC", country: "AT", label: "Securities account", wrapper: "Securities account", incomeRate: 27.5, taxesRetained: true, sheltered: false, note: "27.5% on payouts and on income an accumulating fund keeps, every year." },
 ];
 

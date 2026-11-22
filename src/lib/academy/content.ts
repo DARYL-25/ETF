@@ -10,7 +10,7 @@ export type Lesson = {
   references: { label: string; url: string }[];
 };
 
-export const LAST_UPDATED = "2026-11-05";
+export const LAST_UPDATED = "2026-11-22";
 const UCITS = { label: "Directive 2009/65/EC on UCITS", url: "https://eur-lex.europa.eu/eli/dir/2009/65/oj" };
 const PRIIPS = { label: "Regulation (EU) No 1286/2014 on PRIIPs key information documents", url: "https://eur-lex.europa.eu/eli/reg/2014/1286/oj" };
 const SEC = { label: "US SEC investor bulletin on mutual funds and ETFs", url: "https://www.sec.gov/oiea/investor-alerts-and-bulletins/investor-bulletin-characteristics-mutual-funds-and-exchange" };
@@ -256,6 +256,76 @@ export const LESSONS: Lesson[] = [
     references: [],
   },
   {
+    slug: "reading-an-etf-page", title: "Reading an ETF page: the metrics that matter", level: "Intermediate", minutes: 7,
+    summary: "Fee, size, tracking, replication, domicile and income: what each number tells you and which to check first.",
+    sections: [
+      { heading: "Start with three numbers", paragraphs: [
+        "The yearly fee (TER or OCF) is what the fund takes from your money each year, whatever the market does. On €10,000, a 0.20% fee is €20 a year. Compare it with other funds on the same index, not with funds on a different one.",
+        "Fund size, or assets under management, tells you how much money the fund holds. Larger funds usually trade on tighter spreads and are less likely to be closed. Below about €100 million, check that the fund is not shrinking.",
+        "Tracking difference is how far the fund's return was from its index over a year, fees included. It is the cost you actually paid, which can be lower or higher than the fee.",
+      ] },
+      { heading: "Then how the fund is built", paragraphs: [
+        "Replication says how the fund follows its index: by holding the shares (physical) or through a swap with a bank (synthetic). Tracking error measures how much its return wandered from the index from day to day: a low figure means a steady copy.",
+        "Domicile is the country the fund is set up in, often Ireland or Luxembourg for European ETFs. It decides how dividends are taxed before they reach the fund, and which investors can buy it.",
+        "Income treatment says whether the fund pays out its income (distributing) or reinvests it (accumulating). The right choice depends on your country's tax rules and whether you want the cash.",
+      ] },
+      { heading: "Read them together", paragraphs: [
+        "A cheap fund that is very small, or a large fund with a high fee, each have a trade-off. The fee and size quadrant on each index places every fund on both at once, so the large and cheap ones stand out.",
+      ] },
+    ],
+    tryIt: { label: "See the S&P 500 funds by fee and size", href: "/quadrants/index/sp-500" },
+    quiz: [
+      { question: "Which figure is the cost you actually paid against the index?", options: ["The TER", "The tracking difference", "The fund size"], answer: 1, why: "Tracking difference includes the fee and everything else that made the fund trail or beat its index." },
+      { question: "Why does fund size matter?", options: ["Bigger funds always return more", "Larger funds usually trade on tighter spreads and are less likely to close", "It sets the dividend"], answer: 1, why: "Size is a proxy for liquidity and for the fund's chance of staying open." },
+      { question: "What does domicile change?", options: ["The index", "How dividends are taxed before they reach the fund", "The share price"], answer: 1, why: "Tax treaties depend on where the fund is based." },
+    ],
+    references: [SEC, UCITS],
+  },
+  {
+    slug: "liquidity-and-spreads", title: "Liquidity, spreads and when to trade", level: "Intermediate", minutes: 5,
+    summary: "What you pay to buy and sell, beyond the fee, and how to keep it small.",
+    sections: [
+      { heading: "The spread is a cost too", paragraphs: [
+        "On an exchange there are two prices: what buyers offer (bid) and what sellers ask (ask). The gap is the spread. Buying at the ask and later selling at the bid costs you the spread, once in and once out.",
+        "For large ETFs on major indices the spread is often a few hundredths of a percent. For small or niche funds it can be several tenths.",
+      ] },
+      { heading: "An ETF is as liquid as what it holds", paragraphs: [
+        "Low trading volume on the exchange does not mean a fund is hard to trade: market makers can create and redeem shares against the underlying securities. What matters most is how easy the fund's holdings are to trade, and the fund's size.",
+      ] },
+      { heading: "Habits that keep costs down", paragraphs: [
+        "Trade when the fund's underlying markets are open: a European ETF on US shares trades with tighter spreads in the afternoon, when New York is open. Use limit orders rather than market orders, and avoid the first and last minutes of the trading day.",
+      ] },
+    ],
+    quiz: [
+      { question: "You buy at the ask and sell at the bid. What did that cost?", options: ["Nothing", "The spread", "The TER"], answer: 1, why: "Each round trip crosses the spread." },
+      { question: "When does a European ETF on US shares usually trade with the tightest spreads?", options: ["At the European open", "When the US market is also open", "At night"], answer: 1, why: "Market makers can then price and hedge with the underlying shares trading." },
+    ],
+    references: [PREMIUM, SEC],
+  },
+  {
+    slug: "tax-wrappers-and-holding", title: "Tax accounts and how long to hold", level: "Tax", minutes: 6,
+    summary: "PEA, assurance-vie, ISA, box 3 and others: why the account you use can matter more than the fund.",
+    sections: [
+      { heading: "The same ETF, different tax", paragraphs: [
+        "Many countries offer accounts with tax advantages for long-term savers: the PEA and the assurance-vie in France, the stocks and shares ISA in the United Kingdom, pillar 3a in Switzerland. Inside them, gains and income are taxed less, later, or not at all.",
+        "Outside such accounts, the usual rules apply: in France a flat tax on gains and dividends, in Germany a flat withholding tax with part of an equity fund's returns exempt, in the Netherlands a yearly tax on an assumed return.",
+      ] },
+      { heading: "Clocks that change the tax", paragraphs: [
+        "Some advantages start only after a holding period. A PEA frees gains from income tax five years after it was opened, and an assurance-vie becomes lighter after eight years. In Luxembourg, gains on securities sold after six months are exempt for a small holding. In Ireland the clock works the other way: every eight years of holding counts as a sale for tax.",
+        "Before selling, check whether a date is close. Waiting a few weeks can change the tax on the whole gain.",
+      ] },
+      { heading: "Use the site", paragraphs: [
+        "Choose your country at the top of the page. In your portfolio, set the account and its opening date: the tax points show the dates that apply to you and roughly what selling today would cost.",
+      ] },
+    ],
+    tryIt: { label: "See how long to hold, country by country", href: "/tax" },
+    quiz: [
+      { question: "When does a French PEA free gains from income tax?", options: ["Immediately", "Five years after it was opened", "After eight years"], answer: 1, why: "The five years run from the plan's opening, not from each purchase." },
+      { question: "What happens in Ireland after eight years of holding an EU ETF?", options: ["Gains become exempt", "It counts as a sale for tax, and exit tax is due on the gain", "Nothing"], answer: 1, why: "This is the deemed disposal rule." },
+    ],
+    references: [],
+  },
+  {
     slug: "etf-tax-layers", title: "The layers of ETF taxation", level: "Tax", minutes: 6,
     summary: "A map of where tax can apply. Educational, with no rates and no advice.",
     sections: [
@@ -278,6 +348,7 @@ export const LESSONS: Lesson[] = [
 ];
 
 export const PATHS: { slug: string; title: string; description: string; lessons: string[] }[] = [
+  { slug: "start-here", title: "The complete course", description: "Every metric and every word you need to choose ETFs on your own, in order.", lessons: ["what-is-an-etf", "what-is-an-index", "nav-and-market-price", "isin-ticker-listing", "fees-ter-ocf", "reading-an-etf-page", "tracking-difference", "liquidity-and-spreads", "replication", "accumulating-distributing", "currency-and-hedging", "domicile-and-ucits", "diversification-and-risk", "bond-etfs", "etf-tax-layers", "tax-wrappers-and-holding"] },
   { slug: "beginner", title: "ETF Beginner", description: "Understand what you are buying.", lessons: ["what-is-an-etf", "nav-and-market-price", "what-is-an-index", "isin-ticker-listing"] },
   { slug: "investor", title: "ETF Investor", description: "Compare funds on what really matters.", lessons: ["fees-ter-ocf", "tracking-difference", "replication", "accumulating-distributing", "currency-and-hedging", "domicile-and-ucits"] },
   { slug: "analyst", title: "Advanced ETF Analyst", description: "Read bond funds and portfolio risk.", lessons: ["tracking-difference", "bond-etfs", "diversification-and-risk"] },

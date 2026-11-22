@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Bookmark, Trash2 } from "lucide-react";
 import { formatDate, formatMoney, formatPct, formatSignedPct, MISSING } from "@/lib/format";
 import { useLocal } from "./local-store";
-import { AccountPanel, ImportPanel, JournalPanel, PerformancePanel, RebalancePanel, ShareButton, type Portfolio } from "./portfolio-tools";
+import { AccountPanel, ImportPanel, JournalPanel, PerformancePanel, RebalancePanel, ShareButton, TaxAdvicePanel, TradesChartPanel, type Portfolio } from "./portfolio-tools";
 import { netPositions } from "@/lib/portfolio/performance";
 import { snapshotOf, type Change, type Snapshot } from "@/lib/portfolio/watch";
 
@@ -227,8 +227,10 @@ export function PortfolioTracker({ lens = null }: { lens?: string | null }) {
                 <Link className="btn btn-quiet" href={`/dashboard?p=${p.id}`}>{t("Open the dashboard")}</Link>
               </p>
             ) : null}
-            <PerformancePanel portfolio={p} rows={rows} />
+            <PerformancePanel portfolio={p} rows={rows} onChange={(next) => save(portfolios.map((o) => (o.id === p.id ? next : o)))} />
+            <TradesChartPanel portfolio={p} rows={rows} />
             <AccountPanel portfolio={p} lens={lens} onChange={(next) => save(portfolios.map((o) => (o.id === p.id ? next : o)))} />
+            <TaxAdvicePanel portfolio={p} rows={rows} lens={lens} />
             <RebalancePanel portfolio={p} rows={rows} onChange={(next) => save(portfolios.map((o) => (o.id === p.id ? next : o)))} />
             <JournalPanel portfolio={p} rows={rows} onChange={(next) => save(portfolios.map((o) => (o.id === p.id ? next : o)))} />
             <ImportPanel onImport={(positions) => save(portfolios.map((o) => (o.id === p.id ? { ...o, positions: [...o.positions, ...positions] } : o)))} />

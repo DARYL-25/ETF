@@ -22,6 +22,11 @@ const IT_19E: Source = { label: "Agenzia delle Entrate, Circolare 19/E of 27 Jun
 const AT_INVFR: Source = { label: "BMF Findok, Investmentfondsrichtlinien", url: "https://findok.bmf.gv.at/findok/resources/pdf/595910a5-12d3-4079-8460-d5cbbf0c3ee6/37454.1.-1.X.pdf" };
 const AT_USP: Source = { label: "Unternehmensserviceportal (BMF), Kapitalertragsteuer", url: "https://www.usp.gv.at/steuern-finanzen/einkommensteuer-ueberblick/weitere-informationen-est/kapitalertragsteueranmeldung.html" };
 
+const LU_GAINS: Source = { label: "Guichet.lu, income from the purchase or sale of shares or other securities", url: "https://guichet.public.lu/en/citoyens/fiscalite/declaration-impot-decompte/capitaux-mobiliers/banque-dividende-interets/achat-vente-actions.html" };
+const NL_BOX3: Source = { label: "Belastingdienst, how box 3 income is calculated for 2026", url: "https://www.belastingdienst.nl/wps/wcm/connect/fisin/fisin2026/belastingberekening" };
+const NL_ALLOWANCE: Source = { label: "Belastingdienst, tax-free allowance (heffingsvrij vermogen)", url: "https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/heffingsvrij-vermogen" };
+const NL_RATE: Source = { label: "Rijksoverheid, types of income tax: box 3", url: "https://www.rijksoverheid.nl/themas/werk/inkomstenbelasting/soorten-inkomstenbelasting" };
+
 export const MORE_SOURCES = { UK_HS265, UK_ISA, DE_NRW, DE_INVSTG, IE_EBRIEF, BE_WIKIFIN, ES_CNMV, IT_19E, AT_INVFR };
 
 export const MORE_COUNTRIES: TaxCountry[] = [
@@ -138,5 +143,39 @@ export const MORE_COUNTRIES: TaxCountry[] = [
       { fact: "Income treatment", matters: "Matters little: retained income is taxed every year either way." },
     ],
     open: ["The exact flat estimate applied to non-reporting funds.", "Offsetting losses across your accounts in the tax return."],
+  },
+  {
+    code: "LU", slug: "luxembourg", name: "Luxembourg", adjective: "Luxembourg", authority: "Administration des contributions directes (ACD)", readOn: "2026-11-22",
+    summary: "For a private investor holding less than 10% of a company, gains on securities held for more than six months are exempt. Sold within six months, they are taxed at the progressive income tax rates. A budget bill would lengthen that period to twelve months from 2027.",
+    rules: [
+      { title: "Gains after six months are exempt", body: "Gains on a holding below 10% of a company's capital, sold more than six months after purchase, are exempt. Sold within six months, they are taxed at the ordinary progressive rates, up to 42.80% or 43.60%.", why: "Each purchase starts its own six-month clock. Selling units bought recently can make that part of the gain taxable, so sell older units first where your broker allows it.", sources: [LU_GAINS] },
+      { title: "Small gains are not taxed", body: "Capital gains realised during a calendar year in an amount below €500 are not taxable.", why: "Below the threshold you have nothing to declare. Above it, the whole gain becomes taxable, not just the part above €500.", sources: [LU_GAINS] },
+      { title: "Losses offset gains of the same year only", body: "Capital losses can be set against capital gains, but not against other income, and they cannot be carried forward to later years.", why: "A loss realised in a year without taxable gains is lost for tax purposes.", sources: [LU_GAINS] },
+    ],
+    wrappers: [
+      { name: "Securities account", body: "Gains follow the six-month rule above. Fund payouts are declared as investment income.", sources: [LU_GAINS], holding: { years: 0, effect: "Each purchase becomes exempt six months after it was made." } },
+    ],
+    compare: [
+      { fact: "Income treatment", matters: "An accumulating fund pays out nothing to declare each year; gains after six months stay exempt." },
+      { fact: "Fund domicile", matters: "Luxembourg-domiciled funds are common and pay no withholding tax to their investors." },
+    ],
+    open: ["How the six-month rule applies to fund units and ETFs: the official page speaks of shares and other securities, so confirm with the ACD.", "Budget bill 8800, which would raise the period from six to twelve months from 2027, if passed.", "Tax on fund payouts, and the subscription tax paid inside funds."],
+  },
+  {
+    code: "NL", slug: "netherlands", name: "Netherlands", adjective: "Dutch", authority: "Belastingdienst", readOn: "2026-11-22",
+    summary: "ETFs fall in box 3: you are taxed on an assumed return on your investments above a tax-free amount, whether you sell or not. Selling, the holding period and accumulating or distributing make no difference to that tax.",
+    rules: [
+      { title: "Box 3 taxes an assumed return, not your gains", body: "For 2026, investments count at an assumed return of 6% a year. The rate on that return is 36%.", why: "There is no holding period to wait for and no tax event when you sell: the tax depends on what you own, not on when you sell it.", sources: [NL_BOX3, NL_RATE] },
+      { title: "A tax-free amount per person", body: "The tax-free amount in box 3 is €59,357 in 2026, or €118,714 for tax partners.", why: "Below that amount of net savings and investments you pay no box 3 tax at all.", sources: [NL_ALLOWANCE] },
+      { title: "A lower actual return can be claimed", body: "If your actual return turns out lower than the assumed return, your box 3 income is adjusted to the actual return in your tax return.", why: "In a bad year for markets, keep the figures to claim the lower actual return.", sources: [NL_BOX3] },
+    ],
+    wrappers: [
+      { name: "Securities account", body: "Everything held counts in box 3 at the assumed return.", sources: [NL_BOX3], holding: { years: 0, effect: "No holding period: the tax is the same whenever you sell." } },
+    ],
+    compare: [
+      { fact: "Income treatment", matters: "Matters little in box 3, since the tax is on the assumed return." },
+      { fact: "Fund domicile", matters: "It decides how dividends are taxed inside the fund before they reach it." },
+    ],
+    open: ["The planned switch to taxing actual returns in box 3, which changes these rules once it takes effect.", "Dividend tax withheld by Dutch funds and how it is credited.", "The provisional assessment uses assumed returns: the final figures come with your tax return."],
   },
 ];

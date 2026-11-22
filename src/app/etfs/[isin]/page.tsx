@@ -2,6 +2,10 @@ import { alternatesFor, getT } from "@/lib/i18n/server";
 import { themeBySlug } from "@/lib/etfs/themes";
 import { Mosaic } from "@/components/mosaic";
 import { SectionNav } from "@/components/section-nav";
+import { ExposurePanel } from "@/components/exposure-panel";
+import { QuadrantChart } from "@/components/quadrant-chart";
+import { indexQuadrant, quadrantOf, themeQuadrant } from "@/lib/etfs/quadrants";
+import { currencies as currencyMix, normalise } from "@/lib/geo/exposure";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -123,7 +127,7 @@ async function LensCard({ row }: { row: EtfRow }) {
     return (
       <section className="panel p-5">
         <h2 className="text-[1.05rem]">{t("Where do you live?")}</h2>
-        <p className="mt-1.5 text-muted">{t("Choose your country at the top of the page, and this panel shows what matters there for this fund. Tax notes cover nine European countries so far.")}</p>
+        <p className="mt-1.5 text-muted">{t("Choose your country at the top of the page, and this panel shows what matters there for this fund. Tax notes cover eleven European countries so far.")}</p>
       </section>
     );
   }
@@ -185,12 +189,28 @@ export default async function EtfPage({ params }: Props) {
   ]);
   const [peers, exposure, lensNow] = await Promise.all([peerPosition(row), fundExposures([{ key, name: row.name }]), getLens()]);
   const usShare = exposure[0]?.us_pct ?? null;
+  // Share of peers this fund charges less than, among those with a fee: rank 1 of 10 beats 90%.
+  const feeBeats = peers && peers.feeRank !== null && peers.group.withFee >= 4 ? Math.round(((peers.group.withFee - peers.feeRank) / (peers.group.withFee - 1)) * 100) : null;
   const assessment = assessEtf(row, peers, { country: lensNow?.code ?? null, usSharePct: usShare });
   const replication = row.asset_class === "equity" || !row.asset_class ? replicationAdvice({ usSharePct: usShare ?? (row.index_slug === "sp-500" || row.index_slug === "nasdaq-100" ? 100 : null), european: isEuropeanIndex(row), account: null, yieldPct: row.trailing_yield_pct ?? DEFAULT_YIELD.equity }) : null;
   const full = await getHoldingsSummary(row.etf_key ?? key);
   const [fullTop, fullSectors, fullCountries] = full ? await Promise.all([getTopHoldingsFull(full.etf_key, 64), getBreakdown(full.etf_key, "sector"), getBreakdown(full.etf_key, "country")]) : [[], [], []];
   const sectors = exposures.filter((x) => x.dimension === "sector");
   const countries = exposures.filter((x) => x.dimension === "country");
+  const exposureCountries = full ? fullCountries.map((x) => ({ label: x.label, weight_pct: x.weight_pct })) : countries.map((x) => ({ label: x.label, weight_pct: x.weight_pct }));
+  const exposureSectors = full ? fullSectors.map((x) => ({ label: x.label, weight_pct: x.weight_pct })) : sectors.map((x) => ({ label: x.label, weight_pct: x.weight_pct }));
+  const exposureData = exposureCountries.length || exposureSectors.length > 1 ? {
+    countries: normalise(exposureCountries), sectors: normalise(exposureSectors), currencies: currencyMix(exposureCountries),
+    note: full ? t("From the {n} largest holdings in the issuer's file, {pct}% of the fund, rescaled to 100%. Currencies are those the shares are priced in.", { n: full.kept, pct: full.covered_pct.toFixed(0) }) : t("From the issuer's published breakdown, largest lines only, rescaled to 100%."),
+  } : null;
+  const theme = row.category_slugs.find((c) => themeBySlug(c)?.kind === "theme") ?? row.category_slugs.find((c) => themeBySlug(c));
+  const quadrant = row.index_slug ? await indexQuadrant(row.index_slug) : theme ? await themeQuadrant(theme) : null;
+  const where = quadrant ? quadrantOf(quadrant, key) : null;
+  const quadrantSentence = !quadrant ? "" : where === "large-cheap" ? t("Among the {n} funds on {group}, this one is both larger and cheaper than the median: the corner you want.", { n: quadrant.points.length, group: t(quadrant.label) })
+    : where === "large-dear" ? t("Among the {n} funds on {group}, this one is larger than the median but charges more than it.", { n: quadrant.points.length, group: t(quadrant.label) })
+    : where === "small-cheap" ? t("Among the {n} funds on {group}, this one is cheaper than the median but smaller, so it may trade on wider spreads.", { n: quadrant.points.length, group: t(quadrant.label) })
+    : where === "small-dear" ? t("Among the {n} funds on {group}, this one is both smaller and dearer than the median.", { n: quadrant.points.length, group: t(quadrant.label) })
+    : t("Where the {n} funds on {group} sit by fee and size. This fund has no size on file, so it is not drawn.", { n: quadrant.points.length, group: t(quadrant.label) });
   const metric = (name: string) => bond.find((b) => b.metric === name);
   const retrieved = row.source_retrieved_on;
   const size = row.fund_aum ?? row.class_aum;
@@ -226,6 +246,7 @@ export default async function EtfPage({ params }: Props) {
             {row.distribution_policy ? <span className="badge">{t(distributionLabel(row.distribution_policy))}</span> : null}
             {row.domicile ? <span className="badge">{countryName(row.domicile, t.lang)}</span> : null}
             {row.hedged ? <span className="badge">{t("Currency hedged")}</span> : null}
+            {feeBeats !== null && feeBeats >= 75 ? <span className="badge border-pine text-pine-deep">{t("Among the cheapest in its group")}</span> : feeBeats !== null && feeBeats <= 25 ? <span className="badge">{t("Among the dearest in its group")}</span> : null}
           </div>
           <h1 className="text-[clamp(1.9rem,3.8vw,3rem)] tracking-[-0.04em]">{row.name}</h1>
           <div className="flex items-center gap-2.5 text-muted"><IssuerLogo name={row.name} /><span>{row.issuer_name === "Not identified" ? t("Issuer not identified") : row.issuer_name}</span><span aria-hidden>·</span><span className="data">{[row.ticker ? `${row.ticker}${exchange ? ` ${t("on")} ${exchange}` : ""}` : null, isin ? `ISIN ${isin}` : null].filter(Boolean).join(", ") || MISSING}</span></div>
@@ -248,6 +269,9 @@ export default async function EtfPage({ params }: Props) {
           <FactTile label={t("NAV return, 1 year")} value={<Change value={row.nav_return_1y} />} note={row.nav_return_1y !== null ? t("In {currency}, to {date}", { currency: returnCurrency ?? t("the fund's currency"), date: formatDate(row.nav_return_as_of, t.lang) }) : t("Not loaded yet")} />
           <FactTile label={t("Index")} value={row.index_slug ? <Link className="no-underline hover:text-pine" href={`/indices/${row.index_slug}`}>{row.index_name}</Link> : row.index_name ?? MISSING} small />
           <FactTile label={t("Fund launched")} value={row.fund_launch_date ? row.fund_launch_date.slice(0, 4) : MISSING} />
+          <FactTile label={t("Replication")} value={t(replicationLabel(row.replication))} small />
+          {row.tracking_error_3y ? <FactTile label={t("Tracking error, 3 years")} value={formatPct(row.tracking_error_3y)} note={t("How much its return wandered from the index")} /> : facts.trackingBeyondFeePct !== null ? <FactTile label={t("Tracking beyond the fee")} value={`${facts.trackingBeyondFeePct >= 0 ? "+" : "−"}${Math.abs(facts.trackingBeyondFeePct).toFixed(2)}%`} note={t("Measured against the best fund on its index, 1 year")} /> : null}
+          {feeBeats !== null ? <FactTile label={t("Fee against its peers")} value={t("Cheaper than {pct}%", { pct: feeBeats })} note={t("of {n} funds on {group}", { n: peers!.group.withFee, group: t(peers!.group.label) })} small /> : null}
           <FactTile label={t("Holdings")} value={(full?.n_holdings ?? row.holdings_count)?.toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB") ?? MISSING} />
           {row.headline_fee_pct !== null ? <FactTile label={t("On {amount}, the fee is", { amount: formatMoney(10000, lensCurrency, t.lang) })} value={t("{amount} a year", { amount: formatMoney(row.headline_fee_pct * 100, lensCurrency, t.lang) })} small /> : null}
         </div>
@@ -271,12 +295,12 @@ export default async function EtfPage({ params }: Props) {
           <Section id="chart" title={t("Price history")}>
             {series ? (
               <>
-                <PriceChart series={[{ label: `${series.ticker} (${series.currency})`, currency: series.currency, points: series.points }]} />
+                <PriceChart series={[{ label: `${series.ticker} (${series.currency})`, currency: series.currency, points: series.points }]} feePct={row.headline_fee_pct} />
                 <p className="mt-2 max-w-[72ch] text-[0.85rem] text-muted">{t("Market price of ")}{series.ticker}{t(" on ")}{series.exchange}{t(", one point per month, last point ")}{formatDate(series.points.at(-1)!.date, t.lang)}{t(". Not NAV, and delayed. Source: ")}{series.source}.</p>
               </>
             ) : daily.length >= 5 ? (
               <>
-                <PriceChart series={[{ label: `${row.ticker ?? "NAV"} (${daily.at(-1)!.currency ?? ""})`, currency: daily.at(-1)!.currency, points: daily.map((d) => ({ date: d.date, close: d.value })) }]} />
+                <PriceChart series={[{ label: `${row.ticker ?? "NAV"} (${daily.at(-1)!.currency ?? ""})`, currency: daily.at(-1)!.currency, points: daily.map((d) => ({ date: d.date, close: d.value })) }]} feePct={row.headline_fee_pct} />
                 <p className="mt-2 max-w-[72ch] text-[0.85rem] text-muted">{t("Daily ")}{kind}{t(" from ")}{daily.at(-1)!.source}{t(", collected by us since ")}{formatDate(daily[0].date, t.lang)}{t(". Last point ")}{formatDate(daily.at(-1)!.date, t.lang)}{t(". End of day, never real time.")}</p>
               </>
             ) : daily.length ? (
@@ -363,7 +387,7 @@ export default async function EtfPage({ params }: Props) {
               <p className="mb-4 max-w-[72ch] text-muted">{full.as_of ? t("{n} holdings on {date}, from {source}'s holdings file.", { n: full.n_holdings.toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB"), date: formatDate(full.as_of, t.lang), source: full.source }) : t("{n} holdings, from {source}'s holdings file.", { n: full.n_holdings.toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB"), source: full.source })}{full.kept < full.n_holdings ? t(" We keep the largest {n}, which make up {pct}% of the fund.", { n: full.kept, pct: full.covered_pct.toFixed(1) }) : ""}</p>
               <Mosaic items={fullTop} label={t("Largest holdings of {name}", { name: row.name })} restLabel={(pct) => t("{n} more holdings, {pct}%", { n: Math.max(0, full.n_holdings - fullTop.length).toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB"), pct })} />
               <p className="mb-6 mt-2 text-[0.85rem] text-muted">{t("Each tile is one holding, sized by its share of the fund. Select one to see every ETF that owns it.")}</p>
-              <div className="grid gap-x-10 gap-y-8 md:grid-cols-2">
+              <div className="max-w-2xl">
                 <div>
                   <h3 className="mb-1 text-[1.05rem]">{t("Largest holdings")}</h3>
                   <ul data-reveal>
@@ -375,8 +399,6 @@ export default async function EtfPage({ params }: Props) {
                     ))}
                   </ul>
                 </div>
-                {fullSectors.length > 1 ? <div><h3 className="mb-1 text-[1.05rem]">{t("Sectors")}</h3><Bars rows={fullSectors.map((x) => ({ label: x.label, weight_pct: x.weight_pct }))} /></div> : null}
-                {fullCountries.length > 1 ? <div><h3 className="mb-1 text-[1.05rem]">{t("Countries")}</h3><Bars rows={fullCountries.map((x) => ({ label: x.label, weight_pct: x.weight_pct }))} /></div> : null}
               </div>
               <p className="mt-4 flex flex-wrap gap-2"><Link className="btn btn-quiet" href={`/compare?isins=${key}`}>{t("Check overlap with another ETF")}</Link>{full.source_url ? <a className="btn btn-quiet" href={full.source_url} target="_blank" rel="noreferrer">{t("Issuer page")}</a> : null}</p>
             </Section>
@@ -402,23 +424,18 @@ export default async function EtfPage({ params }: Props) {
             </Section>
           ) : null}
 
-          {!full && (sectors.length || countries.length) ? (
-            <div className={`grid gap-6 ${sectors.length && countries.length ? "md:grid-cols-2" : ""}`}>
-              {sectors.length ? (
-                <Section id="sectors" title={t("Sectors")}>
-                  <Bars rows={sectors} />
-                  <p className="mt-1"><AsOf date={sectors[0].as_of} retrieved={sectors[0].observed_on} /></p>
-                  <p className="text-[0.85rem] text-muted">{t("Largest ")}{sectors.length}{t(" only.")}</p>
-                </Section>
-              ) : null}
-              {countries.length ? (
-                <Section id="countries" title={t("Countries")}>
-                  <Bars rows={countries} />
-                  <p className="mt-1"><AsOf date={countries[0].as_of} retrieved={countries[0].observed_on} /></p>
-                  <p className="text-[0.85rem] text-muted">{t("Largest ")}{countries.length}{t(" only.")}</p>
-                </Section>
-              ) : null}
-            </div>
+          {exposureData ? (
+            <Section id="exposure" title={t("Where the money goes")}>
+              <ExposurePanel data={exposureData} />
+            </Section>
+          ) : null}
+
+          {quadrant && quadrant.points.length >= 5 ? (
+            <Section id="quadrant" title={t("Fee and size against its peers")}>
+              <p className="mb-3 max-w-[72ch] text-muted">{quadrantSentence}</p>
+              <QuadrantChart q={quadrant} highlight={key} compact />
+              <p className="mt-2 text-[0.85rem]"><Link className="prose-link" href={`/quadrants/${quadrant.kind}/${quadrant.slug}`}>{t("Open the full quadrant")}</Link></p>
+            </Section>
           ) : null}
 
           {listings.length ? (

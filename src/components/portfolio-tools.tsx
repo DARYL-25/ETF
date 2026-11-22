@@ -2,18 +2,20 @@
 
 import { useT } from "@/lib/i18n/client";
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Copy, FileUp, Share2, Trash2 } from "lucide-react";
 import { drift } from "@/lib/portfolio/rebalance";
 import { encodeShared } from "@/lib/portfolio/share";
-import { netPositions, performance, milestones } from "@/lib/portfolio/performance";
+import { netPositions, performance, milestones, netOfSubscriptions, type Subscription } from "@/lib/portfolio/performance";
+import { taxPoints } from "@/lib/tax/advice";
+import { PriceChart } from "./price-chart";
 import { ACCOUNTS, accountById, holdingFor } from "@/lib/tax/drag";
 import { formatDate } from "@/lib/format";
 
 export type Position = { id: string; key: string; quantity: number; price: number; date: string; side?: "buy" | "sell"; fee?: number };
 export type JournalEntry = { id: string; date: string; key: string; action: "buy" | "sell" | "hold" | "note"; reason: string };
-export type Portfolio = { id: string; name: string; positions: Position[]; targets?: Record<string, number>; threshold?: number; journal?: JournalEntry[]; note?: string; account?: string; opened?: string };
-type Row = { name: string; nav: number | null; nav_currency: string | null };
+export type Portfolio = { id: string; name: string; positions: Position[]; targets?: Record<string, number>; threshold?: number; journal?: JournalEntry[]; note?: string; account?: string; opened?: string; subscriptions?: Subscription[] };
+type Row = { name: string; nav: number | null; nav_currency: string | null; distribution_policy?: string | null; asset_class?: string | null; pea_eligible?: boolean | null; headline_fee_pct?: number | null };
 
 const newId = () => Math.random().toString(36).slice(2, 10);
 const today = () => new Date().toISOString().slice(0, 10);
@@ -237,10 +239,14 @@ export function AccountPanel({ portfolio, onChange, lens }: { portfolio: Portfol
 }
 
 /** Gains, fees and the money-weighted return (XIRR) from the reader's own buys and sells. */
-export function PerformancePanel({ portfolio, rows }: { portfolio: Portfolio; rows: Record<string, Row> }) {
+export function PerformancePanel({ portfolio, rows, onChange }: { portfolio: Portfolio; rows: Record<string, Row>; onChange?: (p: Portfolio) => void }) {
   const t = useT();
   const prices = Object.fromEntries(Object.entries(rows).map(([k, r]) => [k, { nav: r.nav, currency: r.nav_currency, name: r.name }]));
   const perf = performance(portfolio.positions, prices);
+  const subs = portfolio.subscriptions ?? [];
+  const net = netOfSubscriptions(perf, subs);
+  const brokerFees = perf.funds.reduce((sum, f) => sum + f.fees, 0);
+  const fundFeesYear = perf.funds.reduce((sum, f) => sum + (f.value ?? 0) * ((rows[f.key]?.headline_fee_pct ?? 0) / 100), 0);
   const m = (v: number | null, ccy: string | null) => (v === null ? "—" : `${Math.round(v).toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB")}${ccy ? ` ${ccy}` : ""}`);
   if (!perf.funds.length) return null;
   return (
@@ -253,6 +259,7 @@ export function PerformancePanel({ portfolio, rows }: { portfolio: Portfolio; ro
             <p className="stat-value">{pctFmt(c.xirr)}<span className="ml-1 text-[0.8rem] font-normal text-muted">{t("a year (XIRR)")}</span></p>
             <p className="text-[0.9rem]">{t("Paid in {in}, taken out {out}, worth {value}: gain {gain}.", { in: m(c.paidIn, null), out: m(c.takenOut, null), value: m(c.value, null), gain: m(c.gain, null) })}</p>
             {!c.complete ? <p className="text-[0.8rem] text-muted">{t("Some funds have no NAV, so the return is not shown.")}</p> : null}
+            {(() => { const n = net.find((x) => x.currency === c.currency); return n && n.subscriptions > 0 ? <p className="mt-1 text-[0.9rem]"><b>{t("After subscriptions")}</b>: {t("gain {gain}, {xirr} a year", { gain: m(n.netGain, null), xirr: pctFmt(n.netXirr) })}</p> : null; })()}
           </div>
         ))}
       </div>
@@ -269,15 +276,129 @@ export function PerformancePanel({ portfolio, rows }: { portfolio: Portfolio; ro
                 <td className={`num ${f.unrealised === null ? "" : f.unrealised >= 0 ? "text-up" : "text-down"}`}>{m(f.unrealised, null)}</td>
                 <td className={`num ${f.realised >= 0 ? "" : "text-down"}`}>{f.realised ? m(f.realised, null) : "—"}</td>
                 <td className="num">{f.fees ? f.fees.toFixed(2) : "—"}</td>
-                <td className="num">{pctFmt(f.xirr)}</td>
+                <td className="num">{f.days !== null && f.days < 365 ? <span title={t("Under a year, the total return is shown: a yearly rate would exaggerate it.")}>{pctFmt(f.paidIn ? ((f.value ?? 0) + f.takenOut - f.paidIn) / f.paidIn : null)} <span className="text-[0.75rem] text-muted">{t("total")}</span></span> : pctFmt(f.xirr)}</td>
                 <td className="num whitespace-nowrap">{f.days === null ? "—" : f.days >= 365 ? t("{n} years", { n: (f.days / 365.25).toFixed(1) }) : t("{n} days", { n: f.days })}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        <div className="rounded-xl bg-sunken p-3"><p className="text-[0.85rem] text-muted">{t("Broker fees paid")}</p><p className="stat-value">{m(brokerFees, perf.currencies.length === 1 ? perf.currencies[0].currency : null)}</p></div>
+        <div className="rounded-xl bg-sunken p-3"><p className="text-[0.85rem] text-muted">{t("Subscriptions paid")}</p><p className="stat-value">{net.reduce((x, n) => x + n.subscriptions, 0) ? net.filter((n) => n.subscriptions).map((n) => m(n.subscriptions, n.currency)).join(" + ") : "—"}</p></div>
+        <div className="rounded-xl bg-sunken p-3"><p className="text-[0.85rem] text-muted">{t("Fund fees, per year at today's value")}</p><p className="stat-value">{fundFeesYear ? m(fundFeesYear, perf.currencies.length === 1 ? perf.currencies[0].currency : null) : "—"}</p></div>
+      </div>
+      {onChange ? <SubscriptionsEditor subs={subs} onChange={(next) => onChange({ ...portfolio, subscriptions: next })} /> : null}
       {perf.warnings.map((w) => <p key={w.text + JSON.stringify(w.vars)} className="mt-1 text-[0.85rem] text-muted">{t(w.text, w.vars)}</p>)}
       <p className="mt-2 text-[0.82rem] text-muted">{t("Average cost method; fees are added to purchases and deducted from sales. XIRR is the yearly return that balances your payments, withdrawals and today's value at their dates; it is shown once a fund has been held for more than a day. Values use the latest NAV in the fund's currency, before tax.")}</p>
+    </details>
+  );
+}
+
+/** Recurring costs outside the trades, so the profit shown is what is really left. */
+function SubscriptionsEditor({ subs, onChange }: { subs: Subscription[]; onChange: (s: Subscription[]) => void }) {
+  const t = useT();
+  const [draft, setDraft] = useState<Omit<Subscription, "id">>({ label: "", amount: 0, currency: "EUR", every: "month", from: today() });
+  return (
+    <div className="mt-4 rounded-xl border border-line p-3">
+      <p className="font-semibold">{t("Recurring costs")}</p>
+      <p className="text-[0.85rem] text-muted">{t("Custody fees, a broker or app subscription, an adviser: anything you pay to invest, so the gain shown is what you really keep.")}</p>
+      {subs.length ? (
+        <ul className="mt-2 space-y-1">
+          {subs.map((x) => (
+            <li key={x.id} className="flex items-center justify-between gap-3 border-t border-line pt-1.5">
+              <span>{x.label || t("Subscription")} · {x.amount} {x.currency} {x.every === "month" ? t("a month") : t("a year")} · {t("since {date}", { date: formatDate(x.from, t.lang) })}{x.to ? ` → ${formatDate(x.to, t.lang)}` : ""}</span>
+              <button type="button" aria-label={t("Remove")} className="cursor-pointer p-1 text-muted hover:text-down" onClick={() => onChange(subs.filter((y) => y.id !== x.id))}><Trash2 size={15} aria-hidden /></button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="mt-2 grid gap-2 md:grid-cols-[1.4fr_0.8fr_0.6fr_0.8fr_1fr_auto]">
+        <input aria-label={t("What it is")} placeholder={t("What it is, e.g. broker plan")} className="field" value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value.slice(0, 80) })} />
+        <input aria-label={t("Amount")} className="field data" type="number" min="0" step="0.01" value={draft.amount} onChange={(e) => setDraft({ ...draft, amount: Math.max(0, Number(e.target.value)) })} />
+        <input aria-label={t("Currency")} className="field data uppercase" maxLength={3} value={draft.currency} onChange={(e) => setDraft({ ...draft, currency: e.target.value.toUpperCase() })} />
+        <select aria-label={t("How often")} className="field" value={draft.every} onChange={(e) => setDraft({ ...draft, every: e.target.value as "month" | "year" })}><option value="month">{t("Monthly")}</option><option value="year">{t("Yearly")}</option></select>
+        <input aria-label={t("Since")} className="field data" type="date" value={draft.from} onChange={(e) => setDraft({ ...draft, from: e.target.value })} />
+        <button type="button" className="btn btn-quiet" disabled={!(draft.amount > 0) || !draft.from} onClick={() => { onChange([...subs, { ...draft, id: newId() }]); setDraft({ ...draft, label: "", amount: 0 }); }}>{t("Add")}</button>
+      </div>
+    </div>
+  );
+}
+
+/** Each fund's price history with the reader's own purchases and sales marked on it. */
+export function TradesChartPanel({ portfolio, rows }: { portfolio: Portfolio; rows: Record<string, Row> }) {
+  const t = useT();
+  const keys = [...new Set(portfolio.positions.map((p) => p.key))];
+  const [key, setKey] = useState(keys[0] ?? "");
+  const [data, setData] = useState<{ name: string; ticker: string | null; currency: string | null; fee_pct: number | null; points: { date: string; close: number }[] } | null>(null);
+  const active = keys.includes(key) ? key : keys[0] ?? "";
+  useEffect(() => {
+    if (!active) return;
+    const c = new AbortController();
+    setData(null);
+    fetch(`/api/v1/etfs/${encodeURIComponent(active)}/prices`, { signal: c.signal }).then((r) => (r.ok ? r.json() : null)).then(setData).catch(() => undefined);
+    return () => c.abort();
+  }, [active]);
+  const trades = useMemo(() => portfolio.positions.filter((p) => p.key === active).map((p) => ({ date: p.date, side: p.side ?? "buy", quantity: p.quantity, price: p.price } as const)), [portfolio.positions, active]);
+  if (!keys.length) return null;
+  const before = data?.points.length ? trades.filter((x) => x.date < data.points[0].date).length : 0;
+  return (
+    <details className="mt-3 rounded-xl border border-line bg-surface p-3" open>
+      <summary className="cursor-pointer font-semibold">{t("Your trades on the chart")}</summary>
+      <div className="mt-2 flex flex-wrap items-center gap-3">
+        <select aria-label={t("ETF")} className="field max-w-md" value={active} onChange={(e) => setKey(e.target.value)}>{keys.map((k) => <option key={k} value={k}>{rows[k]?.name ?? k}</option>)}</select>
+        <span className="inline-flex items-center gap-1.5 text-[0.85rem]"><span aria-hidden className="size-3 rounded-full bg-up" />{t("Purchase")}</span>
+        <span className="inline-flex items-center gap-1.5 text-[0.85rem]"><span aria-hidden className="size-3 rounded-full bg-down" />{t("Sale")}</span>
+      </div>
+      <div className="mt-3">
+        {data && data.points.length >= 5 ? <PriceChart series={[{ label: `${data.ticker ?? data.name} (${data.currency ?? ""})`, currency: data.currency, points: data.points }]} feePct={data.fee_pct} trades={trades} />
+          : data ? <p className="text-muted">{t("We do not hold enough price history for this ETF yet to draw your trades.")}</p>
+          : <p className="text-muted" role="status">{t("Loading…")}</p>}
+      </div>
+      {before ? <p className="mt-1 text-[0.85rem] text-muted">{t("{n} of your trades are older than the price history we hold, so they are not drawn.", { n: before })}</p> : null}
+    </details>
+  );
+}
+
+/** Tax points for the reader's own positions, and a short plan written from them by an open-weight model. */
+export function TaxAdvicePanel({ portfolio, rows, lens }: { portfolio: Portfolio; rows: Record<string, Row>; lens: string | null }) {
+  const t = useT();
+  const [plan, setPlan] = useState<{ text: string | null; model: string | null } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const account = accountById(portfolio.account);
+  const prices = Object.fromEntries(Object.entries(rows).map(([k, r]) => [k, { nav: r.nav, currency: r.nav_currency, name: r.name }]));
+  const perf = performance(portfolio.positions, prices);
+  const facts = Object.entries(rows).map(([key, r]) => ({ key, name: r.name, distribution_policy: r.distribution_policy ?? null, asset_class: r.asset_class ?? null, pea_eligible: r.pea_eligible ?? null }));
+  const points = taxPoints({ account, opened: portfolio.opened ?? null, lots: portfolio.positions, funds: perf.funds, facts });
+  if (!perf.funds.length) return null;
+  const write = async () => {
+    setBusy(true);
+    try {
+      const r = await fetch("/api/v1/portfolio/tax-plan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({
+        account: account?.label ?? null, country: account?.country ?? lens, points: points.map((p) => t(p.text, p.vars)),
+        funds: perf.funds.map((f) => ({ name: f.name, held_years: f.days === null ? null : Number((f.days / 365.25).toFixed(1)), gain: f.unrealised === null ? null : Math.round(f.unrealised), currency: f.currency })),
+      }) });
+      setPlan(r.ok ? await r.json() : { text: null, model: null });
+    } finally { setBusy(false); }
+  };
+  const tone = { act: "border-l-pine", wait: "border-l-saffron", info: "border-l-line-strong" } as const;
+  return (
+    <details className="mt-3 rounded-xl border border-line bg-surface p-3" open>
+      <summary className="cursor-pointer font-semibold">{t("Tax points for this portfolio")}{points.length ? <span className="ml-2 text-muted">({points.length})</span> : null}</summary>
+      <ul className="mt-2 flex flex-col gap-2">
+        {points.map((p) => <li key={p.id} className={`rounded-lg border-l-4 bg-sunken px-3 py-2 ${tone[p.level]}`}>{t(p.text, p.vars)}</li>)}
+      </ul>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button type="button" className="btn btn-navy" disabled={busy || !points.length} onClick={write}>{busy ? t("Writing…") : t("Write my tax plan")}</button>
+        <span className="text-[0.82rem] text-muted">{t("Written by an open-source AI model from the points above only.")}</span>
+      </div>
+      {plan ? (plan.text ? (
+        <div className="mt-3 rounded-xl border border-line p-3">
+          <div className="whitespace-pre-wrap leading-relaxed">{plan.text}</div>
+          {plan.model ? <p className="mt-2 text-[0.78rem] text-muted">{t("Model: {model}", { model: plan.model })}</p> : null}
+        </div>
+      ) : <p className="mt-2 text-muted">{t("The AI model is not available right now. The points above are complete without it.")}</p>) : null}
+      <p className="mt-2 text-[0.82rem] text-muted">{t("Estimates from the rules on our tax pages and your own entries, before allowances and personal circumstances. General information, not tax advice.")} <Link className="prose-link" href="/tax">{t("Tax notes by country")}</Link></p>
     </details>
   );
 }

@@ -9,7 +9,7 @@ describe("tax notes", () => {
     for (const c of TAX_COUNTRIES) {
       for (const r of [...c.rules, ...c.wrappers]) {
         expect(r.sources.length, `${c.name}: ${"title" in r ? r.title : r.name}`).toBeGreaterThan(0);
-        for (const s of r.sources) expect(s.url).toMatch(/^https:\/\/([a-z0-9-]+\.)*(admin\.ch|gouv\.fr|gov\.uk|revenue\.ie|belgium\.be|wikifin\.be|gesetze-im-internet\.de|finanzamt\.nrw\.de|bmf\.gv\.at|usp\.gv\.at|cnmv\.es|agenziaentrate\.gov\.it)\//);
+        for (const s of r.sources) expect(s.url).toMatch(/^https:\/\/([a-z0-9-]+\.)*(admin\.ch|gouv\.fr|gov\.uk|revenue\.ie|belgium\.be|wikifin\.be|gesetze-im-internet\.de|finanzamt\.nrw\.de|bmf\.gv\.at|usp\.gv\.at|cnmv\.es|agenziaentrate\.gov\.it|public\.lu|belastingdienst\.nl|rijksoverheid\.nl)\//);
       }
     }
   });
@@ -52,8 +52,8 @@ describe("update policy", () => {
 });
 
 describe("more countries", () => {
-  it("covers nine countries, each rule with an official source and a read date", () => {
-    expect(TAX_COUNTRIES.map((c) => c.code).sort()).toEqual(["AT", "BE", "CH", "DE", "ES", "FR", "GB", "IE", "IT"]);
+  it("covers eleven countries, each rule with an official source and a read date", () => {
+    expect(TAX_COUNTRIES.map((c) => c.code).sort()).toEqual(["AT", "BE", "CH", "DE", "ES", "FR", "GB", "IE", "IT", "LU", "NL"]);
   });
   it("tells a German investor about the equity fund exemption and an Irish one about deemed disposal", () => {
     expect(taxNotes({ ...base, asset_class: "equity" }, "DE").map((n) => n.text).join(" ")).toMatch(/30% of its income/);

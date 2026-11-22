@@ -13,7 +13,7 @@ export type FundPerf = {
   unrealised: number | null; realised: number; fees: number; paidIn: number; takenOut: number;
   xirr: number | null; firstDate: string | null; days: number | null;
 };
-export type CurrencyPerf = { currency: string; paidIn: number; takenOut: number; value: number; gain: number; xirr: number | null; complete: boolean };
+export type CurrencyPerf = { currency: string; paidIn: number; takenOut: number; value: number; gain: number; xirr: number | null; complete: boolean; flows: Flow[] };
 export type Performance = { funds: FundPerf[]; currencies: CurrencyPerf[]; warnings: { text: string; vars: Record<string, string> }[] };
 
 const DAY = 864e5;
@@ -93,7 +93,7 @@ export function performance(lots: Lot[], prices: Record<string, { nav: number | 
     flowsByCurrency.set(ccy, agg);
   }
   const currencies: CurrencyPerf[] = [...flowsByCurrency.entries()].map(([currency, a]) => ({
-    currency, paidIn: a.paidIn, takenOut: a.takenOut, value: a.value, gain: a.value + a.takenOut - a.paidIn, complete: a.complete,
+    currency, paidIn: a.paidIn, takenOut: a.takenOut, value: a.value, gain: a.value + a.takenOut - a.paidIn, complete: a.complete, flows: a.flows,
     xirr: a.complete ? xirr([...a.flows, { date: today, amount: a.value }]) : null,
   }));
   if (currencies.length > 1) warnings.push({ text: "Your funds are in {n} currencies, so totals are given per currency rather than converted at today's rate.", vars: { n: String(currencies.length) } });
@@ -114,4 +114,32 @@ export function milestones(account: { id: string } | null, opened: string | null
   if (perPurchase) return lots.filter((l) => l.side !== "sell").map((l) => ({ key: l.key, from: l.date, date: add(l.date), passed: add(l.date) <= today })).sort((a, b) => a.date.localeCompare(b.date));
   if (!opened) return [];
   return [{ key: null as string | null, from: opened, date: add(opened), passed: add(opened) <= today }];
+}
+
+/** A recurring cost outside the trades: a broker's custody fee, an app or data subscription, an advice fee. */
+export type Subscription = { id: string; label: string; amount: number; currency: string; every: "month" | "year"; from: string; to?: string };
+
+/** Every payment a subscription has made up to today, as dated outflows. */
+export function subscriptionFlows(subs: Subscription[], today = new Date().toISOString().slice(0, 10)): (Flow & { currency: string })[] {
+  const out: (Flow & { currency: string })[] = [];
+  for (const s of subs) {
+    if (!(s.amount > 0) || !s.from) continue;
+    const end = s.to && s.to < today ? s.to : today;
+    const d = new Date(`${s.from}T00:00:00Z`);
+    for (let i = 0; i < 600 && d.toISOString().slice(0, 10) <= end; i++) {
+      out.push({ date: d.toISOString().slice(0, 10), amount: -s.amount, currency: s.currency });
+      if (s.every === "month") d.setUTCMonth(d.getUTCMonth() + 1); else d.setUTCFullYear(d.getUTCFullYear() + 1);
+    }
+  }
+  return out;
+}
+
+/** Gain and yearly return per currency once subscriptions are counted as money paid in. */
+export function netOfSubscriptions(perf: Performance, subs: Subscription[], today = new Date().toISOString().slice(0, 10)) {
+  const flows = subscriptionFlows(subs, today);
+  return perf.currencies.map((c) => {
+    const mine = flows.filter((f) => f.currency === c.currency);
+    const paid = -mine.reduce((s, f) => s + f.amount, 0);
+    return { currency: c.currency, subscriptions: paid, netGain: c.gain - paid, netXirr: c.complete && paid ? xirr([...c.flows, ...mine, { date: today, amount: c.value }]) : c.xirr };
+  });
 }

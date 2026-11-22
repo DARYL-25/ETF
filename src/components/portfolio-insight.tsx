@@ -4,6 +4,8 @@ import { useT } from "@/lib/i18n/client";
 import { useEffect, useState } from "react";
 import type { PortfolioInsight as Insight } from "@/lib/etfs/portfolio";
 import { Mosaic } from "./mosaic";
+import { ExposurePanel } from "./exposure-panel";
+import { normalise, providerViews } from "@/lib/geo/exposure";
 
 export const ASSET: Record<string, string> = { equity: "Shares", fixed_income: "Bonds", money_market: "Money market", commodities: "Commodities" };
 const eur = (v: number, lang = "en") => new Intl.NumberFormat(lang === "fr" ? "fr-FR" : "en-GB", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
@@ -73,14 +75,15 @@ export function PortfolioInsight({ positions }: { positions: { key: string; quan
           <Mosaic items={data.look.holdings.map((h) => ({ holding_key: h.holding_key, name: h.label, ticker: h.ticker, weight_pct: h.weight_pct }))} label={t("Your portfolio as one basket")} restLabel={(pct) => t("Everything else, {pct}%", { pct })} />
         </div>
       ) : null}
-      {data.look.covered_pct > 0 ? (
-        <div className="mt-5 grid gap-x-8 gap-y-5 md:grid-cols-2 xl:grid-cols-4">
-          <Bars title={t("Largest holdings")} rows={data.look.holdings.map((h) => ({ label: h.label, weight_pct: h.weight_pct }))} />
-          <Bars title={t("Sectors")} rows={data.look.sectors} />
-          <Bars title={t("Countries")} rows={data.look.countries} />
-          <Bars title={t("Currencies, of the part seen through")} rows={data.xray.currencies.map((c) => ({ label: c.label === "Other" ? t("Other") : c.label, weight_pct: c.weight_pct }))} />
-        </div>
-      ) : <p className="mt-4 text-muted">{t("None of these funds has a holdings file on record yet, so we cannot look inside them.")}</p>}
+      <div className="mt-6 rounded-2xl border border-line p-4">
+        <ExposurePanel title={t("Where your money goes")} data={{
+          countries: normalise(data.look.countries), sectors: normalise(data.look.sectors),
+          currencies: data.xray.currencies.map((c) => ({ label: c.label, weight_pct: c.weight_pct })),
+          ...providerViews(data.funds.map((f) => ({ name: f.name, domicile: f.domicile, weight_pct: f.weight_pct }))),
+          note: data.look.covered_pct > 0 ? t("Countries, sectors and currencies cover the {pct}% of the portfolio whose holdings are on file, rescaled to 100%. Providers and domiciles cover every fund.", { pct: data.look.covered_pct.toFixed(0) }) : t("None of these funds has a holdings file on record yet, so countries and sectors are not shown. Providers and domiciles cover every fund."),
+        }} />
+      </div>
+      {data.look.covered_pct > 0 ? <div className="mt-5 max-w-xl"><Bars title={t("Largest holdings")} rows={data.look.holdings.map((h) => ({ label: h.label, weight_pct: h.weight_pct }))} /></div> : null}
       <p className="mt-3 text-[0.82rem] text-muted">{t("Values use each fund's latest NAV, converted to euro at European Central Bank rates. Holdings come from issuers' files, and percentages are of the whole portfolio.")}</p>
     </div>
   );
