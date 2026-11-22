@@ -1,5 +1,5 @@
 {
- "on": "2026-11-16",
+ "on": "2026-11-22",
  "ssga_errors": [
   "GLDM: HTTPError: HTTP Error 404: Not Found",
   "GLD: HTTPError: HTTP Error 404: Not Found"
@@ -24,8 +24,8 @@
   "errors": []
  },
  "direxion": {
-  "ok": 18,
-  "failed": 116,
+  "ok": 15,
+  "failed": 119,
   "errors": []
  },
  "global_x": {
@@ -36,14 +36,14 @@
    "COMD: RuntimeError: no file: no weights column",
    "BITS: RuntimeError: no file: no weights column"
   ],
-  "sample": "Global X Gold Miners ETF\nFund Holdings Data as of 11/13/2026\n% of Net Assets,Ticker,Name,SEDOL,Market Price ($),Shares Held,Market Value ($)\n0.74,OR,OR ROYALTIES INC,BPJJWN9,34.89,\"1,199.00\",\"41,833.11\"\n0.73,LUG CN,LUNDIN GOLD INC,BTKSSY6,64.369671875,640.00,\"41,196.59\"\n0.71,2259 HK,ZIJIN GOLD INTERNATIONAL CO,BSD3B20,15.4497253384913,\"2,585.00\",\"39,937.54\"\n0.70,TFPM,TRIPLE FLAG PRECIOUS MET,BMDVH"
+  "sample": "Global X Gold Miners ETF\nFund Holdings Data as of 11/20/2026\n% of Net Assets,Ticker,Name,SEDOL,Market Price ($),Shares Held,Market Value ($)\n0.04,SIND,SINDA LTD,BXD1L30,9.09,229.00,\"2,081.61\"\n0.04,NFGC,NEW FOUND GOLD CORP,BL98380,1.18,\"1,760.00\",\"2,076.80\"\n0.04,THM,INTL TOWER HILL MINES LTD,B5ZYX57,1.15,\"1,665.00\",\"1,914.75\"\n0.04,VMET,VERSAMET ROYALTIES CORP,BMVFC78,6.49,277.00,\"1,797.73\"\n0.02,APM"
  },
  "kraneshares": {
   "funds": 28,
   "ok": 28,
   "failed": 0,
   "errors": [],
-  "sample": "\"BUYO Holdings\",\"As of 2026-11-13\",\"Holdings Are Subject To Change\"\nRank,\"Company Name\",\"% of Net Assets\",Ticker,Identifier,\"Shares Held\",\"Market Value($)\"\n1,\"NEWS CORP - CLASS A\",1.53,NWSA,US65249B1098,\"9,483\",\"255,757\"\n2,\"ENCOMPASS HEALTH CORP\",1.39,EHC,US29261A1007,\"1,642\",\"231,506\"\n3,\"AFFILIATED MANAGERS GROUP\",1.19,AMG,US0082521081,503,\"198,579\"\n4,\"MORNINGSTAR INC\",1.10,MORN,US6177001095,747,"
+  "sample": "\"BUYO Holdings\",\"As of 2026-11-20\",\"Holdings Are Subject To Change\"\nRank,\"Company Name\",\"% of Net Assets\",Ticker,Identifier,\"Shares Held\",\"Market Value($)\"\n1,\"NEWS CORP - CLASS A\",1.55,NWSA,US65249B1098,\"9,483\",\"237,549\"\n2,\"ENCOMPASS HEALTH CORP\",1.43,EHC,US29261A1007,\"1,642\",\"219,453\"\n3,\"AFFILIATED MANAGERS GROUP\",1.20,AMG,US0082521081,503,\"185,179\"\n4,\"MORNINGSTAR INC\",1.13,MORN,US6177001095,747,"
  },
  "probe": {
   "spdr_eu_sample": [
@@ -61,7 +61,7 @@
    ],
    [
     "Holdings As Of:",
-    "13-Nov-2026"
+    "19-Nov-2026"
    ],
    [],
    [
@@ -83,12 +83,12 @@
     "Apple Inc.",
     "USD",
     "8215.0",
-    "2.629835",
+    "2.712097",
     "United States",
-    "356.27",
+    "349.21",
     "Information Technology",
     "Technology Hardware Storage & Peripherals",
-    "2926758.0"
+    "2868760.3"
    ],
    [
     "US5949181045",
@@ -96,15 +96,15 @@
     "Microsoft Corporation",
     "USD",
     "5301.0",
-    "2.495349",
+    "2.497236",
     "United States",
-    "523.88",
+    "498.3",
     "Information Technology",
     "Software",
-    "2777088.0"
+    "2641488.3"
    ]
   ]
  },
- "etfs": 482,
- "rows": 98980
+ "etfs": 485,
+ "rows": 99198
 }
