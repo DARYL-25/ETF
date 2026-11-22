@@ -63,6 +63,17 @@ const INDEX_RULES: [string, RegExp][] = [
 
 export const inferIndex = (name: string): string | null => INDEX_RULES.find(([, re]) => re.test(name))?.[0] ?? null;
 
+/**
+ * The flagship US-listed funds whose names do not say their index ("Invesco QQQ Trust"), checked against each
+ * issuer's own description of the fund. Only plain market-cap versions: equal-weight or factor funds stay out.
+ */
+export const US_INDEX_BY_TICKER: Record<string, string> = {
+  QQQ: "nasdaq-100", QQQM: "nasdaq-100",
+  SPY: "sp-500", VOO: "sp-500", IVV: "sp-500", SPLG: "sp-500", SPYM: "sp-500",
+  URTH: "msci-world", ACWI: "msci-acwi", EEM: "msci-emerging-markets",
+  IWM: "russell-2000", VTWO: "russell-2000",
+};
+
 /** Register names carry umbrella and share-class boilerplate. This removes it, and nothing else. */
 export function cleanName(name: string): string {
   return name

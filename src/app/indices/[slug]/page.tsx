@@ -7,6 +7,8 @@ import { notFound } from "next/navigation";
 import { CompareToggle } from "@/components/compare-tray";
 import { EtfName, Fee, PageTitle } from "@/components/etf-bits";
 import { GroupFeeLine } from "@/components/group-fee-line";
+import { QuadrantChart } from "@/components/quadrant-chart";
+import { indexQuadrant } from "@/lib/etfs/quadrants";
 import { indexStats } from "@/lib/etfs/stats";
 import { getIndex } from "@/lib/etfs/queries";
 import { returnGaps } from "@/lib/etfs/cost";
@@ -38,6 +40,9 @@ export default async function IndexPage({ params, searchParams }: Props) {
     <div>
       <PageTitle title={index.name}>{t(index.description ?? "")}</PageTitle>
       <GroupFeeLine stats={await indexStats(index.slug, index.name)} find={`/find?index=${index.slug}`} />
+      {await (async () => { const q = await indexQuadrant(index.slug); return q && q.points.length >= 5 ? (
+        <section className="panel mb-8 p-5"><div className="mb-3 flex flex-wrap items-baseline justify-between gap-3"><h2 className="text-[1.25rem]">{t("Fee against size")}</h2><Link href={`/quadrants/${q.kind}/${q.slug}`} className="text-[0.9rem] font-semibold no-underline">{t("Open the full quadrant")} →</Link></div><QuadrantChart q={q} compact /></section>
+      ) : null; })()}
       <dl className="mb-6 flex flex-wrap gap-x-8 gap-y-1">
         <div><dt className="inline text-muted">{t("Provider: ")}</dt><dd className="inline">{index.provider}</dd></div>
         <div><dt className="inline text-muted">{t("Asset class: ")}</dt><dd className="inline">{t(assetClassLabel(index.asset_class))}</dd></div>

@@ -30,3 +30,12 @@ export const BRANDS: { slug: string; label: string; match: RegExp; domain: strin
 ];
 
 export const brandOf = (name: string) => BRANDS.find((b) => b.match.test(name));
+
+/** Where each brand's parent company is based, for the provider-country view of a portfolio. */
+export const BRAND_HOME: Record<string, string> = {
+  ishares: "United States", vanguard: "United States", amundi: "France", xtrackers: "Germany", invesco: "United States", ubs: "Switzerland",
+  spdr: "United States", hsbc: "United Kingdom", wisdomtree: "United States", vaneck: "United States", jpmorgan: "United States", bnp: "France",
+  fidelity: "United States", franklin: "United States", "first-trust": "United States", proshares: "United States", direxion: "United States",
+  schwab: "United States", "global-x": "United States", ark: "United States", dimensional: "United States", pimco: "United States", deka: "Germany",
+  ossiam: "France", "legal-general": "United Kingdom", kodex: "South Korea", tiger: "South Korea",
+};

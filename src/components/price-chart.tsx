@@ -2,9 +2,21 @@
 
 import { useT } from "@/lib/i18n/client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AreaSeries, ColorType, CrosshairMode, LineSeries, LineStyle, createChart, type IChartApi, type ISeriesApi, type UTCTimestamp } from "lightweight-charts";
+import { AreaSeries, ColorType, CrosshairMode, LineSeries, LineStyle, createChart, createSeriesMarkers, type IChartApi, type ISeriesApi, type SeriesMarker, type UTCTimestamp } from "lightweight-charts";
 
 export type ChartSeries = { label: string; currency: string | null; points: { date: string; close: number }[] };
+export type TradeMark = { date: string; side: "buy" | "sell"; quantity: number; price: number };
+const NO_TRADES: TradeMark[] = [];
+
+/**
+ * What the price would have been with no yearly fee: the fund's charge comes out of its assets a little every day,
+ * so adding it back at the same rate since the first point in view gives the line the fee has pulled the price below.
+ */
+export function withoutFee(points: { date: string; close: number }[], feePct: number) {
+  if (!points.length) return [];
+  const t0 = Date.parse(points[0].date);
+  return points.map((p) => ({ date: p.date, close: p.close * Math.pow(1 + feePct / 100, (Date.parse(p.date) - t0) / (365.25 * 864e5)) }));
+}
 
 const RANGES = [
   { key: "1Y", years: 1 },
@@ -32,12 +44,13 @@ export function rebase(points: { date: string; close: number }[]) {
   return points.map((p) => ({ date: p.date, close: (p.close / base) * 100 }));
 }
 
-export function PriceChart({ series }: { series: ChartSeries[] }) {
+export function PriceChart({ series, feePct = null, trades = NO_TRADES }: { series: ChartSeries[]; feePct?: number | null; trades?: TradeMark[] }) {
   const t = useT();
   const holder = useRef<HTMLDivElement>(null);
   const [range, setRange] = useState<RangeKey>("5Y");
   const [view, setView] = useState<"price" | "rebased">(series.length > 1 ? "rebased" : "price");
   const [kind, setKind] = useState<"area" | "line">("area");
+  const [showFee, setShowFee] = useState(false);
   const [readout, setReadout] = useState<{ date: string; values: string[] } | null>(null);
   const [themeTick, setThemeTick] = useState(0);
   const multi = series.length > 1;
@@ -88,6 +101,19 @@ export function PriceChart({ series }: { series: ChartSeries[] }) {
       api.setData(s.points.map((p) => ({ time: toTime(p.date), value: p.close })));
       return api;
     });
+    if (!multi && feePct && showFee && inView[0]?.points.length) {
+      const gross = chart.addSeries(LineSeries, { color: cssVar("--saffron"), lineWidth: 2, lineStyle: LineStyle.Dashed, priceLineVisible: false, lastValueVisible: true, title: t("Without the fee") });
+      gross.setData(withoutFee(inView[0].points, feePct).map((p) => ({ time: toTime(p.date), value: p.close })));
+    }
+    if (!multi && trades.length && apis[0] && inView[0]?.points.length) {
+      const from = inView[0].points[0].date;
+      const marks: SeriesMarker<UTCTimestamp>[] = trades.filter((tr) => tr.date >= from).sort((a, b) => a.date.localeCompare(b.date)).map((tr) => ({
+        time: toTime(tr.date), position: tr.side === "buy" ? "belowBar" : "aboveBar", shape: "circle", size: 1.4,
+        color: tr.side === "buy" ? cssVar("--up") : cssVar("--down"),
+        text: `${tr.side === "buy" ? t("Bought") : t("Sold")} ${tr.quantity} @ ${tr.price.toFixed(2)}`,
+      }));
+      createSeriesMarkers(apis[0], marks);
+    }
     chart.timeScale().fitContent();
     chart.subscribeCrosshairMove((param) => {
       if (!param.time) return setReadout(null);
@@ -102,7 +128,7 @@ export function PriceChart({ series }: { series: ChartSeries[] }) {
       });
     });
     return () => chart.remove();
-  }, [inView, kind, multi, view, themeTick]);
+  }, [inView, kind, multi, view, themeTick, showFee, feePct, trades]);
 
   const change = useMemo(() => inView.map((s) => {
     const first = s.points[0];
@@ -130,7 +156,15 @@ export function PriceChart({ series }: { series: ChartSeries[] }) {
             <button type="button" className={segment} aria-pressed={kind === "line"} onClick={() => setKind("line")}>{t("Line")}</button>
           </div>
         ) : null}
+        {!multi && feePct ? (
+          <button type="button" className="chip" aria-pressed={showFee} onClick={() => setShowFee((v) => !v)}>
+            <span aria-hidden className="inline-block h-0.5 w-4 border-t-2 border-dashed border-saffron" />{t("Show fees paid")}
+          </button>
+        ) : null}
       </div>
+      {!multi && feePct && showFee && inView[0]?.points.length > 1 ? (
+        <p className="mb-1 text-[0.9rem]">{t("Over this period the {fee}% yearly fee took about {cost}% of the value: the gap between the two lines.", { fee: feePct.toFixed(2), cost: ((1 - 1 / Math.pow(1 + feePct / 100, (Date.parse(inView[0].points.at(-1)!.date) - Date.parse(inView[0].points[0].date)) / (365.25 * 864e5))) * 100).toFixed(2) })}</p>
+      ) : null}
       <p className="data min-h-[1.5em] text-[0.9rem]" aria-live="off">
         {readout
           ? `${readout.date}: ${readout.values.join(", ")}`

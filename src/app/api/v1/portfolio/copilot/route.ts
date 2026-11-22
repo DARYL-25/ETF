@@ -11,7 +11,7 @@ import { aiChat, aiConfig } from "@/lib/ai/provider";
 const body = z.object({ question: z.string().min(2).max(500), positions: positionsSchema, watch: watchSchema.optional() });
 
 /**
- * Answers a question about the reader's own portfolio from figures computed here. With ANTHROPIC_API_KEY set,
+ * Answers a question about the reader's own portfolio from figures computed here. With an AI model configured (by default an open-weight model on Vercel AI Gateway),
  * the model rewrites the answer in plain language but receives only these figures; without it, the computed
  * answer is returned as it is.
  */

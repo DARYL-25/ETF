@@ -6,9 +6,19 @@
  *   when the server needs one. Examples: Ollama (http://localhost:11434/v1, model qwen3:14b or llama3.3),
  *   vLLM or LM Studio on your own machine, or hosted open models from Mistral, Groq or Together.
  *
+ * - On Vercel with nothing else set: Vercel AI Gateway, authenticated with the deployment's own OIDC token, running
+ *   the open-weight model in AI_GATEWAY_MODEL (default openai/gpt-oss-120b, Apache 2.0). AI_GATEWAY_API_KEY works
+ *   outside Vercel. Set AI_PROVIDER=none to switch AI off.
+ *
  * AI_PROVIDER=openai or anthropic picks one when both are configured. The model never reaches the database
  * directly: it can only call the tools the caller defines, and every figure comes back from those tools.
  */
+import { getVercelOidcToken } from "@vercel/oidc";
+
+export const GATEWAY_URL = "https://ai-gateway.vercel.sh/v1";
+export const DEFAULT_OPEN_MODEL = "openai/gpt-oss-120b";
+const OIDC = "vercel-oidc";
+
 export type AiTool = { name: string; description: string; input_schema: Record<string, unknown> };
 export type AiToolCall = { id: string; name: string; input: Record<string, unknown> };
 export type AiTurn =
@@ -21,12 +31,16 @@ export type AiConfig = { provider: "anthropic" | "openai"; model: string; baseUr
 
 export function aiConfig(): AiConfig | null {
   const want = process.env.AI_PROVIDER;
+  if (want === "none") return null;
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   const openBase = process.env.AI_BASE_URL;
   if ((want === "openai" || (!anthropicKey && want !== "anthropic")) && openBase && process.env.AI_MODEL) {
     return { provider: "openai", model: process.env.AI_MODEL, baseUrl: openBase.replace(/\/$/, ""), key: process.env.AI_API_KEY || null };
   }
-  if (anthropicKey) return { provider: "anthropic", model: process.env.ASSISTANT_MODEL ?? "claude-haiku-5-5", baseUrl: "https://api.anthropic.com/v1", key: anthropicKey };
+  if (anthropicKey && want !== "gateway") return { provider: "anthropic", model: process.env.ASSISTANT_MODEL ?? "claude-haiku-5-5", baseUrl: "https://api.anthropic.com/v1", key: anthropicKey };
+  // AI Gateway: an API key anywhere, or the deployment's OIDC token on Vercel.
+  const gatewayKey = process.env.AI_GATEWAY_API_KEY || (process.env.VERCEL ? OIDC : null);
+  if (gatewayKey) return { provider: "openai", model: process.env.AI_GATEWAY_MODEL || DEFAULT_OPEN_MODEL, baseUrl: GATEWAY_URL, key: gatewayKey };
   return null;
 }
 
@@ -64,9 +78,10 @@ export async function aiChat({ system, turns, tools = [], maxTokens = 900, confi
       const body = (await res.json()) as { content: { type: string; text?: string; id?: string; name?: string; input?: Record<string, unknown> }[] };
       return { ok: true, text: body.content.filter((c) => c.type === "text").map((c) => c.text).join("\n").trim(), toolCalls: body.content.filter((c) => c.type === "tool_use").map((c) => ({ id: c.id!, name: c.name!, input: c.input ?? {} })) };
     }
+    const key = config.key === OIDC ? await getVercelOidcToken() : config.key;
     const res = await fetchFn(`${config.baseUrl}/chat/completions`, {
       method: "POST",
-      headers: { "content-type": "application/json", ...(config.key ? { authorization: `Bearer ${config.key}` } : {}) },
+      headers: { "content-type": "application/json", ...(key ? { authorization: `Bearer ${key}` } : {}) },
       body: JSON.stringify({ model: config.model, max_tokens: maxTokens, temperature: 0.2, messages: toOpenAi(system, turns), ...(tools.length ? { tools: tools.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.input_schema } })), tool_choice: "auto" } : {}) }),
     });
     if (!res.ok) return { ok: false, status: res.status };

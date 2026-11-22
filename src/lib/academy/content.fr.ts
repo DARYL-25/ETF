@@ -239,6 +239,73 @@ export const LESSONS_FR: Record<string, LessonText> = {
       { question: "Un fonds passe de 100 à 70, puis remonte à 90. Quelle est la perte maximale ?", options: ["-10 %", "-30 %", "-20 %"], why: "Elle se mesure du sommet au creux : de 100 à 70." },
     ],
   },
+  "reading-an-etf-page": {
+    title: "Lire la fiche d'un ETF : les indicateurs qui comptent",
+    summary: "Frais, encours, suivi, réplication, domicile et revenus : ce que dit chaque chiffre et lesquels regarder d'abord.",
+    sections: [
+      { heading: "Commencez par trois chiffres", paragraphs: [
+        "Les frais annuels (TER ou frais courants) sont ce que le fonds prélève chaque année sur votre argent, quoi que fasse le marché. Sur 10 000 €, des frais de 0,20 % coûtent 20 € par an. Comparez-les à ceux des fonds sur le même indice, pas sur un autre.",
+        "L'encours, ou actifs sous gestion, indique combien d'argent le fonds détient. Les gros fonds se négocient en général avec des écarts plus serrés et risquent moins d'être fermés. En dessous d'environ 100 millions d'euros, vérifiez que le fonds ne rétrécit pas.",
+        "L'écart de suivi (tracking difference) mesure la distance entre le rendement du fonds et celui de son indice sur un an, frais compris. C'est le coût que vous avez réellement payé, qui peut être plus bas ou plus haut que les frais.",
+      ] },
+      { heading: "Puis la façon dont le fonds est construit", paragraphs: [
+        "La réplication indique comment le fonds suit son indice : en détenant les actions (physique) ou par un swap avec une banque (synthétique). L'erreur de suivi (tracking error) mesure à quel point son rendement s'est écarté de l'indice au jour le jour : un chiffre bas signifie une copie régulière.",
+        "Le domicile est le pays où le fonds est constitué, souvent l'Irlande ou le Luxembourg pour les ETF européens. Il décide de la fiscalité des dividendes avant qu'ils n'arrivent au fonds, et des investisseurs qui peuvent l'acheter.",
+        "Le traitement des revenus indique si le fonds distribue ses revenus (distribuant) ou les réinvestit (capitalisant). Le bon choix dépend de la fiscalité de votre pays et de votre besoin de liquidités.",
+      ] },
+      { heading: "Lisez-les ensemble", paragraphs: [
+        "Un fonds bon marché mais très petit, ou un gros fonds aux frais élevés, impliquent chacun un compromis. Le quadrant frais et taille de chaque indice place chaque fonds sur les deux à la fois : les fonds gros et bon marché ressortent.",
+      ] },
+    ],
+    tryIt: "Voir les fonds S&P 500 par frais et par taille",
+    quiz: [
+      { question: "Quel chiffre est le coût réellement payé par rapport à l'indice ?", options: ["Le TER", "L'écart de suivi", "L'encours"], why: "L'écart de suivi inclut les frais et tout ce qui a fait que le fonds a suivi ou battu son indice." },
+      { question: "Pourquoi l'encours compte-t-il ?", options: ["Les gros fonds rapportent toujours plus", "Les gros fonds se négocient avec des écarts plus serrés et ferment moins souvent", "Il fixe le dividende"], why: "La taille donne une idée de la liquidité et de la probabilité que le fonds reste ouvert." },
+      { question: "Que change le domicile ?", options: ["L'indice", "La fiscalité des dividendes avant qu'ils n'arrivent au fonds", "Le cours"], why: "Les conventions fiscales dépendent du pays où le fonds est établi." },
+    ],
+  },
+  "liquidity-and-spreads": {
+    title: "Liquidité, écarts et moment pour passer ses ordres",
+    summary: "Ce que vous payez pour acheter et vendre, au-delà des frais, et comment le réduire.",
+    sections: [
+      { heading: "L'écart est aussi un coût", paragraphs: [
+        "En bourse, il y a deux prix : ce que proposent les acheteurs (bid) et ce que demandent les vendeurs (ask). La différence est l'écart (spread). Acheter au prix demandé puis revendre au prix offert vous coûte l'écart, une fois à l'entrée et une fois à la sortie.",
+        "Pour les gros ETF sur les grands indices, l'écart est souvent de quelques centièmes de pour cent. Pour les fonds petits ou de niche, il peut atteindre plusieurs dixièmes.",
+      ] },
+      { heading: "Un ETF est aussi liquide que ce qu'il détient", paragraphs: [
+        "Un faible volume en bourse ne veut pas dire qu'un fonds est difficile à négocier : les teneurs de marché peuvent créer et racheter des parts contre les titres sous-jacents. Ce qui compte le plus, c'est la facilité à négocier ce que le fonds détient, et sa taille.",
+      ] },
+      { heading: "Des habitudes qui réduisent les coûts", paragraphs: [
+        "Passez vos ordres quand les marchés sous-jacents sont ouverts : un ETF européen sur des actions américaines se négocie avec des écarts plus serrés l'après-midi, quand New York est ouvert. Utilisez des ordres à cours limité plutôt qu'au marché, et évitez les premières et dernières minutes de la séance.",
+      ] },
+    ],
+    quiz: [
+      { question: "Vous achetez au prix demandé et vendez au prix offert. Combien cela a-t-il coûté ?", options: ["Rien", "L'écart", "Le TER"], why: "Chaque aller-retour traverse l'écart." },
+      { question: "Quand un ETF européen sur des actions américaines a-t-il en général les écarts les plus serrés ?", options: ["À l'ouverture européenne", "Quand le marché américain est aussi ouvert", "La nuit"], why: "Les teneurs de marché peuvent alors fixer les prix et se couvrir avec les actions sous-jacentes en cotation." },
+    ],
+  },
+  "tax-wrappers-and-holding": {
+    title: "Enveloppes fiscales et durée de détention",
+    summary: "PEA, assurance-vie, ISA, box 3 et les autres : pourquoi l'enveloppe peut compter davantage que le fonds.",
+    sections: [
+      { heading: "Le même ETF, une fiscalité différente", paragraphs: [
+        "Beaucoup de pays proposent des enveloppes avantageuses pour l'épargne de long terme : le PEA et l'assurance-vie en France, le stocks and shares ISA au Royaume-Uni, le pilier 3a en Suisse. À l'intérieur, plus-values et revenus sont moins imposés, plus tard, ou pas du tout.",
+        "En dehors de ces enveloppes, les règles habituelles s'appliquent : en France une flat tax sur les plus-values et les dividendes, en Allemagne un prélèvement forfaitaire avec une part des revenus des fonds actions exonérée, aux Pays-Bas un impôt annuel sur un rendement supposé.",
+      ] },
+      { heading: "Des horloges qui changent l'impôt", paragraphs: [
+        "Certains avantages ne commencent qu'après une durée de détention. Un PEA exonère les plus-values d'impôt sur le revenu cinq ans après son ouverture, et l'assurance-vie devient plus légère après huit ans. Au Luxembourg, les plus-values sur titres vendus après six mois sont exonérées pour une petite participation. En Irlande, l'horloge joue dans l'autre sens : chaque période de huit ans de détention compte comme une vente pour l'impôt.",
+        "Avant de vendre, vérifiez si une date est proche. Attendre quelques semaines peut changer l'impôt sur toute la plus-value.",
+      ] },
+      { heading: "Utilisez le site", paragraphs: [
+        "Choisissez votre pays en haut de la page. Dans votre portefeuille, indiquez l'enveloppe et sa date d'ouverture : les points fiscaux montrent les dates qui vous concernent et, à peu près, ce que coûterait une vente aujourd'hui.",
+      ] },
+    ],
+    tryIt: "Voir combien de temps détenir, pays par pays",
+    quiz: [
+      { question: "Quand un PEA exonère-t-il les plus-values d'impôt sur le revenu ?", options: ["Immédiatement", "Cinq ans après son ouverture", "Après huit ans"], why: "Les cinq ans courent à partir de l'ouverture du plan, pas de chaque achat." },
+      { question: "Que se passe-t-il en Irlande après huit ans de détention d'un ETF européen ?", options: ["Les plus-values deviennent exonérées", "Cela compte comme une vente, et l'exit tax est due sur la plus-value", "Rien"], why: "C'est la règle de la cession présumée (deemed disposal)." },
+    ],
+  },
   "etf-tax-layers": {
     title: "Les niveaux de la fiscalité des ETF",
     summary: "Une carte des endroits où l'impôt peut s'appliquer. À visée pédagogique, sans taux ni conseil.",
@@ -261,6 +328,7 @@ export const LESSONS_FR: Record<string, LessonText> = {
 };
 
 export const PATHS_FR: Record<string, { title: string; description: string }> = {
+  "start-here": { title: "Le parcours complet", description: "Chaque indicateur et chaque mot dont vous avez besoin pour choisir vos ETF seul, dans l'ordre." },
   beginner: { title: "Débuter avec les ETF", description: "Comprendre ce que vous achetez." },
   investor: { title: "Investir en ETF", description: "Comparer les fonds sur ce qui compte vraiment." },
   analyst: { title: "Analyse avancée des ETF", description: "Lire les fonds obligataires et le risque d'un portefeuille." },

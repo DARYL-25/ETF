@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { CompareToggle } from "@/components/compare-tray";
 import { Change, EtfName, Fee, PageTitle } from "@/components/etf-bits";
 import { GroupFeeLine } from "@/components/group-fee-line";
+import { QuadrantChart } from "@/components/quadrant-chart";
+import { themeQuadrant } from "@/lib/etfs/quadrants";
 import { themeStats } from "@/lib/etfs/stats";
 import { Mosaic } from "@/components/mosaic";
 import { getHoldingsSummary, getThemeCommon, getTopHoldingsFull, largestWithHoldings } from "@/lib/etfs/holdings";
@@ -59,6 +61,9 @@ export default async function ThemePage({ params, searchParams }: Props) {
       <p className="mb-2"><Link className="prose-link" href="/themes">{t("Themes")}</Link></p>
       <PageTitle title={t("{theme} ETFs", { theme: t(theme.label) })}>{t(theme.blurb)}</PageTitle>
       <GroupFeeLine stats={await themeStats(theme.slug)} find={`/find?theme=${theme.slug}`} />
+      {await (async () => { const q = await themeQuadrant(theme.slug); return q && q.points.length >= 5 ? (
+        <section className="panel mb-8 p-5"><div className="mb-3 flex flex-wrap items-baseline justify-between gap-3"><h2 className="text-[1.25rem]">{t("Fee against size")}</h2><Link href={`/quadrants/${q.kind}/${q.slug}`} className="text-[0.9rem] font-semibold no-underline">{t("Open the full quadrant")} →</Link></div><QuadrantChart q={q} compact /></section>
+      ) : null; })()}
       {theme.caution ? <p className="mb-5 max-w-[72ch] rounded-xl bg-warn-bg px-3.5 py-2.5 text-warn-ink">{t(theme.caution)}</p> : null}
 
       <div className="mb-3 flex flex-wrap items-center gap-2" role="group" aria-label={t("Market")}>

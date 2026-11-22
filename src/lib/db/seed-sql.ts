@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
-import { cleanName, inferCategories, inferEquity, inferIndex, prettyName } from "../etfs/infer";
+import { cleanName, inferCategories, inferEquity, inferIndex, prettyName, US_INDEX_BY_TICKER } from "../etfs/infer";
 import { THEMES, themeBySlug } from "../etfs/themes";
 import { brandOf } from "../etfs/brands";
 import { z } from "zod";
@@ -276,7 +276,7 @@ export function buildSeedSql(root: string): string {
         // Funds on the US symbol list are registered in the United States.
         const where = country || (source === "us" && !isin ? "US" : "");
         const kind = assetClass || (inferEquity(full) ? "equity" : "");
-        return `(${q(key)}, ${q(isin)}, ${q(ticker)}, ${q(mic)}, ${q(pretty)}, ${q(currency)}, ${q(lei)}, ${q(who)}, ${q(where)}, ${ucits === "t" ? "true" : "null"}, ${q(kind)}, ${Number(venues) || 0}, ${q(source)}, ${q(url)}, ${q(universeOn)}, ${q(inferIndex(full) ?? inferIndex(benchmarkOf(isin, ticker)))}, ${slugs.length ? `array[${slugs.map(q).join(",")}]` : "'{}'::text[]"})`;
+        return `(${q(key)}, ${q(isin)}, ${q(ticker)}, ${q(mic)}, ${q(pretty)}, ${q(currency)}, ${q(lei)}, ${q(who)}, ${q(where)}, ${ucits === "t" ? "true" : "null"}, ${q(kind)}, ${Number(venues) || 0}, ${q(source)}, ${q(url)}, ${q(universeOn)}, ${q(inferIndex(full) ?? inferIndex(benchmarkOf(isin, ticker)) ?? (where === "US" ? US_INDEX_BY_TICKER[ticker] ?? null : null))}, ${slugs.length ? `array[${slugs.map(q).join(",")}]` : "'{}'::text[]"})`;
       });
       out.push(`insert into public.universe_etfs (etf_key, isin, ticker, mic, name, currency, issuer_lei, issuer_name, issuer_country, ucits, asset_class, venues, source, source_url, retrieved_on, index_slug, category_slugs) values\n${values.join(",\n")};`);
     }

@@ -14,7 +14,7 @@ export default async function Page() {
   const t = await getT();
   const lens = await getLens();
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-6xl">
       <PageTitle title={t("Tax, by where you live")}>{t("Two ETFs on the same index can leave you with different amounts after tax. These notes state the general rules for private investors, each quoted from an official source.")}</PageTitle>
       <ul className="grid gap-3 md:grid-cols-2">
         {TAX_COUNTRIES.map((c) => (
@@ -27,10 +27,30 @@ export default async function Page() {
           </li>
         ))}
       </ul>
+      <section className="mt-10">
+        <h2 className="text-[1.5rem]">{t("How long to hold for tax")}</h2>
+        <p className="mt-1 max-w-[72ch] text-muted">{t("The holding periods that change the tax on a sale, for each account these notes cover. Your own portfolio shows the dates that apply to you, under Tax points.")}</p>
+        <div className="mt-4 overflow-x-auto rounded-2xl border border-line bg-surface">
+          <table className="table-data">
+            <thead><tr><th>{t("Country")}</th><th>{t("Account")}</th><th className="num">{t("Holding period")}</th><th>{t("What changes")}</th></tr></thead>
+            <tbody>
+              {TAX_COUNTRIES.flatMap((c) => c.wrappers.filter((w) => w.holding).map((w) => (
+                <tr key={c.code + w.name}>
+                  <td className="whitespace-nowrap"><Link href={`/tax/${c.slug}`} className="no-underline hover:underline">{countryName(c.code, t.lang)}</Link></td>
+                  <td>{t(w.name)}</td>
+                  <td className="num whitespace-nowrap font-semibold">{c.code === "LU" ? t("6 months") : w.holding!.years ? t("{n} years", { n: w.holding!.years }) : t("None")}</td>
+                  <td className="min-w-[18rem]">{t(w.holding!.effect)}</td>
+                </tr>
+              )))}
+              <tr><td className="whitespace-nowrap"><Link href="/tax/switzerland" className="no-underline hover:underline">{countryName("CH", t.lang)}</Link></td><td>{t("Securities account")}</td><td className="num font-semibold">{t("None")}</td><td>{t("Gains are tax-free for a private investor whenever you sell.")}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
       <section className="mt-10 max-w-[70ch]">
         <h2 className="text-[1.3rem]">{t("How to read these notes")}</h2>
         <ul className="mt-3 list-disc space-y-1.5 pl-5">
-          <li>{t("They were read from official sources between ")}{formatDate(TAX_CHECKED_ON, t.lang)}{t(" and ")}{formatDate("2026-11-17", t.lang)}{t(". No tax adviser has reviewed them yet.")}</li>
+          <li>{t("They were read from official sources between ")}{formatDate(TAX_CHECKED_ON, t.lang)}{t(" and ")}{formatDate("2026-11-22", t.lang)}{t(". No tax adviser has reviewed them yet.")}</li>
           <li>{t("They describe general rules. They do not calculate your tax, and they are not advice for your situation.")}</li>
           <li>{t("Tax has layers: inside the fund, on what it pays you, and on what you gain when you sell. A note says which layer it covers.")}</li>
           <li>{t("Other countries are not written yet. For them, an ETF page shows only structural facts such as domicile and income treatment.")}</li>
