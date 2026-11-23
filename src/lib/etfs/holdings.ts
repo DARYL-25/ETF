@@ -137,3 +137,9 @@ export async function getThemeCommon(slug: string, limit = 12): Promise<{ funds:
      group by h.holding_key having count(distinct h.etf_key) >= 2 order by 4 desc, 5 desc limit ${Math.floor(limit)}`, [slug]);
   return { funds: count.funds, rows };
 }
+
+/** Country or sector split printed on the issuer's factsheet, for funds without a full holdings file. */
+export const getFactsheetExposure = (etfKey: string, by: "sector" | "country") =>
+  query<Slice & { source: string; source_url: string | null; as_of: string | null }>(
+    "select label, weight_pct, source, source_url, as_of::text from public.universe_exposures where etf_key = $1 and dimension = $2 order by weight_pct desc",
+    [etfKey, by]);
