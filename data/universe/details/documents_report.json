@@ -1,21 +1,6 @@
 {
  "on": "2026-11-23",
  "issuers": {
-  "hsbc": {
-   "tried": 5,
-   "ok": 5,
-   "no_link": 0,
-   "failed": 0,
-   "wrong_fund": 0,
-   "with_fee": 5,
-   "with_size": 5,
-   "with_top": 1,
-   "with_countries": 4,
-   "with_sectors": 4,
-   "with_kid": 0,
-   "errors": {},
-   "minutes": 0.3
-  },
   "invesco": {
    "tried": 5,
    "ok": 0,
@@ -31,27 +16,12 @@
    "errors": {
     "ValueError: not a pdf": 5
    },
-   "minutes": 0.4
-  },
-  "ishares": {
-   "tried": 5,
-   "ok": 5,
-   "no_link": 0,
-   "failed": 0,
-   "wrong_fund": 0,
-   "with_fee": 5,
-   "with_size": 5,
-   "with_top": 4,
-   "with_countries": 0,
-   "with_sectors": 0,
-   "with_kid": 5,
-   "errors": {},
-   "minutes": 0.8
+   "minutes": 0.5
   }
  },
- "funds": 10,
- "with_top_holdings_new": 5,
- "exposure_rows": 77,
+ "funds": 0,
+ "with_top_holdings_new": 0,
+ "exposure_rows": 0,
  "refused_hosts": [],
  "test_run": true
 }
