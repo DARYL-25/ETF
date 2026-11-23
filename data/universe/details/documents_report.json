@@ -2,42 +2,25 @@
  "on": "2026-11-23",
  "issuers": {
   "hsbc": {
-   "tried": 4,
-   "ok": 4,
+   "tried": 5,
+   "ok": 5,
    "no_link": 0,
    "failed": 0,
    "wrong_fund": 0,
-   "with_fee": 4,
-   "with_size": 4,
+   "with_fee": 5,
+   "with_size": 5,
    "with_top": 1,
-   "with_countries": 0,
-   "with_sectors": 0,
+   "with_countries": 4,
+   "with_sectors": 4,
    "with_kid": 0,
    "errors": {},
-   "minutes": 0.2
-  },
-  "invesco": {
-   "tried": 4,
-   "ok": 0,
-   "no_link": 0,
-   "failed": 4,
-   "wrong_fund": 0,
-   "with_fee": 0,
-   "with_size": 0,
-   "with_top": 0,
-   "with_countries": 0,
-   "with_sectors": 0,
-   "with_kid": 0,
-   "errors": {
-    "ValueError: not a pdf": 4
-   },
    "minutes": 0.3
   },
-  "xtrackers": {
-   "tried": 4,
+  "invesco": {
+   "tried": 5,
    "ok": 0,
-   "no_link": 4,
-   "failed": 0,
+   "no_link": 0,
+   "failed": 5,
    "wrong_fund": 0,
    "with_fee": 0,
    "with_size": 0,
@@ -46,29 +29,29 @@
    "with_sectors": 0,
    "with_kid": 0,
    "errors": {
-    "page without factsheet link": 4
+    "ValueError: not a pdf": 5
    },
-   "minutes": 0.6
+   "minutes": 0.4
   },
   "ishares": {
-   "tried": 4,
-   "ok": 4,
+   "tried": 5,
+   "ok": 5,
    "no_link": 0,
    "failed": 0,
    "wrong_fund": 0,
-   "with_fee": 4,
-   "with_size": 4,
-   "with_top": 3,
+   "with_fee": 5,
+   "with_size": 5,
+   "with_top": 4,
    "with_countries": 0,
    "with_sectors": 0,
-   "with_kid": 4,
+   "with_kid": 5,
    "errors": {},
-   "minutes": 0.5
+   "minutes": 0.8
   }
  },
- "funds": 8,
- "with_top_holdings_new": 4,
- "exposure_rows": 0,
+ "funds": 10,
+ "with_top_holdings_new": 5,
+ "exposure_rows": 77,
  "refused_hosts": [],
  "test_run": true
 }
