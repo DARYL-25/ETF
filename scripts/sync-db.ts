@@ -5,7 +5,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { Client } from "pg";
-import { PUBLIC_DATA_TABLES, buildSeedSql } from "../src/lib/db/seed-sql";
+import { PUBLIC_DATA_TABLES, buildSeedStatements } from "../src/lib/db/seed-sql";
 
 const url = process.env.SYNC_DATABASE_URL;
 if (!url) throw new Error("Set SYNC_DATABASE_URL to the database connection string.");
@@ -35,11 +35,23 @@ for (const name of readdirSync(dir).filter((n) => n.endsWith(".sql")).sort()) {
   }
 }
 
-const seed = buildSeedSql(root).replace(/^begin;$/m, "").replace(/^commit;\s*$/m, "");
+// Statements without the seed's own begin and commit, sent in batches of about 4 MB: one 64 MB message stalls
+// the connection pooler. The batches share one transaction, so readers still see the old data or the new.
+const statements = buildSeedStatements(root).filter((s) => s !== "begin;" && s !== "commit;" && !s.startsWith("--"));
+const batches: string[] = [];
+let current = "";
+for (const st of statements) {
+  if (current && current.length + st.length > 4_000_000) { batches.push(current); current = ""; }
+  current += st + "\n";
+}
+if (current) batches.push(current);
 await db.query("begin");
 try {
   await db.query(`truncate ${PUBLIC_DATA_TABLES.map((t) => `public.${t}`).join(", ")} cascade`);
-  await db.query(seed);
+  for (const [i, batch] of batches.entries()) {
+    await db.query(batch);
+    if (i % 5 === 4 || i === batches.length - 1) console.log(`Loaded batch ${i + 1} of ${batches.length}`);
+  }
   const { rows } = await db.query<{ n: number }>("select count(*)::int as n from public.etf_directory");
   if (rows[0].n < 10000) throw new Error(`Only ${rows[0].n} ETFs after loading, so the old data is kept.`);
   await db.query("insert into public.data_update_logs (job, rows_added, detail) values ('sync-db', $1, 'Full reload of public data')", [rows[0].n]);
