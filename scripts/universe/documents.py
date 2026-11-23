@@ -30,6 +30,7 @@ for d in (H, R, OUT): d.mkdir(parents=True, exist_ok=True)
 ISSUERS = [s for s in os.environ.get("ISSUERS", "hsbc,invesco,xtrackers,ishares").split(",") if s]
 LIMIT = int(os.environ.get("LIMIT", "100000"))
 PAUSE = float(os.environ.get("PAUSE", "1.0"))
+DEBUG = "LIMIT" in os.environ
 csv.field_size_limit(10**9)
 
 def rd(p): return list(csv.DictReader(gzip.open(p, "rt", encoding="utf-8"))) if Path(p).exists() else []
@@ -181,6 +182,7 @@ def xtrackers():
         try:
             html = get(page)[0].decode("utf-8", "replace")
         except Exception as e:
+            if DEBUG: print("--- xtrackers page", page, type(e).__name__, str(e)[:100])
             yield r, None, f"page: {type(e).__name__}"; continue
         m = re.search(r'href="([^"]*(?:AssetDownload/Index/[0-9a-f-]{36}/Factsheet\.pdf|download/asset/[0-9a-f-]{36}))"[^>]*>(?:(?!</a>).){0,200}?Factsheet', html, re.I | re.S) \
             or re.search(r'href="([^"]*AssetDownload/Index/[0-9a-f-]{36}/Factsheet\.pdf)"', html, re.I)
@@ -230,9 +232,23 @@ for issuer in ISSUERS:
         except Exception as e:
             key = f"{type(e).__name__}: {str(e)[:60]}"
             stats["failed"] += 1; stats["errors"][key] = stats["errors"].get(key, 0) + 1
+            if DEBUG and stats["failed"] <= 2:
+                print(f"--- {issuer} failed {r['isin']} {r['name'][:60]} {url} {key}")
+                try:
+                    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": UA}), timeout=30) as resp:
+                        print("   | final", resp.geturl(), resp.headers.get("Content-Type"), resp.read(300)[:300])
+                except Exception as e2: print("   |", type(e2).__name__, str(e2)[:120])
             continue
         if samples < 12 and stats["ok"] < 3:
             (OUT / f"{issuer}_{r['isin']}.txt").write_text(text[:20000]); samples += 1
+        if DEBUG and stats["ok"] < 2:
+            ls = [l.strip() for l in text.splitlines() if l.strip()]
+            keep = [i for i, l in enumerate(ls) if re.search(r"(?i)assets|size|aum|volume|breakdown|allocation|country|countries|sector|geograph|replication|methodology|holdings|expense|charges", l)]
+            print(f"--- {issuer} {r['isin']} {url}")
+            shown = set()
+            for i in keep[:25]:
+                for j in range(i, min(i + 3, len(ls))):
+                    if j not in shown: print("   |", ls[j][:140]); shown.add(j)
         # A factsheet found by ticker must name this fund's ISIN, or its figures are another share class's.
         if not by_key and r["isin"] not in text.replace(" ", ""):
             stats["wrong_fund"] += 1; continue
