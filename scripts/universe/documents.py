@@ -163,9 +163,9 @@ def parse(text):
         if len(v) >= 2 and 40 <= sum(v.values()) <= 101.5: out[k] = v
     return out
 
-SRI = re.compile(r"(?:classified|eingestuft)[^.]{0,60}?\b([1-7])\s*(?:out of|von|auf einer skala von)\s*7", re.I)
-ONGOING = re.compile(r"Management fees and other administrative or operating costs\s*(\d{1,2}[.,]\d{1,3})\s*%", re.I)
-TRANS = re.compile(r"Transaction costs\s*(\d{1,2}[.,]\d{1,3})\s*%", re.I)
+SRI = re.compile(r"(?:classified|eingestuft|Risikoklasse)[^.]{0,80}?\b([1-7])\s*(?:out of|von|auf einer skala von)\s*7", re.I)
+ONGOING = re.compile(r"(?:Management fees and other administrative or operating costs|Verwaltungsgeb\S+ und sonstige Verwaltungs- oder Betriebskosten)\s*(\d{1,2}[.,]\d{1,3})\s*%", re.I)
+TRANS = re.compile(r"(?:Transaction costs|Transaktionskosten)\s*(\d{1,2}[.,]\d{1,3})\s*%", re.I)
 def parse_kid(text):
     out = {}
     m = SRI.search(text)
@@ -216,7 +216,7 @@ def invesco():
         if not (r["isin"] and re.search(r"Invesco|PowerShares", r["name"] + " " + r["issuer_name"], re.I)) or r["isin"][:2] not in ("IE", "LU", "DE"): continue
         ts = sorted(tick.get(r["isin"], set()) | ({figi[r["isin"]].upper()} if r["isin"] in figi else set()))
         sheets = [f"https://etf.invesco.com/sites/default/files/documents/IVZ_{t}_FACTSHEET_{v}.pdf" for t in ts for v in ("EN", "UK_EN")]
-        yield r, sheets, f"https://etf.invesco.com/sites/default/files/documents/{r['isin']}_kid_en.pdf", None
+        yield r, sheets, [f"https://etf.invesco.com/sites/default/files/documents/{r['isin']}_kid_{l}.pdf" for l in ("en", "de")], None
 
 def xtrackers():
     for r in ucits_first(universe):
@@ -306,11 +306,14 @@ for issuer in ISSUERS:
         url, text, err = fetch_pdf(sheets) if sheets else (None, None, "no factsheet address")
         if not text and kid_url:
             # No factsheet: the KID still gives the ongoing costs, transaction costs and risk class.
-            try:
-                blob, _ = get(kid_url)
-                k = parse_kid(pdf_text(blob)) if blob[:4] == b"%PDF" else {}
-            except Exception:
-                k = {}
+            k = {}
+            for ku in (kid_url if isinstance(kid_url, list) else [kid_url]):
+                try:
+                    blob, _ = get(ku)
+                    if blob[:4] == b"%PDF":
+                        k = parse_kid(pdf_text(blob)); kid_url = ku; break
+                except Exception:
+                    continue
             if k:
                 stats["kid_only"] = stats.get("kid_only", 0) + 1; stats["with_kid"] += 1
                 facts.append([r["etf_key"], "", k.get("kid_ongoing_pct", ""), "", "", "", "", "", k.get("sri", ""), k.get("kid_ongoing_pct", ""), k.get("transaction_cost_pct", ""), kid_url, LABEL[issuer].replace("factsheet", "KID"), kid_url])
@@ -334,11 +337,12 @@ for issuer in ISSUERS:
             for i, l in enumerate(ls):
                 if re.search(r"(?i)breakdown|allocation|geograph|countr|sector|holdings", l): print("   |", " // ".join(x[:70] for x in ls[i:i + 4]))
         if kid_url:
-            try:
-                blob, _ = get(kid_url)
-                if blob[:4] == b"%PDF":
-                    p.update(parse_kid(pdf_text(blob))); stats["with_kid"] += 1
-            except Exception: pass
+            for ku in (kid_url if isinstance(kid_url, list) else [kid_url]):
+                try:
+                    blob, _ = get(ku)
+                    if blob[:4] == b"%PDF":
+                        p.update(parse_kid(pdf_text(blob))); stats["with_kid"] += 1; kid_url = ku; break
+                except Exception: continue
         stats["ok"] += 1
         src = LABEL[issuer]
         facts.append([r["etf_key"], p.get("as_of", ""), p.get("fee_pct", ""), p.get("aum", ""), p.get("aum_currency", ""), p.get("aum_level", ""), p.get("n_holdings", ""), p.get("replication", ""),
