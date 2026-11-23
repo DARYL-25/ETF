@@ -9,7 +9,8 @@ at a time, and a refusal is recorded and accepted. Nothing behind a terms page i
 Issuers covered, and how each factsheet is found:
   hsbc       factsheet addressed by ISIN on the issuer's document service
   invesco    factsheet addressed by the fund's ticker
-  xtrackers  the fund page (addressed by ISIN) links its factsheet
+  xtrackers  not read: its fund pages show content only after a visitor accepts terms. Its product file
+             (downloaded by the owner) gives fees and sizes instead
   ishares    the fund page from iShares' public product list links its factsheet (UCITS funds only;
              US iShares funds come from SEC N-PORT)
 
@@ -27,7 +28,7 @@ from pathlib import Path
 UA = "etf-intelligence-documents/1.0 (+https://github.com/DARYL-25/ETF)"
 U, H, R, OUT = Path("data/universe"), Path("data/holdings"), Path("data/universe/details"), Path("out")
 for d in (H, R, OUT): d.mkdir(parents=True, exist_ok=True)
-ISSUERS = [s for s in os.environ.get("ISSUERS", "hsbc,invesco,xtrackers,ishares").split(",") if s]
+ISSUERS = [s for s in os.environ.get("ISSUERS", "hsbc,invesco,ishares").split(",") if s]
 LIMIT = int(os.environ.get("LIMIT", "100000"))
 PAUSE = float(os.environ.get("PAUSE", "1.0"))
 DEBUG = "LIMIT" in os.environ
@@ -89,7 +90,10 @@ HOLDCOUNT = re.compile(r"(?:Number of (?:Holdings|stocks|securities|positions)|T
 REPL = re.compile(r"(?:Methodology|Replication(?: method)?|Product Structure|Investment method|Replikationsmethode)\s*:?\s*(Full(?:y)? (?:physical )?replication|Replicated|Physical|Physisch|Optimi[sz](?:ed|ation)|Sampled|Sampling|Synthetic|Synthetisch|Swap[- ]based)\b", re.I)
 TOP_HEAD = re.compile(r"^(?:top\s*(?:10|ten)?\s*(?:holdings|positions|exposures|issuers)|largest\s*(?:10\s*)?holdings|top-10-positionen|größte 10 position|top positionen)", re.I)
 SECTION = re.compile(r"(?i)\b(breakdown|allocation|exposure by|by country|by sector|geographic|sector weights|country weights|market allocation|asset class)\b")
-LINE_PCT = re.compile(r"^(.{2,90}?)\s+(?:[A-Z]{2}[A-Z0-9]{9}\d\s+)?(-?\d{1,3}[.,]\d{1,3})\s*%?(?:\s+-?\d{1,3}[.,]\d{1,3}\s*%?)?$")
+LINE_PCT = re.compile(r"^(.{2,90}?)\s+(?:[A-Z]{2}[A-Z0-9]{9}\d\s+)?(-?\d{1,3}[.,]\d{1,3})\s*%?(?:\s+-?\d{1,3}[.,]\d{1,3}\s*%?){0,2}$")
+# A top-holdings line: the weight is the last number (bond lines print the coupon first).
+TOP_LINE = re.compile(r"^(.{2,90}?)\s+(?:[A-Z]{2}[A-Z0-9]{9}\d\s+)?((?:-?\d{1,3}[.,]\d{1,3}\s*%?\s*){1,3})$")
+TRAILING_SECTOR = re.compile(r"\s+(Information Te\w*|Financials?|Health Care|Consumer Discr\w*|Consumer Stap\w*|Industrials|Communication\w*|Energy|Materials|Utilities|Real Estate)$", re.I)
 SECTORS = {"information technology": "Information Technology", "info. tech.": "Information Technology", "technology": "Information Technology", "financials": "Financials", "financial": "Financials",
     "health care": "Health Care", "healthcare": "Health Care", "consumer discretionary": "Consumer Discretionary", "consumer staples": "Consumer Staples", "industrials": "Industrials",
     "communication services": "Communication Services", "communication": "Communication Services", "telecommunication services": "Communication Services", "energy": "Energy",
@@ -134,10 +138,11 @@ def parse(text):
             misses = 0
             for l in lines[i + 1:i + 30]:
                 if SECTION.search(l) or re.match(r"(?i)total\b", l): break
-                mm = LINE_PCT.match(l)
+                mm = TOP_LINE.match(l)
                 if mm and mm.group(1).strip(" .:-*").lower() in (SECTORS.keys() | COUNTRIES.keys()): break
                 if mm and not TOP_HEAD.match(l):
-                    name, w = mm.group(1).strip(" .:-"), pct(mm.group(2))
+                    name = TRAILING_SECTOR.sub("", mm.group(1).strip(" .:-"))
+                    w = pct(re.findall(r"-?\d{1,3}[.,]\d{1,3}", mm.group(2))[-1])
                     if 0 < w <= 60 and not re.fullmatch(r"[\d\s.,%-]+", name): top.append((name, w)); misses = 0
                 else:
                     misses += 1
@@ -177,6 +182,8 @@ def pdf_text(blob):
     halves, whole = [], []
     with pdfplumber.open(io.BytesIO(blob)) as p:
         for pg in p.pages[:4]:
+            try: pg = pg.dedupe_chars()  # bold text drawn twice would read as "IInnffoo"
+            except Exception: pass
             w, h = pg.width, pg.height
             for box in ((0, 0, w / 2, h), (w / 2, 0, w, h)):
                 try: halves.append(pg.crop(box).extract_text() or "")
@@ -293,10 +300,22 @@ for issuer in ISSUERS:
     for r, sheets, kid_url, err in RESOLVERS[issuer]():
         if stats["tried"] >= LIMIT: break
         stats["tried"] += 1
-        if not sheets:
+        if not sheets and not kid_url:
             stats["no_link"] += 1; stats["errors"][err or "no link"] = stats["errors"].get(err or "no link", 0) + 1
             continue
-        url, text, err = fetch_pdf(sheets)
+        url, text, err = fetch_pdf(sheets) if sheets else (None, None, "no factsheet address")
+        if not text and kid_url:
+            # No factsheet: the KID still gives the ongoing costs, transaction costs and risk class.
+            try:
+                blob, _ = get(kid_url)
+                k = parse_kid(pdf_text(blob)) if blob[:4] == b"%PDF" else {}
+            except Exception:
+                k = {}
+            if k:
+                stats["kid_only"] = stats.get("kid_only", 0) + 1; stats["with_kid"] += 1
+                facts.append([r["etf_key"], "", k.get("kid_ongoing_pct", ""), "", "", "", "", "", k.get("sri", ""), k.get("kid_ongoing_pct", ""), k.get("transaction_cost_pct", ""), kid_url, LABEL[issuer].replace("factsheet", "KID"), kid_url])
+                if k.get("kid_ongoing_pct") is not None: stats["with_fee"] += 1
+                continue
         if not text:
             stats["failed"] += 1; stats["errors"][err] = stats["errors"].get(err, 0) + 1
             if DEBUG and stats["failed"] <= 2: print(f"--- {issuer} failed {r['isin']} {r['name'][:60]} {sheets[:3]} {err}")
