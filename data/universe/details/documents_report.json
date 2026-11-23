@@ -1,25 +1,45 @@
 {
  "on": "2026-11-23",
  "issuers": {
-  "ishares": {
-   "tried": 2,
-   "ok": 2,
+  "hsbc": {
+   "tried": 150,
+   "ok": 125,
    "no_link": 0,
+   "failed": 25,
+   "wrong_fund": 0,
+   "with_fee": 124,
+   "with_size": 124,
+   "with_top": 61,
+   "with_countries": 77,
+   "with_sectors": 86,
+   "with_kid": 0,
+   "errors": {
+    "HTTPError: HTTP Error 404: Not Found": 25
+   },
+   "minutes": 9.9
+  },
+  "ishares": {
+   "tried": 919,
+   "ok": 911,
+   "no_link": 1,
    "failed": 0,
    "wrong_fund": 0,
-   "with_fee": 2,
-   "with_size": 2,
-   "with_top": 1,
+   "with_fee": 918,
+   "with_size": 911,
+   "with_top": 827,
    "with_countries": 0,
    "with_sectors": 0,
-   "with_kid": 2,
-   "errors": {},
-   "minutes": 0.4
+   "with_kid": 915,
+   "errors": {
+    "page: TimeoutError": 1
+   },
+   "kid_only": 7,
+   "minutes": 138.4
   }
  },
- "funds": 2,
- "with_top_holdings_new": 1,
- "exposure_rows": 0,
+ "funds": 1043,
+ "with_top_holdings_new": 888,
+ "exposure_rows": 1516,
  "refused_hosts": [],
- "test_run": true
+ "test_run": false
 }
