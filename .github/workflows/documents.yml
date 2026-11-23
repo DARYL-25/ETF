@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
     inputs:
       issuers:
-        description: "Comma list: hsbc,invesco,ishares"
-        default: "hsbc,invesco,ishares"
+        description: "Comma list: hsbc,ishares"
+        default: "hsbc,ishares"
       limit:
         description: "Funds per issuer for a test run (empty = all, and results are saved)"
         default: ""
@@ -32,7 +32,7 @@ jobs:
           if [ -n "$LIMIT" ]; then export LIMIT; fi
           python3 scripts/universe/documents.py
         env:
-          ISSUERS: ${{ inputs.issuers || 'hsbc,invesco,ishares' }}
+          ISSUERS: ${{ inputs.issuers || 'hsbc,ishares' }}
           LIMIT: ${{ inputs.limit }}
       - name: Keep text samples for checking the parser (not committed)
         if: always()
