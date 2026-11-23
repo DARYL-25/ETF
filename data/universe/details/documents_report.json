@@ -2,70 +2,75 @@
  "on": "2026-11-23",
  "issuers": {
   "hsbc": {
-   "tried": 3,
+   "tried": 4,
    "ok": 0,
    "no_link": 0,
-   "failed": 3,
+   "failed": 4,
    "wrong_fund": 0,
    "with_fee": 0,
    "with_size": 0,
    "with_top": 0,
    "with_countries": 0,
    "with_sectors": 0,
+   "with_kid": 0,
    "errors": {
-    "HTTPError: HTTP Error 404: Not Found": 3
-   },
-   "minutes": 0.1
-  },
-  "invesco": {
-   "tried": 3,
-   "ok": 0,
-   "no_link": 0,
-   "failed": 3,
-   "wrong_fund": 0,
-   "with_fee": 0,
-   "with_size": 0,
-   "with_top": 0,
-   "with_countries": 0,
-   "with_sectors": 0,
-   "errors": {
-    "ValueError: not a pdf": 3
-   },
-   "minutes": 0.1
-  },
-  "xtrackers": {
-   "tried": 3,
-   "ok": 0,
-   "no_link": 3,
-   "failed": 0,
-   "wrong_fund": 0,
-   "with_fee": 0,
-   "with_size": 0,
-   "with_top": 0,
-   "with_countries": 0,
-   "with_sectors": 0,
-   "errors": {
-    "page: HTTPError": 3
+    "HTTPError: HTTP Error 404: Not Found": 4
    },
    "minutes": 0.2
   },
+  "invesco": {
+   "tried": 4,
+   "ok": 0,
+   "no_link": 1,
+   "failed": 3,
+   "wrong_fund": 0,
+   "with_fee": 0,
+   "with_size": 0,
+   "with_top": 0,
+   "with_countries": 0,
+   "with_sectors": 0,
+   "with_kid": 0,
+   "errors": {
+    "ValueError: not a pdf": 3,
+    "no link": 1
+   },
+   "minutes": 0.2
+  },
+  "xtrackers": {
+   "tried": 4,
+   "ok": 0,
+   "no_link": 4,
+   "failed": 0,
+   "wrong_fund": 0,
+   "with_fee": 0,
+   "with_size": 0,
+   "with_top": 0,
+   "with_countries": 0,
+   "with_sectors": 0,
+   "with_kid": 0,
+   "errors": {
+    "page: HTTPError 404": 4
+   },
+   "minutes": 0.6
+  },
   "ishares": {
-   "tried": 3,
-   "ok": 3,
+   "tried": 4,
+   "ok": 4,
    "no_link": 0,
    "failed": 0,
    "wrong_fund": 0,
-   "with_fee": 3,
-   "with_size": 0,
-   "with_top": 2,
+   "with_fee": 4,
+   "with_size": 4,
+   "with_top": 3,
    "with_countries": 0,
    "with_sectors": 0,
+   "with_kid": 4,
    "errors": {},
-   "minutes": 0.4
+   "minutes": 0.5
   }
  },
- "funds": 3,
- "with_top_holdings_new": 2,
+ "funds": 4,
+ "with_top_holdings_new": 3,
  "exposure_rows": 0,
  "refused_hosts": [],
  "test_run": true
