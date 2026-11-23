@@ -435,12 +435,13 @@ export async function getSizeSource(etfKey: string | null): Promise<{ source: st
 
 type FigureSource = { source: string; url: string } | null;
 /** Where a basic record's fee and fund size come from, when that differs from the row's own source. */
-export async function getFigureSources(etfKey: string | null): Promise<{ fee: FigureSource; size: FigureSource }> {
+export async function getFigureSources(etfKey: string | null): Promise<{ fee: FigureSource; size: FigureSource; sri?: number | null; transaction_cost_pct?: number | null; kid_url?: string | null }> {
   if (!etfKey) return { fee: null, size: null };
-  const [r] = await query<{ aum_source: string | null; aum_source_url: string | null; fee_source: string | null; fee_source_url: string | null; has_aum: boolean; has_fee: boolean }>(
-    "select aum_source, aum_source_url, fee_source, fee_source_url, aum is not null as has_aum, fee_pct is not null as has_fee from public.universe_details where etf_key = $1", [etfKey]);
+  const [r] = await query<{ aum_source: string | null; aum_source_url: string | null; fee_source: string | null; fee_source_url: string | null; has_aum: boolean; has_fee: boolean; sri: number | null; transaction_cost_pct: number | null; kid_url: string | null }>(
+    "select aum_source, aum_source_url, fee_source, fee_source_url, aum is not null as has_aum, fee_pct is not null as has_fee, sri, transaction_cost_pct, kid_url from public.universe_details where etf_key = $1", [etfKey]);
   if (!r) return { fee: null, size: null };
   return {
+    sri: r.sri, transaction_cost_pct: r.transaction_cost_pct, kid_url: r.kid_url,
     size: r.has_aum && r.aum_source && r.aum_source_url ? { source: r.aum_source, url: r.aum_source_url } : null,
     fee: r.has_fee && r.fee_source && r.fee_source_url ? { source: r.fee_source, url: r.fee_source_url } : null,
   };
