@@ -2034,4 +2034,5 @@ export const FR: Record<string, string> = {
   "{name}: the units bought on {date} pass six months on {due}. Sold before then, their gain is taxed at your income tax rate; after it, it is exempt for a holding below 10% of a company.": "{name} : les parts achetées le {date} passent six mois le {due}. Vendues avant, leur plus-value est imposée à votre taux d'impôt sur le revenu ; après, elle est exonérée pour une participation inférieure à 10 %.",
   "In box 3 you are taxed on an assumed return on what you own, so selling, waiting or switching funds does not change the tax. Keep your figures: in a weak year you can claim the lower actual return.": "En box 3, vous êtes imposé sur un rendement supposé de ce que vous détenez : vendre, attendre ou changer de fonds ne change pas l'impôt. Gardez vos chiffres : une année faible, vous pouvez faire valoir le rendement réel plus bas.",
   "Netherlands": "Pays-Bas",
+  "SEC fund filings (N-PORT)": "Déclarations des fonds à la SEC (N-PORT)",
 };
