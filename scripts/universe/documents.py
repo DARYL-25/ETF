@@ -168,10 +168,19 @@ def parse(text):
 SRI = re.compile(r"(?:classified|eingestuft|Risikoklasse)[^.]{0,80}?\b([1-7])\s*(?:out of|von|auf einer skala von)\s*7", re.I)
 ONGOING = re.compile(r"(?:Management fees and other administrative or operating costs|Verwaltungsgeb\S+ und sonstige Verwaltungs- oder Betriebskosten)\s*(\d{1,2}[.,]\d{1,3})\s*%", re.I)
 TRANS = re.compile(r"(?:Transaction costs|Transaktionskosten)\s*(\d{1,2}[.,]\d{1,3})\s*%", re.I)
+WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7}
+# The older UCITS KIID (still used in the UK): "rated six due to the nature of its investments", "category 6".
+SRI_KIID = re.compile(r"(?:is rated|rated as|in category|risk category|category)\s+(one|two|three|four|five|six|seven|[1-7])\b", re.I)
+ONGOING_KIID = re.compile(r"Ongoing charges?\s*:?\s*(\d{1,2}[.,]\d{1,3})\s*%", re.I)
 def parse_kid(text):
     out = {}
-    m = SRI.search(text)
-    if m: out["sri"] = int(m.group(1))
+    m = SRI.search(text) or SRI_KIID.search(text)
+    if m:
+        v = m.group(1).lower()
+        out["sri"] = WORDS.get(v) or int(v)
+    if "kid_ongoing_pct" not in out:
+        m2 = ONGOING_KIID.search(text)
+        if m2 and pct(m2.group(1)) <= 3: out["kid_ongoing_pct"] = pct(m2.group(1))
     m = ONGOING.search(text)
     if m and pct(m.group(1)) <= 3: out["kid_ongoing_pct"] = pct(m.group(1))
     m = TRANS.search(text)
@@ -343,7 +352,13 @@ for issuer in ISSUERS:
                 try:
                     blob, _ = get(ku)
                     if blob[:4] == b"%PDF":
-                        p.update(parse_kid(pdf_text(blob))); stats["with_kid"] += 1; kid_url = ku; break
+                        kt = pdf_text(blob)
+                        p.update(parse_kid(kt)); stats["with_kid"] += 1; kid_url = ku
+                        if DEBUG and stats["ok"] < 2:
+                            print(f"--- {issuer} KID {ku}\n    kid parsed: {parse_kid(kt)}")
+                            for l in kt.split("=====")[0].splitlines():
+                                if re.search(r"(?i)rated|category|class|ongoing|transaction|out of 7", l): print("   K|", l.strip()[:160])
+                        break
                 except Exception: continue
         stats["ok"] += 1
         src = LABEL[issuer]
