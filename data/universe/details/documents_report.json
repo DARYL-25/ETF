@@ -2,10 +2,10 @@
  "on": "2026-11-23",
  "issuers": {
   "hsbc": {
-   "tried": 6,
+   "tried": 3,
    "ok": 0,
    "no_link": 0,
-   "failed": 6,
+   "failed": 3,
    "wrong_fund": 0,
    "with_fee": 0,
    "with_size": 0,
@@ -13,15 +13,15 @@
    "with_countries": 0,
    "with_sectors": 0,
    "errors": {
-    "HTTPError: HTTP Error 404: Not Found": 6
+    "HTTPError: HTTP Error 404: Not Found": 3
    },
    "minutes": 0.1
   },
   "invesco": {
-   "tried": 6,
+   "tried": 3,
    "ok": 0,
    "no_link": 0,
-   "failed": 6,
+   "failed": 3,
    "wrong_fund": 0,
    "with_fee": 0,
    "with_size": 0,
@@ -29,43 +29,43 @@
    "with_countries": 0,
    "with_sectors": 0,
    "errors": {
-    "ValueError: not a pdf": 6
+    "ValueError: not a pdf": 3
+   },
+   "minutes": 0.1
+  },
+  "xtrackers": {
+   "tried": 3,
+   "ok": 0,
+   "no_link": 3,
+   "failed": 0,
+   "wrong_fund": 0,
+   "with_fee": 0,
+   "with_size": 0,
+   "with_top": 0,
+   "with_countries": 0,
+   "with_sectors": 0,
+   "errors": {
+    "page: HTTPError": 3
    },
    "minutes": 0.2
   },
-  "xtrackers": {
-   "tried": 6,
-   "ok": 0,
-   "no_link": 6,
-   "failed": 0,
-   "wrong_fund": 0,
-   "with_fee": 0,
-   "with_size": 0,
-   "with_top": 0,
-   "with_countries": 0,
-   "with_sectors": 0,
-   "errors": {
-    "page: HTTPError": 6
-   },
-   "minutes": 0.3
-  },
   "ishares": {
-   "tried": 6,
-   "ok": 6,
+   "tried": 3,
+   "ok": 3,
    "no_link": 0,
    "failed": 0,
    "wrong_fund": 0,
-   "with_fee": 6,
+   "with_fee": 3,
    "with_size": 0,
-   "with_top": 4,
+   "with_top": 2,
    "with_countries": 0,
    "with_sectors": 0,
    "errors": {},
-   "minutes": 0.7
+   "minutes": 0.4
   }
  },
- "funds": 6,
- "with_top_holdings_new": 4,
+ "funds": 3,
+ "with_top_holdings_new": 2,
  "exposure_rows": 0,
  "refused_hosts": [],
  "test_run": true
