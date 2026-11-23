@@ -1,27 +1,45 @@
 {
  "on": "2026-11-23",
  "issuers": {
-  "invesco": {
-   "tried": 5,
-   "ok": 0,
+  "hsbc": {
+   "tried": 150,
+   "ok": 125,
    "no_link": 0,
-   "failed": 5,
+   "failed": 25,
    "wrong_fund": 0,
-   "with_fee": 0,
-   "with_size": 0,
-   "with_top": 0,
-   "with_countries": 0,
-   "with_sectors": 0,
+   "with_fee": 124,
+   "with_size": 124,
+   "with_top": 61,
+   "with_countries": 77,
+   "with_sectors": 86,
    "with_kid": 0,
    "errors": {
-    "ValueError: not a pdf": 5
+    "HTTPError: HTTP Error 404: Not Found": 25
    },
-   "minutes": 0.5
+   "minutes": 10.4
+  },
+  "ishares": {
+   "tried": 919,
+   "ok": 913,
+   "no_link": 0,
+   "failed": 6,
+   "wrong_fund": 0,
+   "with_fee": 913,
+   "with_size": 913,
+   "with_top": 830,
+   "with_countries": 0,
+   "with_sectors": 0,
+   "with_kid": 904,
+   "errors": {
+    "HTTPError: HTTP Error 502: Bad Gateway": 5,
+    "no factsheet address": 1
+   },
+   "minutes": 153.0
   }
  },
- "funds": 0,
- "with_top_holdings_new": 0,
- "exposure_rows": 0,
+ "funds": 1038,
+ "with_top_holdings_new": 891,
+ "exposure_rows": 1516,
  "refused_hosts": [],
- "test_run": true
+ "test_run": false
 }
