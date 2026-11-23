@@ -8,7 +8,8 @@ at a time, and a refusal is recorded and accepted. Nothing behind a terms page i
 
 Issuers covered, and how each factsheet is found:
   hsbc       factsheet addressed by ISIN on the issuer's document service
-  invesco    factsheet addressed by the fund's ticker
+  invesco    parked: its factsheets and KIDs answer GitHub's servers with web pages, not PDFs. Its product file
+             (downloaded by the owner) gives fees and sizes instead
   xtrackers  not read: its fund pages show content only after a visitor accepts terms. Its product file
              (downloaded by the owner) gives fees and sizes instead
   ishares    the fund page from iShares' public product list links its factsheet (UCITS funds only;
@@ -28,7 +29,7 @@ from pathlib import Path
 UA = "etf-intelligence-documents/1.0 (+https://github.com/DARYL-25/ETF)"
 U, H, R, OUT = Path("data/universe"), Path("data/holdings"), Path("data/universe/details"), Path("out")
 for d in (H, R, OUT): d.mkdir(parents=True, exist_ok=True)
-ISSUERS = [s for s in os.environ.get("ISSUERS", "hsbc,invesco,ishares").split(",") if s]
+ISSUERS = [s for s in os.environ.get("ISSUERS", "hsbc,ishares").split(",") if s]
 LIMIT = int(os.environ.get("LIMIT", "100000"))
 PAUSE = float(os.environ.get("PAUSE", "1.0"))
 DEBUG = "LIMIT" in os.environ
