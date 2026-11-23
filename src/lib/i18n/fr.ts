@@ -2035,4 +2035,7 @@ export const FR: Record<string, string> = {
   "In box 3 you are taxed on an assumed return on what you own, so selling, waiting or switching funds does not change the tax. Keep your figures: in a weak year you can claim the lower actual return.": "En box 3, vous êtes imposé sur un rendement supposé de ce que vous détenez : vendre, attendre ou changer de fonds ne change pas l'impôt. Gardez vos chiffres : une année faible, vous pouvez faire valoir le rendement réel plus bas.",
   "Netherlands": "Pays-Bas",
   "SEC fund filings (N-PORT)": "Déclarations des fonds à la SEC (N-PORT)",
+  "Risk class (KID)": "Classe de risque (DIC)",
+  "1 is lowest, 7 highest": "1 = le plus faible, 7 = le plus élevé",
+  "A year, on top of the fee, from the KID": "Par an, en plus des frais, selon le DIC",
 };

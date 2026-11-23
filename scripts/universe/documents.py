@@ -84,9 +84,9 @@ def as_of(text):
 
 def pct(s): return float(s.replace(",", ".").replace("'", ""))
 FEE = re.compile(r"(?:Total Expense Ratio|\bTER\b|Ongoing Charges?(?: Figure)?|\bOCF\b|Management fee(?: p\.a\.)?|Gesamtkostenquote|Laufende Kosten)[^\d\n%]{0,40}?(\d{1,2}[.,]\d{1,3})\s*%", re.I)
-SIZE = re.compile(r"(Net Assets of (?:Fund|Share Class)|Fund size|Fund Size|Fund AUM|Fund assets|Total assets|Total net assets|Net assets)\s*(?:\(\s*(?:million|mn|m)\s*\))?\s*:?\s*([A-Z]{3}|\$|€|£)?\s*([\d][\d,.']*)\s*(bn|billion|million|mn|m\b|M\b)?\s*([A-Z]{3})?", re.I)
+SIZE = re.compile(r"(Net Assets of (?:Fund|Share Class)|Fund size|Fund Size|Fund AUM|Fund assets|Total assets|Total net assets|Net assets|Fondsvolumen|Fondsvermögen)\s*(?:\(\s*(?:million|mn|m|mio\.?)\s*\))?\s*:?\s*([A-Z]{3}|\$|€|£)?\s*([\d][\d,.']*)\s*(bn|billion|million|mn|m\b|M\b)?\s*([A-Z]{3})?", re.I)
 HOLDCOUNT = re.compile(r"(?:Number of (?:Holdings|stocks|securities|positions)|Total holdings|Anzahl der Positionen)\D{0,12}([\d][\d,']*)", re.I)
-REPL = re.compile(r"\b(Full(?:y)? (?:physical )?replication|Physical(?: replication)?|Optimi[sz](?:ed|ation)|Sampling|Synthetic|Swap[- ]based)\b", re.I)
+REPL = re.compile(r"(?:Methodology|Replication(?: method)?|Product Structure|Investment method|Replikationsmethode)\s*:?\s*(Full(?:y)? (?:physical )?replication|Replicated|Physical|Physisch|Optimi[sz](?:ed|ation)|Sampled|Sampling|Synthetic|Synthetisch|Swap[- ]based)\b", re.I)
 TOP_HEAD = re.compile(r"^(?:top\s*(?:10|ten)?\s*(?:holdings|positions|exposures|issuers)|largest\s*(?:10\s*)?holdings|top-10-positionen|größte 10 position|top positionen)", re.I)
 SECTION = re.compile(r"(?i)\b(breakdown|allocation|exposure by|by country|by sector|geographic|sector weights|country weights|market allocation|asset class)\b")
 LINE_PCT = re.compile(r"^(.{2,90}?)\s+(?:[A-Z]{2}[A-Z0-9]{9}\d\s+)?(-?\d{1,3}[.,]\d{1,3})\s*%?(?:\s+-?\d{1,3}[.,]\d{1,3}\s*%?)?$")
@@ -108,23 +108,26 @@ def parse(text):
     out = {"as_of": as_of(text)}
     m = FEE.search(text)
     if m and 0 < pct(m.group(1)) <= 3: out["fee_pct"] = pct(m.group(1))
+    sizes = []
     for m in SIZE.finditer(text):
         label, cur1, amount, unit, cur2 = m.groups()
         cur = {"$": "USD", "€": "EUR", "£": "GBP"}.get(cur1 or "", cur1 or cur2 or "")
         try: value = float(amount.replace(",", "").replace("'", ""))
         except ValueError: continue
         u = (unit or "").lower()
-        if "(million" in m.group(0).lower() or u in ("m", "mn", "million"): value *= 1e6
+        if re.search(r"\(\s*(?:million|mn|m|mio\.?)\s*\)", m.group(0), re.I) or u in ("m", "mn", "million"): value *= 1e6
         elif u in ("bn", "billion"): value *= 1e9
         if cur and len(cur) == 3 and cur.isalpha() and value >= 1e5:
-            out.update(aum=round(value), aum_currency=cur.upper(), aum_level="share_class" if "share class" in label.lower() else "fund")
-            break
+            sizes.append((0 if "share class" not in label.lower() else 1, round(value), cur.upper(), "share_class" if "share class" in label.lower() else "fund"))
+    if sizes:
+        _, v, c, lvl = sorted(sizes, key=lambda x: x[0])[0]
+        out.update(aum=v, aum_currency=c, aum_level=lvl)
     m = HOLDCOUNT.search(text)
     if m: out["n_holdings"] = int(m.group(1).replace(",", "").replace("'", ""))
     m = REPL.search(text)
     if m:
         w = m.group(1).lower()
-        out["replication"] = "synthetic" if ("synthetic" in w or "swap" in w) else "physical_sampled" if ("optimi" in w or "sampling" in w) else "physical_full"
+        out["replication"] = "synthetic" if ("synthet" in w or "swap" in w) else "physical_sampled" if ("optimi" in w or "sampl" in w) else "physical_full"
     top, i = [], 0
     while i < len(lines):
         if TOP_HEAD.match(lines[i]):
@@ -155,38 +158,72 @@ def parse(text):
         if len(v) >= 2 and 40 <= sum(v.values()) <= 101.5: out[k] = v
     return out
 
-def pdf_text(blob):
-    import pdfplumber
-    with pdfplumber.open(io.BytesIO(blob)) as p:
-        return "\n".join((pg.extract_text() or "") for pg in p.pages[:4])
+SRI = re.compile(r"(?:classified|eingestuft)[^.]{0,60}?\b([1-7])\s*(?:out of|von|auf einer skala von)\s*7", re.I)
+ONGOING = re.compile(r"Management fees and other administrative or operating costs\s*(\d{1,2}[.,]\d{1,3})\s*%", re.I)
+TRANS = re.compile(r"Transaction costs\s*(\d{1,2}[.,]\d{1,3})\s*%", re.I)
+def parse_kid(text):
+    out = {}
+    m = SRI.search(text)
+    if m: out["sri"] = int(m.group(1))
+    m = ONGOING.search(text)
+    if m and pct(m.group(1)) <= 3: out["kid_ongoing_pct"] = pct(m.group(1))
+    m = TRANS.search(text)
+    if m and pct(m.group(1)) <= 3: out["transaction_cost_pct"] = pct(m.group(1))
+    return out
 
-# ---------- issuers: where each factsheet is ----------
+def pdf_text(blob):
+    """Factsheets are laid out in columns, so each half of a page is read on its own first, then the whole page."""
+    import pdfplumber
+    halves, whole = [], []
+    with pdfplumber.open(io.BytesIO(blob)) as p:
+        for pg in p.pages[:4]:
+            w, h = pg.width, pg.height
+            for box in ((0, 0, w / 2, h), (w / 2, 0, w, h)):
+                try: halves.append(pg.crop(box).extract_text() or "")
+                except Exception: pass
+            whole.append(pg.extract_text() or "")
+    return "\n".join(halves) + "\n=====\n" + "\n".join(whole)
+
+# ---------- issuers: where each factsheet and KID is ----------
+# Each resolver yields (universe row, factsheet addresses to try in order, KID address or None, error or None).
+figi = {r["isin"]: r["ticker"] for r in rd(U / "figi.csv.gz") if r.get("ticker")}
+_cache = {f: rd(U / f) for f in ("issuer_files.csv.gz", "issuer_identity.csv.gz")}
+
 def hsbc():
     for r in universe:
         if r["isin"] and re.search(r"\bHSBC\b", r["name"] + " " + r["issuer_name"], re.I):
-            yield r, f"https://www.assetmanagement.hsbc.co.uk/api/v1/download/document/{r['isin'].lower()}/gb/en/factsheet", True
+            i = r["isin"].lower()
+            sheets = [f"https://www.assetmanagement.hsbc.co.uk/api/v1/download/document/{i}/gb/en/factsheet",
+                      f"https://www.assetmanagement.hsbc.de/api/v1/download/document/{i}/de/de/factsheet"]
+            yield r, sheets, f"https://www.assetmanagement.hsbc.co.uk/api/v1/download/document/{i}/gb/en/kid", None
 
 def invesco():
     tick = {}
-    for f in ("issuer_files.csv.gz", "issuer_identity.csv.gz"):
-        for r in rd(U / f):
-            if r.get("isin") and r.get("ticker") and "invesco" in (r.get("source", "") + r.get("name", "")).lower(): tick.setdefault(r["isin"], r["ticker"])
-    for isin, t in tick.items():
-        r = by_isin.get(isin)
-        if r: yield r, f"https://etf.invesco.com/sites/default/files/documents/IVZ_{t.upper()}_FACTSHEET_EN.pdf", False
+    for f, rows in _cache.items():
+        for r in rows:
+            if r.get("isin") and r.get("ticker") and "invesco" in (r.get("source", "") + r.get("name", "")).lower(): tick.setdefault(r["isin"], set()).add(r["ticker"].upper())
+    for r in universe:
+        if not (r["isin"] and re.search(r"Invesco|PowerShares", r["name"] + " " + r["issuer_name"], re.I)) or r["source"] == "us": continue
+        ts = sorted(tick.get(r["isin"], set()) | ({figi[r["isin"]].upper()} if r["isin"] in figi else set()))
+        sheets = [f"https://etf.invesco.com/sites/default/files/documents/IVZ_{t}_FACTSHEET_{v}.pdf" for t in ts for v in ("EN", "UK_EN")]
+        yield r, sheets, f"https://etf.invesco.com/sites/default/files/documents/{r['isin']}_kid_en.pdf", None
 
 def xtrackers():
     for r in universe:
-        if not (r["isin"] and re.search(r"Xtrackers", r["name"] + " " + r["issuer_name"], re.I)): continue
-        page = f"https://etf.dws.com/en-gb/{r['isin']}/"
-        try:
-            html = get(page)[0].decode("utf-8", "replace")
-        except Exception as e:
-            if DEBUG: print("--- xtrackers page", page, type(e).__name__, str(e)[:100])
-            yield r, None, f"page: {type(e).__name__}"; continue
-        m = re.search(r'href="([^"]*(?:AssetDownload/Index/[0-9a-f-]{36}/Factsheet\.pdf|download/asset/[0-9a-f-]{36}))"[^>]*>(?:(?!</a>).){0,200}?Factsheet', html, re.I | re.S) \
-            or re.search(r'href="([^"]*AssetDownload/Index/[0-9a-f-]{36}/Factsheet\.pdf)"', html, re.I)
-        yield r, (urllib.parse.urljoin(page, m.group(1)) if m else None), True
+        if not (r["isin"] and re.search(r"Xtrackers|db x-trackers", r["name"] + " " + r["issuer_name"], re.I)) or r["source"] == "us": continue
+        link, err = None, None
+        for site in ("en-gb", "en-lu", "de-de"):
+            page = f"https://etf.dws.com/{site}/{r['isin']}/"
+            try:
+                html = get(page)[0].decode("utf-8", "replace")
+            except Exception as e:
+                err = f"page: {type(e).__name__} {getattr(e, 'code', '')}"; continue
+            m = re.search(r'href="([^"]*(?:AssetDownload/Index/[0-9a-f-]{36}/Factsheet\.pdf|download/asset/[0-9a-f-]{36}))"[^>]*>(?:(?!</a>).){0,200}?Factsheet', html, re.I | re.S) \
+                or re.search(r'href="([^"]*AssetDownload/Index/[0-9a-f-]{36}/Factsheet\.pdf)"', html, re.I)
+            if m: link = urllib.parse.urljoin(page, m.group(1)); break
+            err = "page without factsheet link"
+            if DEBUG: print("--- xtrackers page without link", page, len(html), re.findall(r'href="([^"]{0,120}(?:pdf|download)[^"]{0,60})"', html, re.I)[:8])
+        yield r, [link] if link else [], None, None if link else err
 
 def ishares():
     try:
@@ -199,12 +236,14 @@ def ishares():
         try:
             html = get(page)[0].decode("utf-8", "replace")
         except Exception as e:
-            yield by_isin[f["isin"]], None, f"page: {type(e).__name__}"; continue
+            yield by_isin[f["isin"]], [], None, f"page: {type(e).__name__}"; continue
         m = re.search(r'href="([^"]*literature/fact-sheet/[^"]+\.pdf)"', html, re.I)
-        yield by_isin[f["isin"]], (urllib.parse.urljoin(page, m.group(1)) if m else None), False
+        k = re.search(r'href="([^"]*literature/kiid/[^"]+\.pdf)"', html, re.I)
+        yield by_isin[f["isin"]], [urllib.parse.urljoin(page, m.group(1))] if m else [], urllib.parse.urljoin(page, k.group(1)) if k else None, None if m else "page without factsheet link"
 
 RESOLVERS = {"hsbc": hsbc, "invesco": invesco, "xtrackers": xtrackers, "ishares": ishares}
 LABEL = {"hsbc": "HSBC factsheet", "invesco": "Invesco factsheet", "xtrackers": "Xtrackers factsheet", "ishares": "iShares factsheet"}
+BY_KEY = {"hsbc": True, "invesco": False, "xtrackers": True, "ishares": False}  # True: the address itself names the ISIN
 
 # ETFs with a full holdings file already keep it; factsheet top holdings fill only the rest.
 full = {r["etf_key"] for f in ("summary.csv.gz", "sec_summary.csv.gz") for r in rd(H / f)}
@@ -214,48 +253,52 @@ def holding_key(name):
     clean = re.sub(r"\b(INC|INCORPORATED|CORP|CORPORATION|CO|COMPANY|PLC|LTD|LIMITED|SA|AG|NV|SE|ASA|AB|OYJ|SPA|HOLDINGS?|GROUP|CLASS|CL|ORD|REG|SHS|ADR|THE|AND|COM)\b", "", re.sub(r"[^A-Z0-9 ]", " ", name.upper().replace(".COM", "COM")))
     return re.sub(r"[^A-Z0-9]", "", clean)[:22]
 
+def fetch_pdf(urls):
+    last = "no address"
+    for u in urls:
+        try:
+            blob, _ = get(u)
+            if blob[:4] != b"%PDF": raise ValueError("not a pdf")
+            return u, pdf_text(blob), None
+        except Exception as e:
+            last = f"{type(e).__name__}: {str(e)[:60]}"
+    return None, None, last
+
 for issuer in ISSUERS:
-    stats = {"tried": 0, "ok": 0, "no_link": 0, "failed": 0, "wrong_fund": 0, "with_fee": 0, "with_size": 0, "with_top": 0, "with_countries": 0, "with_sectors": 0, "errors": {}}
+    stats = {"tried": 0, "ok": 0, "no_link": 0, "failed": 0, "wrong_fund": 0, "with_fee": 0, "with_size": 0, "with_top": 0, "with_countries": 0, "with_sectors": 0, "with_kid": 0, "errors": {}}
     started = time.time()
-    for item in RESOLVERS[issuer]():
-        r, url, by_key = item
+    for r, sheets, kid_url, err in RESOLVERS[issuer]():
         if stats["tried"] >= LIMIT: break
         stats["tried"] += 1
-        if not url:
-            stats["no_link"] += 1
-            if isinstance(by_key, str): stats["errors"][by_key] = stats["errors"].get(by_key, 0) + 1
+        if not sheets:
+            stats["no_link"] += 1; stats["errors"][err or "no link"] = stats["errors"].get(err or "no link", 0) + 1
             continue
-        try:
-            blob, ctype = get(url)
-            if blob[:4] != b"%PDF": raise ValueError("not a pdf")
-            text = pdf_text(blob)
-        except Exception as e:
-            key = f"{type(e).__name__}: {str(e)[:60]}"
-            stats["failed"] += 1; stats["errors"][key] = stats["errors"].get(key, 0) + 1
-            if DEBUG and stats["failed"] <= 2:
-                print(f"--- {issuer} failed {r['isin']} {r['name'][:60]} {url} {key}")
-                try:
-                    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": UA}), timeout=30) as resp:
-                        print("   | final", resp.geturl(), resp.headers.get("Content-Type"), resp.read(300)[:300])
-                except Exception as e2: print("   |", type(e2).__name__, str(e2)[:120])
+        url, text, err = fetch_pdf(sheets)
+        if not text:
+            stats["failed"] += 1; stats["errors"][err] = stats["errors"].get(err, 0) + 1
+            if DEBUG and stats["failed"] <= 2: print(f"--- {issuer} failed {r['isin']} {r['name'][:60]} {sheets[:3]} {err}")
             continue
         if samples < 12 and stats["ok"] < 3:
             (OUT / f"{issuer}_{r['isin']}.txt").write_text(text[:20000]); samples += 1
-        if DEBUG and stats["ok"] < 2:
-            ls = [l.strip() for l in text.splitlines() if l.strip()]
-            keep = [i for i, l in enumerate(ls) if re.search(r"(?i)assets|size|aum|volume|breakdown|allocation|country|countries|sector|geograph|replication|methodology|holdings|expense|charges", l)]
-            print(f"--- {issuer} {r['isin']} {url}")
-            shown = set()
-            for i in keep[:25]:
-                for j in range(i, min(i + 3, len(ls))):
-                    if j not in shown: print("   |", ls[j][:140]); shown.add(j)
-        # A factsheet found by ticker must name this fund's ISIN, or its figures are another share class's.
-        if not by_key and r["isin"] not in text.replace(" ", ""):
+        # A factsheet found by ticker or fund page must name this fund's ISIN, or its figures are another share class's.
+        if not BY_KEY[issuer] and r["isin"] not in text.replace(" ", ""):
             stats["wrong_fund"] += 1; continue
         p = parse(text)
+        if DEBUG and stats["ok"] < 2:
+            ls = [l.strip() for l in text.split("=====")[0].splitlines() if l.strip()]
+            print(f"--- {issuer} {r['isin']} {url}\n    parsed: {json.dumps({k: v for k, v in p.items() if k != 'top'})} top={p.get('top', [])[:4]}")
+            for i, l in enumerate(ls):
+                if re.search(r"(?i)breakdown|allocation|geograph|countr|sector|holdings", l): print("   |", " // ".join(x[:70] for x in ls[i:i + 4]))
+        if kid_url:
+            try:
+                blob, _ = get(kid_url)
+                if blob[:4] == b"%PDF":
+                    p.update(parse_kid(pdf_text(blob))); stats["with_kid"] += 1
+            except Exception: pass
         stats["ok"] += 1
         src = LABEL[issuer]
-        facts.append([r["etf_key"], p.get("as_of", ""), p.get("fee_pct", ""), p.get("aum", ""), p.get("aum_currency", ""), p.get("aum_level", ""), p.get("n_holdings", ""), p.get("replication", ""), src, url])
+        facts.append([r["etf_key"], p.get("as_of", ""), p.get("fee_pct", ""), p.get("aum", ""), p.get("aum_currency", ""), p.get("aum_level", ""), p.get("n_holdings", ""), p.get("replication", ""),
+                      p.get("sri", ""), p.get("kid_ongoing_pct", ""), p.get("transaction_cost_pct", ""), kid_url if p.get("sri") or p.get("transaction_cost_pct") is not None else "", src, url])
         for k in ("fee_pct", "aum", "top", "country", "sector"):
             if p.get(k): stats["with_" + {"fee_pct": "fee", "aum": "size", "top": "top", "country": "countries", "sector": "sectors"}[k]] += 1
         if p.get("top") and r["etf_key"] not in full:
@@ -273,7 +316,7 @@ def write(path, header, rows):
         w = csv.writer(fh); w.writerow(header); w.writerows(sorted(rows, key=lambda x: [str(v) for v in x]))
 # A test run (LIMIT set) only reports, so it never replaces a full month's files with a sample.
 if "LIMIT" not in os.environ:
-    write(U / "factsheets.csv.gz", ["etf_key", "as_of", "fee_pct", "aum", "aum_currency", "aum_level", "n_holdings", "replication", "source", "source_url"], facts)
+    write(U / "factsheets.csv.gz", ["etf_key", "as_of", "fee_pct", "aum", "aum_currency", "aum_level", "n_holdings", "replication", "sri", "kid_ongoing_pct", "transaction_cost_pct", "kid_url", "source", "source_url"], facts)
     write(H / "factsheet_holdings.csv.gz", ["etf_key", "holding_key", "name", "ticker", "weight", "sector", "country", "asset_class"], holds)
     write(H / "factsheet_summary.csv.gz", ["etf_key", "as_of", "n_holdings", "kept", "covered_pct", "source", "source_url"], sums)
     write(H / "factsheet_exposures.csv.gz", ["etf_key", "dimension", "label", "weight", "as_of", "source", "source_url"], expo)

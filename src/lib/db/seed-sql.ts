@@ -380,15 +380,15 @@ export function buildSeedSql(root: string): string {
   const factPath = join(root, "data/universe/factsheets.csv.gz");
   if (existsSync(factPath)) {
     for (const line of gunzipSync(readFileSync(factPath)).toString("utf8").trim().split(/\r?\n/).slice(1)) {
-      const [rawKey, asOf, fee, aum, aumCurrency, aumLevel, , replication, source, url] = parseLine(line);
+      const [rawKey, asOf, fee, aum, aumCurrency, aumLevel, , replication, sri, , transaction, kidUrl, source, url] = parseLine(line);
       const key = current(rawKey);
       const feeV = fee === "" ? "null" : String(Number(fee));
       const aumV = aum === "" || !aumCurrency ? "null" : String(Number(aum));
       const d = "public.universe_details";
-      out.push(`insert into ${d} (etf_key, fee_pct, fee_type, fee_as_of, aum, aum_currency, aum_as_of, aum_level, replication, source, source_url, fee_source, fee_source_url, aum_source, aum_source_url) select ${q(key)}, ${feeV}, ${fee === "" ? "null" : "'ongoing'"}, ${q(asOf || null)}, ${aumV}, ${q(aumV === "null" ? null : aumCurrency)}, ${q(asOf || null)}, ${q(aumV === "null" ? null : aumLevel || "fund")}, ${q(replication || null)}, ${q(source)}, ${q(url)}, ${q(feeV === "null" ? null : source)}, ${q(feeV === "null" ? null : url)}, ${q(aumV === "null" ? null : source)}, ${q(aumV === "null" ? null : url)} where exists (select 1 from public.universe_etfs u where u.etf_key = ${q(key)}) on conflict (etf_key) do update set ` +
+      out.push(`insert into ${d} (etf_key, fee_pct, fee_type, fee_as_of, aum, aum_currency, aum_as_of, aum_level, replication, sri, transaction_cost_pct, kid_url, source, source_url, fee_source, fee_source_url, aum_source, aum_source_url) select ${q(key)}, ${feeV}, ${fee === "" ? "null" : "'ongoing'"}, ${q(asOf || null)}, ${aumV}, ${q(aumV === "null" ? null : aumCurrency)}, ${q(asOf || null)}, ${q(aumV === "null" ? null : aumLevel || "fund")}, ${q(replication || null)}, ${sri ? Number(sri) : "null"}, ${transaction === "" ? "null" : Number(transaction)}, ${q(kidUrl || null)}, ${q(source)}, ${q(url)}, ${q(feeV === "null" ? null : source)}, ${q(feeV === "null" ? null : url)}, ${q(aumV === "null" ? null : source)}, ${q(aumV === "null" ? null : url)} where exists (select 1 from public.universe_etfs u where u.etf_key = ${q(key)}) on conflict (etf_key) do update set ` +
         `fee_source = case when ${d}.fee_pct is null then excluded.fee_source else ${d}.fee_source end, fee_source_url = case when ${d}.fee_pct is null then excluded.fee_source_url else ${d}.fee_source_url end, fee_type = case when ${d}.fee_pct is null then excluded.fee_type else ${d}.fee_type end, fee_as_of = case when ${d}.fee_pct is null then excluded.fee_as_of else ${d}.fee_as_of end, fee_pct = coalesce(${d}.fee_pct, excluded.fee_pct), ` +
         `aum_source = case when ${d}.aum is null then excluded.aum_source else ${d}.aum_source end, aum_source_url = case when ${d}.aum is null then excluded.aum_source_url else ${d}.aum_source_url end, aum_currency = case when ${d}.aum is null then excluded.aum_currency else ${d}.aum_currency end, aum_as_of = case when ${d}.aum is null then excluded.aum_as_of else ${d}.aum_as_of end, aum_level = case when ${d}.aum is null then excluded.aum_level else ${d}.aum_level end, aum = coalesce(${d}.aum, excluded.aum), ` +
-        `replication = coalesce(${d}.replication, excluded.replication);`);
+        `replication = coalesce(${d}.replication, excluded.replication), sri = coalesce(excluded.sri, ${d}.sri), transaction_cost_pct = coalesce(excluded.transaction_cost_pct, ${d}.transaction_cost_pct), kid_url = coalesce(excluded.kid_url, ${d}.kid_url);`);
     }
   }
 
