@@ -349,7 +349,7 @@ export function buildSeedSql(root: string): string {
     where d.fee_pct is not null and d.fee_type in ('ter', 'ocf') and not exists (select 1 from public.share_class_fees f where f.share_class_id = sc.id);`);
   out.push(`insert into public.metric_observations (fund_id, share_class_id, metric, value, unit, as_of, observed_on, source_id, verification)
     select sc.fund_id, case when d.aum_level = 'share_class' then sc.id end, 'aum', d.aum, d.aum_currency, nullif(d.aum_as_of, '')::date, current_date, ds.id, 'extracted_unreviewed'
-    from public.universe_details d join public.universe_etfs u on u.etf_key = d.etf_key join public.share_classes sc on sc.isin = u.isin join public.data_sources ds on ds.url = d.source_url
+    from public.universe_details d join public.universe_etfs u on u.etf_key = d.etf_key join public.share_classes sc on sc.isin = u.isin join public.data_sources ds on ds.url = coalesce(d.aum_source_url, d.source_url)
     where d.aum is not null and d.aum_currency is not null and not exists (select 1 from public.metric_observations m where m.fund_id = sc.fund_id and m.metric = 'aum');`);
 
   // US fees from SEC prospectus filings, used only where no issuer figure exists.
@@ -371,7 +371,7 @@ export function buildSeedSql(root: string): string {
     for (const line of gunzipSync(readFileSync(nportPath)).toString("utf8").trim().split(/\r?\n/).slice(1)) {
       const [rawKey, aum, currency, asOf] = parseLine(line);
       const key = current(rawKey);
-      out.push(`insert into public.universe_details (etf_key, aum, aum_currency, aum_as_of, aum_level, source, source_url) select ${q(key)}, ${Number(aum)}, ${q(currency)}, ${q(asOf)}, 'fund', 'SEC N-PORT', ${q(nportUrl)} where exists (select 1 from public.universe_etfs u where u.etf_key = ${q(key)}) on conflict (etf_key) do update set aum_currency = case when public.universe_details.aum is null then excluded.aum_currency else public.universe_details.aum_currency end, aum_as_of = case when public.universe_details.aum is null then excluded.aum_as_of else public.universe_details.aum_as_of end, aum_level = case when public.universe_details.aum is null then excluded.aum_level else public.universe_details.aum_level end, aum = coalesce(public.universe_details.aum, excluded.aum);`);
+      out.push(`insert into public.universe_details (etf_key, aum, aum_currency, aum_as_of, aum_level, source, source_url, aum_source, aum_source_url) select ${q(key)}, ${Number(aum)}, ${q(currency)}, ${q(asOf)}, 'fund', 'SEC N-PORT', ${q(nportUrl)}, 'SEC N-PORT', ${q(nportUrl)} where exists (select 1 from public.universe_etfs u where u.etf_key = ${q(key)}) on conflict (etf_key) do update set aum_source = case when public.universe_details.aum is null then excluded.aum_source else public.universe_details.aum_source end, aum_source_url = case when public.universe_details.aum is null then excluded.aum_source_url else public.universe_details.aum_source_url end, aum_currency = case when public.universe_details.aum is null then excluded.aum_currency else public.universe_details.aum_currency end, aum_as_of = case when public.universe_details.aum is null then excluded.aum_as_of else public.universe_details.aum_as_of end, aum_level = case when public.universe_details.aum is null then excluded.aum_level else public.universe_details.aum_level end, aum = coalesce(public.universe_details.aum, excluded.aum);`);
     }
   }
 

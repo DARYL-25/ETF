@@ -15,7 +15,7 @@ import { CompareToggle } from "@/components/compare-tray";
 import { AsOf, Change, EtfName, Fee } from "@/components/etf-bits";
 import { FeeRuler } from "@/components/fee-ruler";
 import { PriceChart } from "@/components/price-chart";
-import { getBondMetrics, getDailyPoints, getEtf, getExposures, getFeePoints, getListings, getPriceSeries, getSimilarEtfs, getTopHoldings, type EtfRow } from "@/lib/etfs/queries";
+import { getBondMetrics, getDailyPoints, getEtf, getExposures, getFeePoints, getListings, getPriceSeries, getSimilarEtfs, getSizeSource, getTopHoldings, type EtfRow } from "@/lib/etfs/queries";
 import { getLens } from "@/lib/lens-server";
 import { CostCalculator } from "@/components/cost-calculator";
 import { getBreakdown, getHoldingsSummary, getTopHoldingsFull } from "@/lib/etfs/holdings";
@@ -213,6 +213,7 @@ export default async function EtfPage({ params }: Props) {
     : t("Where the {n} funds on {group} sit by fee and size. This fund has no size on file, so it is not drawn.", { n: quadrant.points.length, group: t(quadrant.label) });
   const metric = (name: string) => bond.find((b) => b.metric === name);
   const retrieved = row.source_retrieved_on;
+  const sizeSource = researched ? null : await getSizeSource(row.etf_key ?? null);
   const size = row.fund_aum ?? row.class_aum;
   const sizeCurrency = row.fund_aum_currency ?? row.class_aum_currency;
   const sizeIsClass = row.aum_level === "share_class" || (row.fund_aum === null && row.class_aum !== null);
@@ -512,6 +513,7 @@ export default async function EtfPage({ params }: Props) {
             <h2 className="text-[1.05rem]">{t("Where these figures come from")}</h2>
             <dl className="mt-2 space-y-1.5">
               <div className="flex justify-between gap-3"><dt className="text-muted">{t("Source")}</dt><dd className="text-right">{row.source_url ? <a className="prose-link" href={row.source_url} rel="noreferrer" target="_blank">{researched ? (row.source_kind === "issuer_factsheet" ? t("Issuer factsheet") : t("Issuer website")) : row.headline_fee_pct !== null ? t("Issuer or regulator file") : t("Official list")}</a> : MISSING}</dd></div>
+              {sizeSource ? <div className="flex justify-between gap-3"><dt className="text-muted">{t("Fund size")}</dt><dd className="text-right"><a className="prose-link" href={sizeSource.url} rel="noreferrer" target="_blank">{sizeSource.source === "SEC N-PORT" ? t("SEC fund filings (N-PORT)") : sizeSource.source}</a></dd></div> : null}
               <div className="flex justify-between gap-3"><dt className="text-muted">{t("Read on")}</dt><dd className="data">{formatDate(retrieved, t.lang)}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-muted">{t("Checked by a person")}</dt><dd>{row.verification === "reviewed" ? t("Yes") : t("Not yet")}</dd></div>
             </dl>

@@ -427,3 +427,11 @@ export const getTape = (limit = 16) =>
      from big b join ranked a on a.etf_key = b.etf_key and a.rn = 1 join ranked c on c.etf_key = b.etf_key and c.rn = 2
      where c.value > 0 order by b.size_eur desc nulls last limit ${Math.floor(limit)}`,
   );
+
+/** Where a basic record's fund size comes from, when that differs from the row's own source (US sizes from SEC N-PORT). */
+export async function getSizeSource(etfKey: string | null): Promise<{ source: string; url: string } | null> {
+  if (!etfKey) return null;
+  const [r] = await query<{ aum_source: string | null; aum_source_url: string | null }>(
+    "select aum_source, aum_source_url from public.universe_details where etf_key = $1 and aum is not null", [etfKey]);
+  return r?.aum_source && r.aum_source_url ? { source: r.aum_source, url: r.aum_source_url } : null;
+}
