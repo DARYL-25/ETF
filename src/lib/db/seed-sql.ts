@@ -97,7 +97,8 @@ const q = (v: unknown): string => {
 /** Public data tables, in an order that is safe to empty together. User tables never reference them. */
 export const PUBLIC_DATA_TABLES = ["universe_exposures", "universe_monthly_returns", "holdings", "holdings_summary", "universe_prices", "universe_details", "universe_etfs", "fund_top_holdings", "fund_prices", "fund_exposures", "metric_observations", "share_class_fees", "listings", "share_classes", "fund_categories", "fund_index_relationships", "funds", "categories", "indices", "exchanges", "issuers", "fx_rates", "data_sources"];
 
-export function buildSeedSql(root: string): string {
+/** The seed as separate statements, wrapped in begin and commit. */
+export function buildSeedStatements(root: string): string[] {
   const funds = fundsFile.parse(JSON.parse(readFileSync(join(root, "data/seed/funds.json"), "utf8")));
   const reference = referenceFile.parse(JSON.parse(readFileSync(join(root, "data/seed/reference.json"), "utf8")));
   const fx = JSON.parse(readFileSync(join(root, "data/seed/fx.json"), "utf8"));
@@ -481,5 +482,9 @@ export function buildSeedSql(root: string): string {
   }
 
   out.push("commit;");
-  return out.join("\n") + "\n";
+  return out;
+}
+
+export function buildSeedSql(root: string): string {
+  return buildSeedStatements(root).join("\n") + "\n";
 }
