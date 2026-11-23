@@ -186,11 +186,14 @@ def pdf_text(blob):
 
 # ---------- issuers: where each factsheet and KID is ----------
 # Each resolver yields (universe row, factsheet addresses to try in order, KID address or None, error or None).
+def ucits_first(rows):
+    return sorted(rows, key=lambda r: {"IE": 0, "LU": 1}.get(r["isin"][:2], 2))
+PAGE_EXTRAS = {}  # isin -> {"country": {...}, "sector": {...}} read from a fund page we already opened
 figi = {r["isin"]: r["ticker"] for r in rd(U / "figi.csv.gz") if r.get("ticker")}
 _cache = {f: rd(U / f) for f in ("issuer_files.csv.gz", "issuer_identity.csv.gz")}
 
 def hsbc():
-    for r in universe:
+    for r in ucits_first(universe):
         if r["isin"] and re.search(r"\bHSBC\b", r["name"] + " " + r["issuer_name"], re.I):
             i = r["isin"].lower()
             sheets = [f"https://www.assetmanagement.hsbc.co.uk/api/v1/download/document/{i}/gb/en/factsheet",
@@ -202,15 +205,15 @@ def invesco():
     for f, rows in _cache.items():
         for r in rows:
             if r.get("isin") and r.get("ticker") and "invesco" in (r.get("source", "") + r.get("name", "")).lower(): tick.setdefault(r["isin"], set()).add(r["ticker"].upper())
-    for r in universe:
-        if not (r["isin"] and re.search(r"Invesco|PowerShares", r["name"] + " " + r["issuer_name"], re.I)) or r["source"] == "us": continue
+    for r in ucits_first(universe):
+        if not (r["isin"] and re.search(r"Invesco|PowerShares", r["name"] + " " + r["issuer_name"], re.I)) or r["isin"][:2] not in ("IE", "LU", "DE"): continue
         ts = sorted(tick.get(r["isin"], set()) | ({figi[r["isin"]].upper()} if r["isin"] in figi else set()))
         sheets = [f"https://etf.invesco.com/sites/default/files/documents/IVZ_{t}_FACTSHEET_{v}.pdf" for t in ts for v in ("EN", "UK_EN")]
         yield r, sheets, f"https://etf.invesco.com/sites/default/files/documents/{r['isin']}_kid_en.pdf", None
 
 def xtrackers():
-    for r in universe:
-        if not (r["isin"] and re.search(r"Xtrackers|db x-trackers", r["name"] + " " + r["issuer_name"], re.I)) or r["source"] == "us": continue
+    for r in ucits_first(universe):
+        if not (r["isin"] and re.search(r"Xtrackers|db x-trackers", r["name"] + " " + r["issuer_name"], re.I)) or r["isin"][:2] not in ("IE", "LU", "DE"): continue
         link, err = None, None
         for site in ("en-gb", "en-lu", "de-de"):
             page = f"https://etf.dws.com/{site}/{r['isin']}/"
@@ -239,6 +242,26 @@ def ishares():
             yield by_isin[f["isin"]], [], None, f"page: {type(e).__name__}"; continue
         m = re.search(r'href="([^"]*literature/fact-sheet/[^"]+\.pdf)"', html, re.I)
         k = re.search(r'href="([^"]*literature/kiid/[^"]+\.pdf)"', html, re.I)
+        extras = {}
+        for var, dim in (("tabsSectorDataTable", "sector"), ("subTabsCountriesDataTable", "country")):
+            t = re.search(var + r"\s*=\s*(\[.*?\])\s*;", html, re.S)
+            if not t: continue
+            try: items = json.loads(t.group(1))
+            except ValueError: continue
+            got = {}
+            for it in items if isinstance(items, list) else []:
+                name = it.get("name") or it.get("label") or it.get("title")
+                val = it.get("value", it.get("weight"))
+                if isinstance(val, dict): val = val.get("raw", val.get("r"))
+                try: val = float(str(val).replace(",", "."))
+                except (TypeError, ValueError): continue
+                if name and 0 < val <= 100:
+                    label = SECTORS.get(str(name).lower(), str(name)) if dim == "sector" else COUNTRIES.get(str(name).lower(), str(name))
+                    got[label] = round(got.get(label, 0) + val, 4)
+            if got: extras[dim] = got
+            if DEBUG and not got: print("--- ishares", var, t.group(1)[:300])
+        if extras: PAGE_EXTRAS[f["isin"]] = extras
+        elif DEBUG: print("--- ishares page has no breakdown tables", page, [v for v in re.findall(r"var\s+(\w*(?:Sector|Countr|Geograph)\w*)\s*=", html)][:6])
         yield by_isin[f["isin"]], [urllib.parse.urljoin(page, m.group(1))] if m else [], urllib.parse.urljoin(page, k.group(1)) if k else None, None if m else "page without factsheet link"
 
 RESOLVERS = {"hsbc": hsbc, "invesco": invesco, "xtrackers": xtrackers, "ishares": ishares}
@@ -284,6 +307,8 @@ for issuer in ISSUERS:
         if not BY_KEY[issuer] and r["isin"] not in text.replace(" ", ""):
             stats["wrong_fund"] += 1; continue
         p = parse(text)
+        for dim, vals in PAGE_EXTRAS.get(r["isin"], {}).items():
+            if not p.get(dim): p[dim] = vals
         if DEBUG and stats["ok"] < 2:
             ls = [l.strip() for l in text.split("=====")[0].splitlines() if l.strip()]
             print(f"--- {issuer} {r['isin']} {url}\n    parsed: {json.dumps({k: v for k, v in p.items() if k != 'top'})} top={p.get('top', [])[:4]}")
