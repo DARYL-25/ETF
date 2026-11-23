@@ -30,9 +30,10 @@ UA = "etf-intelligence-documents/1.0 (+https://github.com/DARYL-25/ETF)"
 U, H, R, OUT = Path("data/universe"), Path("data/holdings"), Path("data/universe/details"), Path("out")
 for d in (H, R, OUT): d.mkdir(parents=True, exist_ok=True)
 ISSUERS = [s for s in os.environ.get("ISSUERS", "hsbc,ishares").split(",") if s]
-LIMIT = int(os.environ.get("LIMIT", "100000"))
+TEST = bool(os.environ.get("LIMIT", "").strip())  # an empty LIMIT from the workflow means a full run
+LIMIT = int(os.environ["LIMIT"]) if TEST else 100000
 PAUSE = float(os.environ.get("PAUSE", "1.0"))
-DEBUG = "LIMIT" in os.environ
+DEBUG = TEST
 csv.field_size_limit(10**9)
 
 def rd(p): return list(csv.DictReader(gzip.open(p, "rt", encoding="utf-8"))) if Path(p).exists() else []
@@ -364,11 +365,11 @@ def write(path, header, rows):
     with gzip.open(path, "wt", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh); w.writerow(header); w.writerows(sorted(rows, key=lambda x: [str(v) for v in x]))
 # A test run (LIMIT set) only reports, so it never replaces a full month's files with a sample.
-if "LIMIT" not in os.environ:
+if not TEST:
     write(U / "factsheets.csv.gz", ["etf_key", "as_of", "fee_pct", "aum", "aum_currency", "aum_level", "n_holdings", "replication", "sri", "kid_ongoing_pct", "transaction_cost_pct", "kid_url", "source", "source_url"], facts)
     write(H / "factsheet_holdings.csv.gz", ["etf_key", "holding_key", "name", "ticker", "weight", "sector", "country", "asset_class"], holds)
     write(H / "factsheet_summary.csv.gz", ["etf_key", "as_of", "n_holdings", "kept", "covered_pct", "source", "source_url"], sums)
     write(H / "factsheet_exposures.csv.gz", ["etf_key", "dimension", "label", "weight", "as_of", "source", "source_url"], expo)
-report.update({"funds": len(facts), "with_top_holdings_new": len(sums), "exposure_rows": len(expo), "refused_hosts": sorted(refused_hosts), "test_run": "LIMIT" in os.environ})
+report.update({"funds": len(facts), "with_top_holdings_new": len(sums), "exposure_rows": len(expo), "refused_hosts": sorted(refused_hosts), "test_run": TEST})
 (R / "documents_report.json").write_text(json.dumps(report, indent=1))
 print(json.dumps(report)[:3000])
