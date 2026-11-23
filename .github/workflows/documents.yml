@@ -1,0 +1,59 @@
+# Monthly, once issuers have published the previous month's factsheets: fee, size, top holdings, country and
+# sector split from each fund's own factsheet (scripts/universe/documents.py), then the live database is reloaded.
+name: Monthly issuer factsheets
+on:
+  schedule:
+    - cron: "17 4 12 * *"
+  workflow_dispatch:
+    inputs:
+      issuers:
+        description: "Comma list: hsbc,invesco,xtrackers,ishares"
+        default: "hsbc,invesco,xtrackers,ishares"
+      limit:
+        description: "Funds per issuer for a test run (empty = all, and results are saved)"
+        default: ""
+permissions:
+  contents: write
+concurrency:
+  group: data
+jobs:
+  documents:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: pip install pdfplumber pycountry
+      - name: Read factsheets
+        run: |
+          if [ -n "$LIMIT" ]; then export LIMIT; fi
+          python3 scripts/universe/documents.py
+        env:
+          ISSUERS: ${{ inputs.issuers || 'hsbc,invesco,xtrackers,ishares' }}
+          LIMIT: ${{ inputs.limit }}
+      - name: Keep text samples for checking the parser (not committed)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: factsheet-samples
+          path: out/
+          retention-days: 7
+      - name: Commit results
+        run: |
+          git config user.name "etf-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || git commit -m "$MESSAGE"
+          git pull --rebase -X theirs origin "$GITHUB_REF_NAME"
+          git push
+        env:
+          MESSAGE: Update issuer factsheet data
+      - name: Load into the live database, when one is configured
+        if: ${{ !inputs.limit }}
+        env:
+          SYNC_DATABASE_URL: ${{ secrets.SYNC_DATABASE_URL }}
+        run: |
+          if [ -n "$SYNC_DATABASE_URL" ]; then npm ci --no-audit --no-fund && npx tsx scripts/sync-db.ts; else echo "No SYNC_DATABASE_URL secret, skipped."; fi

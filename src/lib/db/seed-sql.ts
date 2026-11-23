@@ -95,7 +95,7 @@ const q = (v: unknown): string => {
 
 /** Builds idempotent-free insert SQL for an empty database. Same SQL for local and Supabase. */
 /** Public data tables, in an order that is safe to empty together. User tables never reference them. */
-export const PUBLIC_DATA_TABLES = ["holdings", "holdings_summary", "universe_prices", "universe_details", "universe_etfs", "fund_top_holdings", "fund_prices", "fund_exposures", "metric_observations", "share_class_fees", "listings", "share_classes", "fund_categories", "fund_index_relationships", "funds", "categories", "indices", "exchanges", "issuers", "fx_rates", "data_sources"];
+export const PUBLIC_DATA_TABLES = ["universe_exposures", "universe_monthly_returns", "holdings", "holdings_summary", "universe_prices", "universe_details", "universe_etfs", "fund_top_holdings", "fund_prices", "fund_exposures", "metric_observations", "share_class_fees", "listings", "share_classes", "fund_categories", "fund_index_relationships", "funds", "categories", "indices", "exchanges", "issuers", "fx_rates", "data_sources"];
 
 export function buildSeedSql(root: string): string {
   const funds = fundsFile.parse(JSON.parse(readFileSync(join(root, "data/seed/funds.json"), "utf8")));
@@ -375,6 +375,23 @@ export function buildSeedSql(root: string): string {
     }
   }
 
+  // Issuer factsheets (scripts/universe/documents.py): fee, size and replication only where no better figure exists,
+  // each with its own source. Country and sector splits and monthly returns go to their own tables further down.
+  const factPath = join(root, "data/universe/factsheets.csv.gz");
+  if (existsSync(factPath)) {
+    for (const line of gunzipSync(readFileSync(factPath)).toString("utf8").trim().split(/\r?\n/).slice(1)) {
+      const [rawKey, asOf, fee, aum, aumCurrency, aumLevel, , replication, source, url] = parseLine(line);
+      const key = current(rawKey);
+      const feeV = fee === "" ? "null" : String(Number(fee));
+      const aumV = aum === "" || !aumCurrency ? "null" : String(Number(aum));
+      const d = "public.universe_details";
+      out.push(`insert into ${d} (etf_key, fee_pct, fee_type, fee_as_of, aum, aum_currency, aum_as_of, aum_level, replication, source, source_url, fee_source, fee_source_url, aum_source, aum_source_url) select ${q(key)}, ${feeV}, ${fee === "" ? "null" : "'ongoing'"}, ${q(asOf || null)}, ${aumV}, ${q(aumV === "null" ? null : aumCurrency)}, ${q(asOf || null)}, ${q(aumV === "null" ? null : aumLevel || "fund")}, ${q(replication || null)}, ${q(source)}, ${q(url)}, ${q(feeV === "null" ? null : source)}, ${q(feeV === "null" ? null : url)}, ${q(aumV === "null" ? null : source)}, ${q(aumV === "null" ? null : url)} where exists (select 1 from public.universe_etfs u where u.etf_key = ${q(key)}) on conflict (etf_key) do update set ` +
+        `fee_source = case when ${d}.fee_pct is null then excluded.fee_source else ${d}.fee_source end, fee_source_url = case when ${d}.fee_pct is null then excluded.fee_source_url else ${d}.fee_source_url end, fee_type = case when ${d}.fee_pct is null then excluded.fee_type else ${d}.fee_type end, fee_as_of = case when ${d}.fee_pct is null then excluded.fee_as_of else ${d}.fee_as_of end, fee_pct = coalesce(${d}.fee_pct, excluded.fee_pct), ` +
+        `aum_source = case when ${d}.aum is null then excluded.aum_source else ${d}.aum_source end, aum_source_url = case when ${d}.aum is null then excluded.aum_source_url else ${d}.aum_source_url end, aum_currency = case when ${d}.aum is null then excluded.aum_currency else ${d}.aum_currency end, aum_as_of = case when ${d}.aum is null then excluded.aum_as_of else ${d}.aum_as_of end, aum_level = case when ${d}.aum is null then excluded.aum_level else ${d}.aum_level end, aum = coalesce(${d}.aum, excluded.aum), ` +
+        `replication = coalesce(${d}.replication, excluded.replication);`);
+    }
+  }
+
   // Fees and sizes that an exchange publishes for its own listings, used only where nothing better exists.
   const exchangePath = join(root, "data/universe/exchange_facts.csv.gz");
   if (existsSync(exchangePath)) {
@@ -403,7 +420,7 @@ export function buildSeedSql(root: string): string {
 
   // Full holdings, from scripts/universe/holdings.py.
   // Issuer files first, then SEC N-PORT holdings for the funds whose issuer publishes none.
-  for (const [holdingsFile, summaryFile] of [["holdings.csv.gz", "summary.csv.gz"], ["sec_holdings.csv.gz", "sec_summary.csv.gz"]]) {
+  for (const [holdingsFile, summaryFile] of [["holdings.csv.gz", "summary.csv.gz"], ["sec_holdings.csv.gz", "sec_summary.csv.gz"], ["factsheet_holdings.csv.gz", "factsheet_summary.csv.gz"]]) {
   const holdingsPath = join(root, "data/holdings", holdingsFile);
   const summaryPath = join(root, "data/holdings", summaryFile);
   if (!existsSync(holdingsPath) || !existsSync(summaryPath)) continue;
@@ -436,6 +453,31 @@ export function buildSeedSql(root: string): string {
     out.push(`update public.holdings set sector = null where sector in ('', '-');`);
     out.push(`update public.holdings h set country = 'United States' from public.holdings x join public.universe_etfs u on u.etf_key = x.etf_key and u.ticker = 'SPY' where x.holding_key = h.holding_key and h.country is null;`);
   }
+  }
+
+  // Country and sector splits printed on factsheets.
+  const expoPath = join(root, "data/holdings/factsheet_exposures.csv.gz");
+  if (existsSync(expoPath)) {
+    const lines = gunzipSync(readFileSync(expoPath)).toString("utf8").trim().split(/\r?\n/).slice(1);
+    for (let i = 0; i < lines.length; i += 1000) {
+      const values = lines.slice(i, i + 1000).map((line) => {
+        const [key, dim, label, weight, asOf, source, url] = parseLine(line);
+        return `(${q(current(key))}, ${q(dim)}, ${q(label)}, ${Number(weight)}, ${asOf ? `${q(asOf)}::date` : "null::date"}, ${q(source)}, ${q(url)})`;
+      });
+      out.push(`insert into public.universe_exposures select v.* from (values\n${values.join(",\n")}) as v(etf_key, dimension, label, weight_pct, as_of, source, source_url) where exists (select 1 from public.universe_etfs u where u.etf_key = v.etf_key) on conflict do nothing;`);
+    }
+  }
+  // Official monthly total returns of US funds, from SEC N-PORT.
+  const retPath = join(root, "data/universe/sec_returns.csv.gz");
+  if (existsSync(retPath)) {
+    const lines = gunzipSync(readFileSync(retPath)).toString("utf8").trim().split(/\r?\n/).slice(1);
+    for (let i = 0; i < lines.length; i += 2000) {
+      const values = lines.slice(i, i + 2000).map((line) => {
+        const [key, month, value] = parseLine(line);
+        return `(${q(current(key))}, ${q(month + "-01")}::date, ${Number(value)}, 'SEC N-PORT')`;
+      });
+      out.push(`insert into public.universe_monthly_returns select v.* from (values\n${values.join(",\n")}) as v(etf_key, month, return_pct, source) where exists (select 1 from public.universe_etfs u where u.etf_key = v.etf_key) on conflict do nothing;`);
+    }
   }
 
   out.push("commit;");

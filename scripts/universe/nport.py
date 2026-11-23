@@ -7,6 +7,7 @@ quarters, keeps the latest report per fund series, and maps series to our US ETF
 
 Writes:
   data/universe/sec_nport.csv.gz      one row per ETF: net assets in USD and the report date
+  data/universe/sec_returns.csv.gz    official monthly total returns per ETF share class
   data/holdings/sec_holdings.csv.gz   holdings, same columns as holdings.csv.gz, only for ETFs without issuer holdings
   data/holdings/sec_summary.csv.gz    one row per ETF in sec_holdings, same columns as summary.csv.gz
   data/universe/details/nport_report.json
@@ -61,10 +62,13 @@ report["zips"] = [u for _, u in zips]
 tick = json.loads(get("https://www.sec.gov/files/company_tickers_mf.json"))
 f = {n: i for i, n in enumerate(tick["fields"])}
 universe = {r["ticker"]: r["etf_key"] for r in csv.DictReader(gzip.open(U / "universe.csv.gz", "rt", encoding="utf-8")) if r["source"] == "us" and r["ticker"]}
-series_etfs = {}
+series_etfs, class_etf = {}, {}
 for row in tick["data"]:
     key = universe.get(row[f["symbol"]])
-    if key: series_etfs.setdefault(row[f["seriesId"]], set()).add(key)
+    if key:
+        series_etfs.setdefault(row[f["seriesId"]], set()).add(key)
+        class_etf[row[f["classId"]]] = key
+returns = {}  # (etf_key, "YYYY-MM") -> monthly total return in %
 report["series_matched"] = len(series_etfs)
 
 # ETFs that already have issuer holdings keep them; N-PORT fills the rest.
@@ -84,6 +88,7 @@ ASSET = {"EC": "Equity", "EP": "Preferred equity", "DBT": "Fixed income", "ABS-M
          "DCO": "Derivative", "DCR": "Derivative", "DE": "Derivative", "DFE": "Derivative", "DIR": "Derivative", "DO": "Derivative", "OTHER": "Other"}
 
 best = {}  # series -> (report_date, accession, net_assets, quarter)
+acc_month = {}  # accession -> report date, for every matched series
 tmp = Path(tempfile.mkdtemp())
 for quarter, url in zips:
     path = tmp / f"{quarter}.zip"
@@ -104,8 +109,22 @@ for quarter, url in zips:
                 try: parsed = dt.datetime.strptime(d, fmt).date().isoformat(); break
                 except ValueError: pass
             na = num(r.get("NET_ASSETS"))
+            if parsed: acc_month[r["ACCESSION_NUMBER"]] = parsed
             if parsed and na and (s not in best or parsed > best[s][0]):
                 best[s] = (parsed, r["ACCESSION_NUMBER"], na, quarter)
+        # Official monthly total returns per share class: the report's month and the two before it.
+        try:
+            for r in tsv(z, "MONTHLY_TOTAL_RETURN.tsv"):
+                key, end = class_etf.get(r.get("CLASS_ID")), acc_month.get(r["ACCESSION_NUMBER"])
+                if not key or not end: continue
+                y, m = int(end[:4]), int(end[5:7])
+                for back, col in ((2, "MONTHLY_TOTAL_RETURN1"), (1, "MONTHLY_TOTAL_RETURN2"), (0, "MONTHLY_TOTAL_RETURN3")):
+                    v = num(r.get(col))
+                    if v is None or abs(v) > 100: continue
+                    mm = m - back; yy = y + (mm - 1) // 12; mm = (mm - 1) % 12 + 1
+                    returns.setdefault((key, f"{yy}-{mm:02d}"), v)
+        except KeyError as e:
+            report[f"returns_{quarter}"] = str(e)[:200]
 report["series_with_report"] = len(best)
 
 # Holdings of the chosen reports, only for ETFs with no issuer holdings.
@@ -153,6 +172,10 @@ with gzip.open(U / "sec_nport.csv.gz", "wt", newline="") as fh:
     w = csv.writer(fh); w.writerow(["etf_key", "aum", "aum_currency", "aum_as_of", "accession"])
     for s, (date, acc, na, _) in sorted(best.items()):
         for key in sorted(series_etfs[s]): w.writerow([key, round(na), "USD", date, acc])
+with gzip.open(U / "sec_returns.csv.gz", "wt", newline="") as fh:
+    w = csv.writer(fh); w.writerow(["etf_key", "month", "return_pct"])
+    for (key, month), v in sorted(returns.items()): w.writerow([key, month, round(v, 4)])
+report["monthly_returns"] = len(returns)
 for name, header, rows in (("sec_holdings.csv.gz", ["etf_key", "holding_key", "name", "ticker", "weight", "sector", "country", "asset_class"], hold_rows),
                            ("sec_summary.csv.gz", ["etf_key", "as_of", "n_holdings", "kept", "covered_pct", "source", "source_url"], sum_rows)):
     with gzip.open(H / name, "wt", newline="") as fh:

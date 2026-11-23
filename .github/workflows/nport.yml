@@ -1,9 +1,9 @@
-# Quarterly, a few weeks after each quarter ends: US fund sizes and holdings from the SEC's Form N-PORT data sets
+# Monthly (the SEC publishes quarterly today, monthly once its new rule applies): US fund sizes and holdings from the SEC's Form N-PORT data sets
 # (public domain), then the live database is reloaded. Also runs on demand and when the script changes.
-name: Quarterly SEC fund filings
+name: SEC fund filings (N-PORT)
 on:
   schedule:
-    - cron: "29 6 3 2,5,8,11 *"
+    - cron: "29 6 3 * *"
   push:
     branches: [main]
     paths: ["scripts/universe/nport.py", ".github/workflows/nport.yml"]
