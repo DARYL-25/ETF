@@ -3,6 +3,21 @@
  "issuers": {
   "hsbc": {
    "tried": 4,
+   "ok": 4,
+   "no_link": 0,
+   "failed": 0,
+   "wrong_fund": 0,
+   "with_fee": 4,
+   "with_size": 4,
+   "with_top": 1,
+   "with_countries": 0,
+   "with_sectors": 0,
+   "with_kid": 0,
+   "errors": {},
+   "minutes": 0.2
+  },
+  "invesco": {
+   "tried": 4,
    "ok": 0,
    "no_link": 0,
    "failed": 4,
@@ -14,27 +29,9 @@
    "with_sectors": 0,
    "with_kid": 0,
    "errors": {
-    "HTTPError: HTTP Error 404: Not Found": 4
+    "ValueError: not a pdf": 4
    },
-   "minutes": 0.2
-  },
-  "invesco": {
-   "tried": 4,
-   "ok": 0,
-   "no_link": 1,
-   "failed": 3,
-   "wrong_fund": 0,
-   "with_fee": 0,
-   "with_size": 0,
-   "with_top": 0,
-   "with_countries": 0,
-   "with_sectors": 0,
-   "with_kid": 0,
-   "errors": {
-    "ValueError: not a pdf": 3,
-    "no link": 1
-   },
-   "minutes": 0.2
+   "minutes": 0.3
   },
   "xtrackers": {
    "tried": 4,
@@ -49,7 +46,7 @@
    "with_sectors": 0,
    "with_kid": 0,
    "errors": {
-    "page: HTTPError 404": 4
+    "page without factsheet link": 4
    },
    "minutes": 0.6
   },
@@ -69,8 +66,8 @@
    "minutes": 0.5
   }
  },
- "funds": 4,
- "with_top_holdings_new": 3,
+ "funds": 8,
+ "with_top_holdings_new": 4,
  "exposure_rows": 0,
  "refused_hosts": [],
  "test_run": true
