@@ -17,19 +17,19 @@
 "as_of": 0
 },
 "first": {
-"isin": "IE00020O1MD6",
-"name": "comdirect S&P All World State Street UCITS ETF (Acc)",
-"fee": "0.4",
-"aum": "106542305.35",
-"aum_currency": "USD",
+"isin": "IE000VAPFMZ3",
+"name": "comdirect Euro Zins State Street UCITS ETF (Acc)",
+"fee": "0.25",
+"aum": "-",
+"aum_currency": "EUR",
 "domicile": "IE",
-"replication": "Optimised",
+"replication": "Not Applicable",
 "hedging": "-",
-"benchmark": "S&P Global Select Capped Index",
+"benchmark": "ICE BofA 3-Month German Treasury Bill Index",
 "pea": "No",
 "income": "Accumulation",
-"currency": "USD",
-"nav": "10.1469",
-"as_of": "19 Nov 2026"
+"currency": "EUR",
+"nav": "10.0",
+"as_of": "23 Nov 2026"
 }
 }

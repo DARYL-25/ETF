@@ -42,11 +42,11 @@
  "spdr_eu": {
   "ok": true,
   "result": {
-   "found": 180,
+   "found": 181,
    "not_in_universe": 0
   }
  },
- "fees": 1777,
+ "fees": 1778,
  "fund_size": 1777,
- "on": "2026-11-21"
+ "on": "2026-11-24"
 }
