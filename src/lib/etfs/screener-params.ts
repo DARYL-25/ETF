@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { ASIA_PACIFIC, MARKET_DOMICILES, asMarket } from "@/lib/settings";
+import { isEea } from "@/lib/lens";
 
 /** Every screener filter lives in the URL, so a search can be shared by copying the link. */
 
@@ -76,6 +78,8 @@ export const screenerSchema = z.object({
   six: single.transform((s) => (s === "1" ? "1" : "")),
   pea: single.transform((s) => (s === "1" ? "1" : "")),
   hasFee: single.transform((s) => (s === "1" ? "1" : "")),
+  // Where funds are domiciled. Empty means the reader's saved default applies.
+  market: single.transform((s) => asMarket(s) ?? ""),
   sort: single.transform((s): SortKey => (s in SORT_COLUMNS ? (s as SortKey) : "aum")),
   dir: single.transform((s) => (s === "asc" ? "asc" : s === "desc" ? "desc" : "")),
   page: optionalNumber.transform((n) => Math.max(1, Math.floor(n ?? 1))),
@@ -114,8 +118,13 @@ export function screenerHref(params: ScreenerParams, change: Partial<ScreenerPar
   return text ? `/screener?${text}` : "/screener";
 }
 
+/** A fund's domicile: the ISIN's country prefix, else the stored domicile. Same rule as fundDomicile(). */
+const DOMICILE_SQL = "coalesce(nullif(left(isin, 2), ''), domicile)";
+/** Domiciles whose funds private investors in the EEA and the UK usually cannot buy. Mirrors suitability.ts. */
+const FAR_DOMICILES = ["US", "CA", ...ASIA_PACIFIC];
+
 /** WHERE clause with numbered placeholders. Column names only ever come from this file. */
-export function buildScreenerWhere(p: ScreenerParams): { where: string; values: unknown[] } {
+export function buildScreenerWhere(p: ScreenerParams, ctx: { country?: string | null; market?: string } = {}): { where: string; values: unknown[] } {
   const clauses: string[] = [];
   const values: unknown[] = [];
   const add = (fragment: (n: number) => string, value: unknown) => {
@@ -157,6 +166,15 @@ export function buildScreenerWhere(p: ScreenerParams): { where: string; values: 
   if (p.six) clauses.push("listed_on_six is true");
   if (p.pea) clauses.push("(pea_eligible is true or name ~ '\\mPEA\\M')");
   if (p.hasFee) clauses.push("headline_fee_pct is not null");
+
+  const market = p.market || ctx.market || "all";
+  const country = (ctx.country ?? "").toUpperCase();
+  if (market === "other") add((n) => `${DOMICILE_SQL} is not null and not (${DOMICILE_SQL} = any($${n}::text[]))`, Object.values(MARKET_DOMICILES).flat());
+  else if (market === "fit") {
+    // Funds whose domicile is unknown stay, because we cannot tell.
+    if (isEea(country) || country === "GB") add((n) => `(${DOMICILE_SQL} is null or not (${DOMICILE_SQL} = any($${n}::text[])))`, FAR_DOMICILES);
+    else if (country === "US") clauses.push(`(${DOMICILE_SQL} is null or ${DOMICILE_SQL} = 'US')`);
+  } else if (market !== "all") add((n) => `${DOMICILE_SQL} = any($${n}::text[])`, MARKET_DOMICILES[market as keyof typeof MARKET_DOMICILES]);
 
   return { where: clauses.length ? `where ${clauses.join(" and ")}` : "", values };
 }

@@ -1,5 +1,6 @@
 import type { EtfRow } from "./queries";
 import type { PeerPosition } from "./stats";
+import { suitability } from "./suitability";
 import { fundDomicile, usWithholdingRate, INDEX_US_SHARE, DEFAULT_YIELD, type Account } from "@/lib/tax/drag";
 
 /**
@@ -54,8 +55,9 @@ export function assessEtf(row: EtfRow, peers: PeerPosition | null, opts: { count
 
   const account = opts.account ?? null;
   const country = (opts.country ?? account?.country ?? "").toUpperCase();
-  const usDomiciled = row.isin?.startsWith("US");
-  if (usDomiciled && country && country !== "US" && country !== "CH") cons.push({ text: "US-domiciled: brokers in the EU and the UK generally cannot sell it to private investors, because it has no KID.", vars: {} });
+  // Whether a private investor where the reader lives can usually buy it, and what to watch.
+  const fit = suitability(row, country);
+  for (const p of fit.points) (fit.level === "ok" ? notes : cons).push(p);
   if (country === "FR") {
     if (account?.id === "FR-PEA") {
       if (row.pea_eligible === true) pros.push({ text: "Listed by its issuer as eligible for a PEA.", vars: {} });

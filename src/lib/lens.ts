@@ -15,7 +15,12 @@ export const LENS_COUNTRIES: LensCountry[] = [
   { code: "IE", name: "Ireland", adjective: "Irish", currency: "EUR", tax: true },
   { code: "PT", name: "Portugal", adjective: "Portuguese", currency: "EUR", tax: false },
   { code: "US", name: "United States", adjective: "US", currency: "USD", tax: false },
+  { code: "MA", name: "Morocco", adjective: "Moroccan", currency: "MAD", tax: false },
 ];
 
 export const LENS_COOKIE = "lens";
 export const lensCountry = (code: string | null | undefined) => LENS_COUNTRIES.find((c) => c.code === (code ?? "").toUpperCase()) ?? null;
+
+/** EU member states plus Iceland, Liechtenstein and Norway: where PRIIPs applies and UCITS funds are domiciled. */
+export const EEA = ["AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE", "IS", "LI", "NO"];
+export const isEea = (code: string | null | undefined) => EEA.includes((code ?? "").toUpperCase());

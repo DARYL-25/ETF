@@ -5,7 +5,8 @@ import { useT } from "@/lib/i18n/client";
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { MapPin } from "lucide-react";
-import { LENS_COOKIE, LENS_COUNTRIES, lensCountry } from "@/lib/lens";
+import { LENS_COUNTRIES, lensCountry } from "@/lib/lens";
+import { saveSettings } from "@/lib/settings-client";
 
 /** Where you live. Sets a cookie so pages can show what matters for that country. Never guessed. */
 export function LensPicker({ current }: { current: string | null }) {
@@ -13,16 +14,16 @@ export function LensPicker({ current }: { current: string | null }) {
   const router = useRouter();
   const details = useRef<HTMLDetailsElement>(null);
   const country = lensCountry(current);
-  const choose = (code: string) => {
-    document.cookie = code ? `${LENS_COOKIE}=${code}; path=/; max-age=31536000; samesite=lax` : `${LENS_COOKIE}=; path=/; max-age=0`;
+  const choose = async (code: string) => {
     if (details.current) details.current.open = false;
+    await saveSettings({ country: code || null });
     router.refresh();
   };
   return (
     <details ref={details} className="relative">
       <summary className="chip list-none" aria-label={country ? t("You invest from {country}. Change country", { country: countryName(country.code, t.lang) }) : t("Choose the country you invest from")}>
         <MapPin size={14} aria-hidden />
-        <span className="hidden sm:inline">{country ? country.name : t("Your country")}</span>
+        <span className="hidden sm:inline">{country ? countryName(country.code, t.lang) : t("Your country")}</span>
         <span className="sm:hidden">{country ? country.code : t("Country")}</span>
       </summary>
       <div className="panel absolute right-0 top-full z-50 mt-2 w-64 p-2 shadow-xl">

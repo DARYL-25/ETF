@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { query } from "@/lib/db/client";
 import type { EtfRow } from "@/lib/etfs/queries";
 import { buildScreenerWhere, parseScreenerParams } from "@/lib/etfs/screener-params";
+import { LENS_COOKIE } from "@/lib/lens";
+import { MARKET_COOKIE } from "@/lib/settings";
 import { currentPlan } from "@/lib/billing/plan";
 
 const COLUMNS: [string, (r: EtfRow) => unknown][] = [
@@ -22,7 +24,7 @@ const cell = (v: unknown) => {
 export async function GET(request: NextRequest) {
   const { plan, locked } = await currentPlan();
   if (locked && plan !== "premium") return NextResponse.redirect(new URL("/pricing", request.nextUrl), 303);
-  const { where, values } = buildScreenerWhere(parseScreenerParams(Object.fromEntries(request.nextUrl.searchParams)));
+  const { where, values } = buildScreenerWhere(parseScreenerParams(Object.fromEntries(request.nextUrl.searchParams)), { country: request.cookies.get(LENS_COOKIE)?.value, market: request.cookies.get(MARKET_COOKIE)?.value });
   const rows = await query<EtfRow>(`select * from public.etf_directory ${where} order by size_eur desc nulls last, name asc limit 5000`, values);
   const csv = [COLUMNS.map(([h]) => h).join(","), ...rows.map((r) => COLUMNS.map(([, get]) => cell(get(r))).join(","))].join("\n");
   return new NextResponse(csv, { headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": 'attachment; filename="etf-intelligence-export.csv"' } });

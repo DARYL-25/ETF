@@ -30,6 +30,7 @@ import { fundExposures } from "@/lib/etfs/portfolio-data";
 import { replicationAdvice, isEuropeanIndex } from "@/lib/tax/replication";
 import { DEFAULT_YIELD } from "@/lib/tax/drag";
 import { ProsCons } from "@/components/pros-cons";
+import { FitBanner } from "@/components/fit-banner";
 import { MISSING, exchangeName, assetClassLabel, countryName, distributionLabel, formatDate, formatMoney, formatPct, frequencyLabel, productLabel, replicationLabel, styleLabel, yesNoUnknown } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -267,6 +268,8 @@ export default async function EtfPage({ params }: Props) {
         </div>
         <div className="flex flex-wrap gap-2.5"><SaveToWatchlist etfKey={key} /><CompareToggle isin={key} wide /><Link className="btn btn-primary" href={`/assistant?q=${encodeURIComponent(`Find ETFs similar to ${row.name}`)}`}>{t("Find similar")}</Link></div>
       </header>
+
+      <FitBanner row={row} country={lensNow?.code ?? null} />
 
       <section className="panel p-5 sm:p-6" aria-label={t("Key figures")}>
         <h2 className="mb-4 text-[1.2rem] tracking-[-0.025em]">{t("Key facts")}</h2>

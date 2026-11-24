@@ -78,8 +78,8 @@ export type EtfRow = {
 
 export type ScreenerResult = { rows: EtfRow[]; total: number; page: number; pageSize: number; pages: number };
 
-export async function screenEtfs(p: ScreenerParams): Promise<ScreenerResult> {
-  const { where, values } = buildScreenerWhere(p);
+export async function screenEtfs(p: ScreenerParams, ctx: { country?: string | null; market?: string } = {}): Promise<ScreenerResult> {
+  const { where, values } = buildScreenerWhere(p, ctx);
   const direction = p.dir || defaultDirection(p.sort);
   // SORT_COLUMNS is a fixed map, so the column name is never user text. Missing values sort last.
   const order = `${SORT_COLUMNS[p.sort]} ${direction} nulls last, name asc`;

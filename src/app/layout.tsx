@@ -7,6 +7,7 @@ import { LangProvider } from "@/lib/i18n/client";
 import { alternatesFor, getT } from "@/lib/i18n/server";
 import { Suspense } from "react";
 import { Motion } from "@/components/motion";
+import { Welcome } from "@/components/welcome";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
@@ -33,6 +34,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <LangProvider lang={lang}>
           <Shell>{children}</Shell>
           <CompareTray />
+          <Welcome />
         </LangProvider>
       </body>
     </html>

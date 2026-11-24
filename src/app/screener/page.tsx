@@ -9,6 +9,10 @@ import { Change, EtfName, Fee, PageTitle } from "@/components/etf-bits";
 import { screenEtfs, screenerOptions, type FilterOption } from "@/lib/etfs/queries";
 import { DEFAULT_COLUMNS, OPTIONAL_COLUMNS, defaultDirection, parseScreenerParams, screenerHref, type RawParams, type ScreenerParams, type SortKey } from "@/lib/etfs/screener-params";
 import { getLens } from "@/lib/lens-server";
+import { cookies } from "next/headers";
+import { MARKETS, MARKET_COOKIE, asMarket } from "@/lib/settings";
+import { fitBadge, suitability } from "@/lib/etfs/suitability";
+import { OpenSettings } from "@/components/welcome";
 import { assetClassLabel, formatDate, countryName, distributionLabel, formatMoney, formatPct, replicationLabel, styleLabel } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -79,13 +83,16 @@ const returnNote = (row: { nav_return_1y: number | null; nav_return_as_of: strin
 export default async function ScreenerPage({ searchParams }: { searchParams: Promise<RawParams> }) {
   const t = await getT();
   const params = parseScreenerParams(await searchParams);
-  const [result, options] = await Promise.all([screenEtfs(params), screenerOptions()]);
+  const lens = await getLens();
+  // The address wins; otherwise the default the reader saved.
+  const savedMarket = asMarket((await cookies()).get(MARKET_COOKIE)?.value) ?? "all";
+  const market = params.market || savedMarket;
+  const [result, options] = await Promise.all([screenEtfs(params, { country: lens?.code ?? null, market }), screenerOptions()]);
 
   const activeFilters = [params.issuer, params.domicile, params.assetClass, params.region, params.factor, params.theme, params.bondType, params.index, params.replication, params.distribution, params.style, params.currency]
     .reduce((sum, list) => sum + list.length, 0)
     + [params.feeMin, params.feeMax, params.aumMin, params.aumMax].filter((v) => v !== undefined).length
-    + (params.ucits ? 1 : 0) + (params.q ? 1 : 0) + (params.six ? 1 : 0) + (params.pea ? 1 : 0) + (params.hasFee ? 1 : 0);
-  const lens = await getLens();
+    + (params.ucits ? 1 : 0) + (params.q ? 1 : 0) + (params.six ? 1 : 0) + (params.pea ? 1 : 0) + (params.hasFee ? 1 : 0) + (market !== "all" ? 1 : 0);
   const has = (list: string[], v: string) => list.includes(v);
   const flip = (list: string[], v: string) => (has(list, v) ? list.filter((x) => x !== v) : [...list, v]);
   const quick: { label: string; on: boolean; href: string }[] = [
@@ -113,6 +120,7 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
       {params.pea ? <input type="hidden" name="pea" value="1" /> : null}
       {params.hasFee ? <input type="hidden" name="hasFee" value="1" /> : null}
       {params.dir ? <input type="hidden" name="dir" value={params.dir} /> : null}
+      {params.market ? <input type="hidden" name="market" value={params.market} /> : null}
       <label className="block pb-3 font-semibold">{t("Name, ISIN or ticker")}
         <input key={params.q} className="field mt-1 font-normal" type="search" name="q" defaultValue={params.q} />
       </label>
@@ -155,6 +163,17 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
           <div className="hidden lg:block">{form}</div>
         </aside>
         <section className="min-w-0" aria-label={t("Results")}>
+          <div className="mb-3 flex flex-wrap items-center gap-1.5" role="group" aria-label={t("Where the funds are domiciled")}>
+            <span className="mr-1 text-[0.85rem] font-semibold text-muted">{t("Domiciled in")}</span>
+            {MARKETS.map((m) => (
+              <Link key={m.value} href={screenerHref(params, { market: m.value })} scroll={false} aria-current={market === m.value ? "true" : undefined} className={market === m.value ? "chip chip-on" : "chip"}>
+                {m.value === "fit" && lens ? t("Available in {country}", { country: countryName(lens.code, t.lang) }) : t(m.label)}
+              </Link>
+            ))}
+            <OpenSettings className="ml-1 cursor-pointer text-[0.85rem] text-muted underline hover:text-pine">{savedMarket === "all" ? t("Set a default") : t("Default: {market}", { market: t(MARKETS.find((m) => m.value === savedMarket)!.label) })}</OpenSettings>
+          </div>
+          {market === "fit" && !lens ? <p className="mb-3 text-[0.9rem] text-muted">{t("Choose the country you invest from at the top of the page, and this shows only the funds usually sold to private investors there.")}</p> : null}
+          {market === "fit" && lens ? <p className="mb-3 max-w-[72ch] text-[0.85rem] text-muted">{lens.code === "CH" || lens.code === "MA" ? t("No fund is filtered out for {country}: the warnings on each fund page say what to check.", { country: countryName(lens.code, t.lang) }) : t("Funds usually not sold to private investors in {country} are hidden. Choose All countries to see them, with a warning.", { country: countryName(lens.code, t.lang) })}</p> : null}
           <div className="mb-3 flex flex-wrap gap-1.5" aria-label={t("Quick filters")}>
             {quick.map((q) => <Link key={q.label} href={q.href} scroll={false} aria-current={q.on ? "true" : undefined} className={q.on ? "chip chip-on" : "chip"}>{q.label}</Link>)}
           </div>
@@ -190,7 +209,7 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
                   {result.rows.map((row, i) => (
                     <tr key={row.etf_key} style={{ "--i": i } as React.CSSProperties}>
                       <td className="w-px"><CompareToggle isin={row.etf_key!} /></td>
-                      <td className="min-w-[10.5rem]"><EtfName row={row} /></td>
+                      <td className="min-w-[10.5rem]"><EtfName row={row} flag={(() => { const b = fitBadge(suitability(row, lens?.code).level); return b ? t(b) : null; })()} /></td>
                       {show("issuer") ? <td className="whitespace-nowrap">{row.issuer_name}</td> : null}
                       {show("index") ? (
                         <td className={`min-w-[8rem] ${phoneHide}`}>

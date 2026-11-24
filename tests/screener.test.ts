@@ -52,6 +52,19 @@ describe("screener queries", () => {
     for (const r of usAndTech.rows) expect(r.category_slugs).toEqual(expect.arrayContaining(["us", "technology"]));
   });
 
+  it("filters by where funds are domiciled, and hides funds usually unavailable to the reader", async () => {
+    const all = await run({});
+    const us = await screenEtfs(parseScreenerParams({ market: "us", pageSize: "100" }));
+    const eu = await screenEtfs(parseScreenerParams({ market: "eu", pageSize: "100" }));
+    const fitFr = await screenEtfs(parseScreenerParams({ market: "fit", pageSize: "100" }), { country: "FR" });
+    expect(us.total).toBeGreaterThan(1000);
+    expect(eu.total).toBeGreaterThan(1000);
+    expect(us.total + eu.total).toBeLessThanOrEqual(all.total);
+    for (const r of us.rows) expect((r.isin ?? "").slice(0, 2) || r.domicile).toBe("US");
+    for (const r of fitFr.rows) expect(["US", "CA", "JP", "HK"]).not.toContain((r.isin ?? "").slice(0, 2) || r.domicile);
+    expect(fitFr.total).toBeLessThan(all.total);
+  });
+
   it("finds a fund through any of its tickers, once", async () => {
     const { rows, total } = await run({ q: "SXR8" });
     expect(total).toBe(1);

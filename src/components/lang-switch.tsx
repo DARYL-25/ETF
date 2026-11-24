@@ -1,16 +1,17 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { LANGS, LANG_COOKIE, type Lang } from "@/lib/i18n";
+import { LANGS, type Lang } from "@/lib/i18n";
+import { saveSettings } from "@/lib/settings-client";
 import { useT } from "@/lib/i18n/client";
 
 /** EN · FR pill. The choice is kept in a cookie for a year. */
 export function LangSwitch() {
   const router = useRouter();
   const t = useT();
-  const pick = (code: Lang) => {
+  const pick = async (code: Lang) => {
     if (code === t.lang) return;
-    document.cookie = `${LANG_COOKIE}=${code}; path=/; max-age=31536000; samesite=lax`;
+    await saveSettings({ lang: code });
     // A French address always shows French, so leaving French also means leaving that address.
     const { pathname, search } = window.location;
     if (pathname === "/fr" || pathname.startsWith("/fr/")) window.location.assign((pathname.slice(3) || "/") + search);
