@@ -1,3 +1,6 @@
+import { fundDomicile } from "./drag";
+import { isEea } from "@/lib/lens";
+import { suitability } from "@/lib/etfs/suitability";
 import type { EtfRow } from "@/lib/etfs/queries";
 
 /**
@@ -10,13 +13,16 @@ export type EnvelopeFit = { envelope: string; status: Status; reason: string };
 
 export function envelopeFit(row: Pick<EtfRow, "name" | "pea_eligible" | "ucits" | "isin" | "domicile">, country: string | null | undefined): EnvelopeFit[] {
   if (country === "FR") {
-    const pea: EnvelopeFit = row.pea_eligible === true ? { envelope: "PEA", status: "yes", reason: "The issuer lists it as eligible." }
+    const dom = fundDomicile(row);
+    const unavailable = suitability(row, "FR").level === "unavailable";
+    const pea: EnvelopeFit = dom && !isEea(dom) ? { envelope: "PEA", status: "no", reason: "Domiciled outside the EU and EEA, so a PEA cannot hold it." }
+      : row.pea_eligible === true ? { envelope: "PEA", status: "yes", reason: "The issuer lists it as eligible." }
       : row.pea_eligible === false ? { envelope: "PEA", status: "no", reason: "The issuer lists it as not eligible." }
       : /\bPEA\b/.test(row.name) ? { envelope: "PEA", status: "likely", reason: "Its name says PEA. Confirm in the KID." }
       : { envelope: "PEA", status: "check", reason: "Eligibility is not on file. Check the issuer's page." };
     return [
       pea,
-      { envelope: "Compte-titres ordinaire", status: row.ucits === false ? "check" : "yes", reason: row.ucits === false ? "Not marked UCITS: many brokers cannot offer it to retail clients in the EU." : "Any ETF your broker offers." },
+      { envelope: "Compte-titres ordinaire", status: unavailable || row.ucits === false ? "check" : "yes", reason: unavailable ? "Allowed in principle, but brokers in the EU generally do not sell it to private investors." : row.ucits === false ? "Not marked UCITS: many brokers cannot offer it to retail clients in the EU." : "Any ETF your broker offers." },
       { envelope: "Assurance-vie", status: "check", reason: "Only if your insurer lists it among the contract's units." },
       { envelope: "PER", status: "check", reason: "Only if the plan's provider offers it." },
     ];

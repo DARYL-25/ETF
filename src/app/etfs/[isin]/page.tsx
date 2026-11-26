@@ -30,7 +30,8 @@ import { fundExposures } from "@/lib/etfs/portfolio-data";
 import { replicationAdvice, isEuropeanIndex } from "@/lib/tax/replication";
 import { DEFAULT_YIELD } from "@/lib/tax/drag";
 import { ProsCons } from "@/components/pros-cons";
-import { FitBanner } from "@/components/fit-banner";
+import { FitPill, FitRows } from "@/components/fit-banner";
+import { suitability } from "@/lib/etfs/suitability";
 import { MISSING, exchangeName, assetClassLabel, countryName, distributionLabel, formatDate, formatMoney, formatPct, frequencyLabel, productLabel, replicationLabel, styleLabel, yesNoUnknown } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -134,9 +135,10 @@ async function LensCard({ row }: { row: EtfRow }) {
   }
   if (!country) {
     return (
-      <section className="panel p-5">
+      <section className="panel p-5" id="tax">
         <h2 className="text-[1.05rem]">{t("For an investor in ")}{countryName(lens.code, t.lang)}</h2>
-        <ul className="mt-2 space-y-1.5">
+        <FitRows row={row} country={lens.code} />
+        <ul className="mt-3 space-y-1.5">
           <li>{row.ucits ? t("UCITS fund, the kind brokers in Europe can generally offer to private investors.") : lens.code === "US" ? t("Check that your broker offers this fund.") : t("Not marked UCITS, so check that your broker can offer it to you.")}</li>
           <li>{t("Fund currency {fund}. Your home currency is {home}.", { fund: row.currency ?? t("not known"), home: lens.currency })}</li>
         </ul>
@@ -148,6 +150,8 @@ async function LensCard({ row }: { row: EtfRow }) {
   return (
     <section className="panel p-5" id="tax">
       <h2 className="text-[1.05rem]">{t("For an investor in ")}{countryName(country.code, t.lang)}</h2>
+      <FitRows row={row} country={country.code} />
+      <h3 className="mt-4 font-semibold">{t("Tax")}</h3>
       <ul className="mt-2.5 space-y-2.5">
         {notes.map((n) => (
           <li key={n.text} className="flex gap-2.5">
@@ -163,7 +167,7 @@ async function LensCard({ row }: { row: EtfRow }) {
             {envelopeFit(row, country.code).map((e) => (
               <li key={e.envelope} className="flex items-start justify-between gap-3">
                 <span>{t(e.envelope)}<span className="block text-[0.82rem] text-muted">{t(e.reason)}</span></span>
-                <span className={`flex-none rounded-full px-2 py-0.5 text-[0.8rem] ${e.status === "yes" ? "bg-pine text-pine-ink" : e.status === "no" ? "bg-down/10 text-down" : "bg-sunken text-muted"}`}>{e.status === "yes" ? t("Yes") : e.status === "no" ? t("No") : e.status === "likely" ? t("Likely") : t("To check")}</span>
+                <span className={`fit-pill flex-none ${e.status === "yes" ? "fit-yes" : e.status === "no" ? "fit-no" : "fit-check"}`}>{e.status === "yes" ? t("Yes") : e.status === "no" ? t("No") : e.status === "likely" ? t("Likely") : t("To check")}</span>
               </li>
             ))}
           </ul>
@@ -254,6 +258,7 @@ export default async function EtfPage({ params }: Props) {
             {row.distribution_policy ? <span className="badge">{t(distributionLabel(row.distribution_policy))}</span> : null}
             {row.domicile ? <span className="badge">{countryName(row.domicile, t.lang)}</span> : null}
             {row.hedged ? <span className="badge">{t("Currency hedged")}</span> : null}
+            {lensNow && ["unavailable", "poor"].includes(suitability(row, lensNow.code).level) ? <FitPill level={suitability(row, lensNow.code).level} href="#tax" /> : null}
             {feeBeats !== null && feeBeats >= 75 ? <span className="badge border-pine text-pine-deep">{t("Among the cheapest in its group")}</span> : feeBeats !== null && feeBeats <= 25 ? <span className="badge">{t("Among the dearest in its group")}</span> : null}
           </div>
           <h1 className="text-[clamp(1.9rem,3.8vw,3rem)] tracking-[-0.04em]">{row.name}</h1>
@@ -268,8 +273,6 @@ export default async function EtfPage({ params }: Props) {
         </div>
         <div className="flex flex-wrap gap-2.5"><SaveToWatchlist etfKey={key} /><CompareToggle isin={key} wide /><Link className="btn btn-primary" href={`/assistant?q=${encodeURIComponent(`Find ETFs similar to ${row.name}`)}`}>{t("Find similar")}</Link></div>
       </header>
-
-      <FitBanner row={row} country={lensNow?.code ?? null} />
 
       <section className="panel p-5 sm:p-6" aria-label={t("Key figures")}>
         <h2 className="mb-4 text-[1.2rem] tracking-[-0.025em]">{t("Key facts")}</h2>

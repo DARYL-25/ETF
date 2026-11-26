@@ -90,27 +90,23 @@ export function Welcome() {
   };
 
   return (
-    <dialog ref={dialog} className="palette m-auto w-[min(34rem,calc(100vw-2rem))] rounded-3xl border border-line bg-surface p-0 text-ink shadow-2xl" aria-labelledby="welcome-title" onCancel={() => applySettings({})}>
+    <dialog ref={dialog} className="welcome m-auto w-[min(34rem,calc(100vw-2rem))] rounded-[24px] border border-line bg-surface p-0 text-ink shadow-[0_30px_80px_-30px_rgb(10_42_94/45%)] backdrop:bg-[rgb(10_42_94/35%)] backdrop:backdrop-blur-sm" aria-labelledby="welcome-title" onCancel={() => applySettings({})}>
       <form onSubmit={save} className="flex flex-col gap-5 p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="eyebrow flex items-center gap-1.5"><Globe2 size={14} aria-hidden />{t("Your settings")}</p>
-            <h2 id="welcome-title" className="mt-1 text-[1.45rem] tracking-[-0.03em]">{first ? t("Welcome to ETF Intelligence") : t("Language, country and lists")}</h2>
+            <h2 id="welcome-title" className="font-display mt-1 text-[1.55rem] font-extrabold tracking-[-0.04em]">{first ? t("Welcome to ETF Intelligence") : t("Language, country and lists")}</h2>
             <p className="mt-1.5 text-muted">{t("Tell us where you invest from, and pages show what applies to you: which funds you can usually buy there, and what they mean for your tax.")}</p>
           </div>
           <button type="button" onClick={skip} className="chip flex-none" aria-label={t("Close")}><X size={15} aria-hidden /></button>
         </div>
 
-        <fieldset>
-          <legend className="font-semibold">{t("Language")}</legend>
-          <div className="mt-1.5 flex gap-2">
-            {LANGS.map((l) => (
-              <label key={l.code} lang={l.code} className={`chip cursor-pointer ${lang === l.code ? "chip-on" : ""}`}>
-                <input type="radio" name="lang" value={l.code} checked={lang === l.code} onChange={() => setLang(l.code)} className="sr-only" />{l.name}
-              </label>
-            ))}
+        <div>
+          <p className="font-semibold" id="welcome-lang">{t("Language")}</p>
+          <div className="seg mt-1.5" role="group" aria-labelledby="welcome-lang">
+            {LANGS.map((l) => <button key={l.code} type="button" lang={l.code} aria-pressed={lang === l.code} onClick={() => setLang(l.code)}>{l.name}</button>)}
           </div>
-        </fieldset>
+        </div>
 
         <label className="block font-semibold">{t("Country you invest from")}
           <select className="field mt-1.5 font-normal" value={country} onChange={(e) => setCountry(e.target.value)}>
@@ -120,12 +116,20 @@ export function Welcome() {
           <span className="mt-1 block text-[0.85rem] font-normal text-muted">{t("Never guessed from your location. It decides the tax notes and the warnings on funds that are usually not sold to private investors where you live.")}</span>
         </label>
 
-        <label className="block font-semibold">{t("Funds to show in lists by default")}
-          <select className="field mt-1.5 font-normal" value={market} onChange={(e) => setMarket(e.target.value as Market)}>
-            {MARKETS.map((m) => <option key={m.value} value={m.value}>{m.value === "all" ? t("All funds, with a warning on those not for me") : m.value === "fit" ? t("Only funds usually available to me") : t("Domiciled in: {market}", { market: t(m.label) })}</option>)}
-          </select>
-          <span className="mt-1 block text-[0.85rem] font-normal text-muted">{t("You can always switch in the screener. Funds you cannot usually buy are still shown when you ask for them.")}</span>
-        </label>
+        <div>
+          <p className="font-semibold" id="welcome-market">{t("Funds to show in lists by default")}</p>
+          <div className="seg mt-1.5" role="group" aria-labelledby="welcome-market">
+            <button type="button" aria-pressed={market === "all"} onClick={() => setMarket("all")}>{t("All funds")}</button>
+            <button type="button" aria-pressed={market === "fit"} onClick={() => setMarket("fit")}>{t("Only those I can usually buy")}</button>
+          </div>
+          <label className="mt-2.5 block text-[0.9rem] text-muted">{t("Or only funds domiciled in")}
+            <select className="field mt-1 text-ink" value={market === "all" || market === "fit" ? "" : market} onChange={(e) => setMarket((e.target.value || "all") as Market)}>
+              <option value="">{t("Any country")}</option>
+              {MARKETS.filter((m) => m.value !== "all" && m.value !== "fit").map((m) => <option key={m.value} value={m.value}>{t(m.label)}</option>)}
+            </select>
+          </label>
+          <span className="mt-1.5 block text-[0.85rem] text-muted">{t("Funds you cannot usually buy stay one click away in the screener, with a warning.")}</span>
+        </div>
 
         <div className="flex flex-col-reverse gap-3 border-t border-line pt-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[0.8rem] text-muted">{signedIn ? t("Saved to your account and this device.") : t("Saved in cookies on this device. Sign in to keep them on every device.")}</p>

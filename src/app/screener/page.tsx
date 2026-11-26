@@ -163,14 +163,16 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
           <div className="hidden lg:block">{form}</div>
         </aside>
         <section className="min-w-0" aria-label={t("Results")}>
-          <div className="mb-3 flex flex-wrap items-center gap-1.5" role="group" aria-label={t("Where the funds are domiciled")}>
-            <span className="mr-1 text-[0.85rem] font-semibold text-muted">{t("Domiciled in")}</span>
-            {MARKETS.map((m) => (
-              <Link key={m.value} href={screenerHref(params, { market: m.value })} scroll={false} aria-current={market === m.value ? "true" : undefined} className={market === m.value ? "chip chip-on" : "chip"}>
-                {m.value === "fit" && lens ? t("Available in {country}", { country: countryName(lens.code, t.lang) }) : t(m.label)}
-              </Link>
-            ))}
-            <OpenSettings className="ml-1 cursor-pointer text-[0.85rem] text-muted underline hover:text-pine">{savedMarket === "all" ? t("Set a default") : t("Default: {market}", { market: t(MARKETS.find((m) => m.value === savedMarket)!.label) })}</OpenSettings>
+          <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="text-[0.85rem] font-semibold text-muted">{t("Domiciled in")}</span>
+            <div className="seg flex-wrap" role="group" aria-label={t("Where the funds are domiciled")}>
+              {MARKETS.map((m) => (
+                <Link key={m.value} href={screenerHref(params, { market: m.value })} scroll={false} aria-current={market === m.value ? "page" : undefined} className="whitespace-nowrap">
+                  {m.value === "fit" && lens ? t("Available in {country}", { country: countryName(lens.code, t.lang) }) : t(m.label)}
+                </Link>
+              ))}
+            </div>
+            <OpenSettings className="cursor-pointer text-[0.85rem] font-semibold text-pine hover:underline">{savedMarket === "all" ? t("Set a default") : t("Default: {market}", { market: t(MARKETS.find((m) => m.value === savedMarket)!.label) })}</OpenSettings>
           </div>
           {market === "fit" && !lens ? <p className="mb-3 text-[0.9rem] text-muted">{t("Choose the country you invest from at the top of the page, and this shows only the funds usually sold to private investors there.")}</p> : null}
           {market === "fit" && lens ? <p className="mb-3 max-w-[72ch] text-[0.85rem] text-muted">{lens.code === "CH" || lens.code === "MA" ? t("No fund is filtered out for {country}: the warnings on each fund page say what to check.", { country: countryName(lens.code, t.lang) }) : t("Funds usually not sold to private investors in {country} are hidden. Choose All countries to see them, with a warning.", { country: countryName(lens.code, t.lang) })}</p> : null}
