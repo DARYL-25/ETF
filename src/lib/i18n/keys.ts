@@ -21,7 +21,7 @@ export function collectKeys(root: string): string[] {
         for (const m of text.matchAll(/\bt\(\s*"((?:[^"\\]|\\.)*)"/g)) add(JSON.parse(`"${m[1]}"`));
         for (const m of text.matchAll(/\b(?:hint=|const (?:DEVICE|ACCOUNT)_NOTE = )"((?:[^"\\]|\\.)*)"/g)) add(JSON.parse(`"${m[1]}"`));
         // Files whose sentences are data rendered through t(): every prose string literal in them is a key.
-        if (/lib\/(portfolio\/(doctor|import|watch|performance)|etfs\/(xray|quality|assess)|tax\/(envelopes|drag|replication)|academy\/suggest|assistant\/copilot)\.ts$|components\/(portfolio-tools|portfolio-doctor|simulator|dashboard|portfolio-insight|quality-panel)\.tsx$|app\/(tools|methodology|tax\/envelopes)\/page\.tsx$/.test(path)) {
+        if (/lib\/(portfolio\/(doctor|import|watch|performance)|etfs\/(xray|quality|assess|suitability)|tax\/(envelopes|drag|replication)|academy\/suggest|assistant\/copilot)\.ts$|components\/(portfolio-tools|portfolio-doctor|simulator|dashboard|portfolio-insight|quality-panel)\.tsx$|app\/(tools|methodology|tax\/envelopes)\/page\.tsx$/.test(path)) {
           for (const m of text.split("\n").filter((l) => !l.includes("'\"'")).join("\n").matchAll(/"((?:[^"\\\n]|\\.)*)"/g)) {
             let v = "";
             try { v = JSON.parse(`"${m[1]}"`); } catch { continue; }
@@ -29,7 +29,7 @@ export function collectKeys(root: string): string[] {
           }
         }
         // Label tables that are translated where they are rendered.
-        if (/components\/(shell|palette|assistant)\.tsx$|app\/(pricing|compare|data)\/page\.tsx$|etfs\/screener-params\.ts$|lib\/format\.ts$|components\/etf-bits\.tsx$/.test(path)) {
+        if (/components\/(shell|palette|assistant)\.tsx$|app\/(pricing|compare|data)\/page\.tsx$|etfs\/screener-params\.ts$|lib\/settings\.ts$|lib\/format\.ts$|components\/etf-bits\.tsx$/.test(path)) {
           for (const m of text.matchAll(/(?:label|title): "((?:[^"\\]|\\.)*)"/g)) add(JSON.parse(`"${m[1]}"`));
           for (const block of text.matchAll(/const (?:EXAMPLES|FREE|PREMIUM|PAGES|STATE|REPLICATION|DISTRIBUTION|FREQUENCY|ASSET_CLASS|PRODUCT|STYLE|FEE_LABEL|[A-Z_]+_LABELS?)\b[^=]*=\s*([\[{][\s\S]*?[\]}]);/g)) {
             for (const m of block[1].matchAll(/"((?:[^"\\]|\\.)*)"/g)) { const v = JSON.parse(`"${m[1]}"`); if (!v.startsWith("/")) add(v); }

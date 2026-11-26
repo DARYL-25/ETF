@@ -4,6 +4,10 @@ import { Check, Info, Minus } from "lucide-react";
 import type { Assessment } from "@/lib/etfs/assess";
 import type { PeerPosition } from "@/lib/etfs/stats";
 import type { Advice } from "@/lib/tax/replication";
+import { countryName } from "@/lib/format";
+
+/** Country codes in a point read as names in the reader's language. */
+const named = (vars: Record<string, string>, lang: "en" | "fr") => (vars.domicile ? { ...vars, domicile: countryName(vars.domicile, lang) } : vars);
 
 /** Strengths, weaknesses and notes for one ETF against its peers, with the peer group's fees and replication guidance. */
 export async function ProsCons({ assessment, peers, replication }: { assessment: Assessment; peers: PeerPosition | null; replication: Advice | null }) {
@@ -21,10 +25,10 @@ export async function ProsCons({ assessment, peers, replication }: { assessment:
         </div>
         <div className="panel p-4">
           <h3 className="font-semibold text-down">{t("Weaknesses")}</h3>
-          {assessment.cons.length ? <ul className="mt-2 space-y-1.5">{assessment.cons.map((p) => <li key={p.text} className="flex gap-2"><Minus size={16} className="mt-1 flex-none text-down" aria-hidden /><span>{t(p.text, p.vars)}</span></li>)}</ul> : <p className="mt-2 text-muted">{t("None stands out from the data we hold.")}</p>}
+          {assessment.cons.length ? <ul className="mt-2 space-y-1.5">{assessment.cons.map((p) => <li key={p.text} className="flex gap-2"><Minus size={16} className="mt-1 flex-none text-down" aria-hidden /><span>{t(p.text, named(p.vars, t.lang))}</span></li>)}</ul> : <p className="mt-2 text-muted">{t("None stands out from the data we hold.")}</p>}
         </div>
       </div>
-      {assessment.notes.length ? <ul className="space-y-1">{assessment.notes.map((p) => <li key={p.text} className="flex gap-2 text-[0.92rem] text-muted"><Info size={15} className="mt-1 flex-none" aria-hidden /><span>{t(p.text, p.vars)}</span></li>)}</ul> : null}
+      {assessment.notes.length ? <ul className="space-y-1">{assessment.notes.map((p) => <li key={p.text} className="flex gap-2 text-[0.92rem] text-muted"><Info size={15} className="mt-1 flex-none" aria-hidden /><span>{t(p.text, named(p.vars, t.lang))}</span></li>)}</ul> : null}
       {replication ? (
         <div className="rounded-xl bg-sunken p-3.5">
           <p className="font-semibold">{t("Physical or synthetic for this index?")} <span className="ml-1 rounded-full bg-surface px-2 py-0.5 text-[0.8rem]">{replication.verdict === "synthetic" ? t("Synthetic has the edge") : replication.verdict === "physical" ? t("Physical is usually simpler") : t("Either can suit")}</span></p>

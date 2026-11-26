@@ -188,7 +188,11 @@ describe("envelopes", () => {
   it("only states PEA eligibility the data or the name supports", () => {
     expect(envelopeFit({ name: "Amundi PEA S&P 500", pea_eligible: null, ucits: true, isin: "FR0011871128", domicile: "FR" }, "FR")[0].status).toBe("likely");
     expect(envelopeFit({ name: "Some World ETF", pea_eligible: null, ucits: true, isin: "IE00B4L5Y983", domicile: "IE" }, "FR")[0].status).toBe("check");
-    expect(envelopeFit({ name: "x", pea_eligible: true, ucits: true, isin: "x", domicile: "FR" }, "FR")[0].status).toBe("yes");
+    expect(envelopeFit({ name: "x", pea_eligible: true, ucits: true, isin: "FR0011871128", domicile: "FR" }, "FR")[0].status).toBe("yes");
+    // A US fund can never sit in a PEA, and EU brokers generally do not sell it to private investors.
+    const us = envelopeFit({ name: "SPDR S&P 500 ETF Trust", pea_eligible: null, ucits: false, isin: "US78462F1030", domicile: "US" }, "FR");
+    expect(us[0].status).toBe("no");
+    expect(us[1].status).toBe("check");
   });
 });
 

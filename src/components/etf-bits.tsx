@@ -24,13 +24,14 @@ export function Change({ value }: { value: number | null | undefined }) {
   return <span className={value >= 0 ? "text-up" : "text-down"}>{formatSignedPct(value)}</span>;
 }
 
-export function EtfName({ row }: { row: Pick<EtfRow, "etf_key" | "isin" | "name" | "ticker"> }) {
+export function EtfName({ row, flag }: { row: Pick<EtfRow, "etf_key" | "isin" | "name" | "ticker">; flag?: string | null }) {
   return (
     <div className="flex items-start gap-2.5">
       <IssuerLogo name={row.name} />
       <div className="min-w-0">
         <Link href={`/etfs/${row.etf_key ?? row.isin}`} className="font-medium no-underline hover:text-pine hover:underline">{row.name}</Link>
         <span className="data block text-[0.85rem] text-muted">{[row.ticker, row.isin].filter(Boolean).join(", ") || MISSING}</span>
+        {flag ? <span className="fit-pill fit-no mt-1.5 !text-[0.72rem] !py-0.5">{flag}</span> : null}
       </div>
     </div>
   );

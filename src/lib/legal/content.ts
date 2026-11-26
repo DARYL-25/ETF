@@ -47,13 +47,13 @@ export const LEGAL_PAGES: LegalPage[] = [
         "You can use most of the site without telling us who you are. We do not show advertising, we do not use tracking or analytics cookies, and we do not sell personal data.",
       ] },
       { heading: "Without an account", paragraphs: [
-        "Two cookies remember choices you make: your language and the country whose rules you asked to see. They hold nothing else and last one year.",
+        "Four small cookies remember the settings you choose: your language, the country you invest from, which funds lists show by default, and that you have seen the settings window. They hold nothing else and last one year.",
         "Your watchlists, practice portfolios, comparison list, lesson progress and light or dark appearance are kept in your browser's storage. They stay on your device and are not sent to us.",
         "Like any website, our hosting provider records technical logs, such as the address a request came from and the page requested, to keep the service running and secure.",
       ] },
       { heading: "With an account", paragraphs: [
         "We store your email address and the sign-in data needed to recognise you. Cookies keep you signed in.",
-        "Your watchlists and practice portfolios are then saved to your account, so you find them on every device. Only you can read them.",
+        "Your watchlists, practice portfolios and settings (language, country and default list view) are then saved to your account, so you find them on every device. Only you can read them.",
       ] },
       { heading: "Payments", paragraphs: [
         "Stripe handles payments. We never see or store your card number. We store which plan you have, its status, and the identifiers Stripe gives us for your customer record and subscription.",

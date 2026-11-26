@@ -50,10 +50,15 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               <label className="flex flex-col gap-1.5 font-semibold">{t("Password")}<input className="field font-normal" type="password" name="password" required minLength={8} autoComplete={creating ? "new-password" : "current-password"} />{creating ? <span className="text-[0.8rem] font-normal text-muted">{t("At least 8 characters.")}</span> : null}</label>
               <button className="btn btn-primary w-full" formAction={creating ? signUp : signIn}>{creating ? t("Create account") : t("Sign in")}</button>
             </form>
-            <div className="flex items-center gap-3 text-[0.8rem] text-muted" aria-hidden><span className="h-px flex-1 bg-line" />{t("or")}<span className="h-px flex-1 bg-line" /></div>
-            <form action={signInWithGoogle}>
-              <button className="btn btn-quiet w-full" type="submit">{t("Continue with Google")}</button>
-            </form>
+            {/* Shown once the Google provider is switched on in Supabase and NEXT_PUBLIC_GOOGLE_AUTH=1 is set. */}
+            {process.env.NEXT_PUBLIC_GOOGLE_AUTH === "1" ? (
+              <>
+                <div className="flex items-center gap-3 text-[0.8rem] text-muted" aria-hidden><span className="h-px flex-1 bg-line" />{t("or")}<span className="h-px flex-1 bg-line" /></div>
+                <form action={signInWithGoogle}>
+                  <button className="btn btn-quiet w-full" type="submit">{t("Continue with Google")}</button>
+                </form>
+              </>
+            ) : null}
           </>
         )}
         <p className="text-[0.8rem] text-muted">{t("By creating an account you accept the")} <Link href="/legal/terms" className="prose-link">{t("terms of use")}</Link> {t("and the")} <Link href="/legal/privacy" className="prose-link">{t("privacy policy")}</Link>.</p>
