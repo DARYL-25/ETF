@@ -399,7 +399,7 @@ export default async function EtfPage({ params }: Props) {
 
           {full ? (
             <Section id="holdings" title={t("What it holds")}>
-              <p className="mb-4 max-w-[72ch] text-muted">{full.as_of ? t("{n} holdings on {date}, from {source}'s holdings file.", { n: full.n_holdings.toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB"), date: formatDate(full.as_of, t.lang), source: full.source }) : t("{n} holdings, from {source}'s holdings file.", { n: full.n_holdings.toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB"), source: full.source })}{full.kept < full.n_holdings ? t(" We keep the largest {n}, which make up {pct}% of the fund.", { n: full.kept, pct: full.covered_pct.toFixed(1) }) : ""}</p>
+              <p className="mb-4 max-w-[72ch] text-muted">{full.source === "SEC N-PORT" && full.as_of ? t("{n} holdings on {date}, from the fund's latest Form N-PORT report to the SEC. US funds make each quarter's report public about 60 days after it ends, and we add it the day it appears.", { n: full.n_holdings.toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB"), date: formatDate(full.as_of, t.lang) }) : full.as_of ? t("{n} holdings on {date}, from {source}'s holdings file.", { n: full.n_holdings.toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB"), date: formatDate(full.as_of, t.lang), source: full.source }) : t("{n} holdings, from {source}'s holdings file.", { n: full.n_holdings.toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB"), source: full.source })}{full.kept < full.n_holdings ? t(" We keep the largest {n}, which make up {pct}% of the fund.", { n: full.kept, pct: full.covered_pct.toFixed(1) }) : ""}</p>
               <Mosaic items={fullTop} label={t("Largest holdings of {name}", { name: row.name })} restLabel={(pct) => t("{n} more holdings, {pct}%", { n: Math.max(0, full.n_holdings - fullTop.length).toLocaleString(t.lang === "fr" ? "fr-FR" : "en-GB"), pct })} />
               <p className="mb-6 mt-2 text-[0.85rem] text-muted">{t("Each tile is one holding, sized by its share of the fund. Select one to see every ETF that owns it.")}</p>
               <div className="max-w-2xl">
@@ -415,7 +415,7 @@ export default async function EtfPage({ params }: Props) {
                   </ul>
                 </div>
               </div>
-              <p className="mt-4 flex flex-wrap gap-2"><Link className="btn btn-quiet" href={`/compare?isins=${key}`}>{t("Check overlap with another ETF")}</Link>{full.source_url ? <a className="btn btn-quiet" href={full.source_url} target="_blank" rel="noreferrer">{t("Issuer page")}</a> : null}</p>
+              <p className="mt-4 flex flex-wrap gap-2"><Link className="btn btn-quiet" href={`/compare?isins=${key}`}>{t("Check overlap with another ETF")}</Link>{full.source_url ? <a className="btn btn-quiet" href={full.source_url} target="_blank" rel="noreferrer">{full.source === "SEC N-PORT" ? (full.source_url.includes("/Archives/edgar/") ? t("SEC filing") : t("SEC data sets")) : t("Issuer page")}</a> : null}</p>
             </Section>
           ) : null}
 

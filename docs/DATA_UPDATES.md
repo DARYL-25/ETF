@@ -10,7 +10,7 @@ The goal is every ETF in the world, with figures that show their source and date
 | Fees and fund facts: TER or OCF, domicile, replication, income treatment, benchmark | Quarterly at least | Issuer files on the 8th of each month. SEC data on the 15th of February, May, August and November. Owner files each quarter | `details.yml`, `sec.yml`, and a person |
 | Fund size and official returns | Monthly | The 8th, once the previous month's factsheets are out. Daily for iShares and State Street | `details.yml`, `daily.yml` |
 | Prices: one value per ETF per day | Daily | Tuesday to Saturday, 05:23 UTC, for the previous trading day | `daily.yml` |
-| What each fund holds: every holding with its weight | Weekly | Sundays, 06:37 UTC | `holdings.yml` |
+| What each fund holds: every holding with its weight | Weekly for issuer files; daily for US SEC filings | Sundays, 06:37 UTC; SEC filings every day, 07:43 UTC | `holdings.yml`, `nport-live.yml` |
 | Exchange rates | Daily | With the price job | `daily.yml` |
 | Tax rules | Twice a year, and when a law changes | January and July | A person |
 
@@ -73,6 +73,7 @@ Until then the site says plainly that prices are end of day.
 | Global X holdings files | About 115 Global X ETFs in the US, many of them thematic | Automatic, weekly |
 | KraneShares holdings files | KraneShares ETFs, mostly Chinese shares | Automatic, weekly |
 | Direxion holdings files | Direxion funds that hold their securities directly. Leveraged funds built on swaps are left out | Automatic, weekly |
+| SEC Form N-PORT filings | About 3,900 US ETFs whose issuer publishes no file | Automatic, daily. Each quarter's report is public about 60 days after it ends; `nport-live.yml` reads EDGAR's daily index and adds each fund's filing the day it appears. `nport.yml` loads the SEC's quarterly bulk data sets as a backstop and never replaces a newer filing. Each fund shows its report date and links to its filing |
 | iShares, Xtrackers, Amundi, Vanguard, Invesco | Not collected | Their files are served only after a visitor accepts site terms. Needs permission or a licensed source |
 
 Holdings under 0.02% of a fund are dropped and at most 800 are kept per fund. Issuers identify securities differently, so they are matched across issuers by cleaned name. If a fund's file fails on one run, its last good holdings are kept.
