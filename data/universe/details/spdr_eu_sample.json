@@ -20,7 +20,7 @@
 "isin": "IE000VAPFMZ3",
 "name": "comdirect Euro Zins State Street UCITS ETF (Acc)",
 "fee": "0.25",
-"aum": "5000146.33",
+"aum": "5000610.84",
 "aum_currency": "EUR",
 "domicile": "IE",
 "replication": "Not Applicable",
@@ -29,7 +29,7 @@
 "pea": "No",
 "income": "Accumulation",
 "currency": "EUR",
-"nav": "10.0003",
-"as_of": "24 Nov 2026"
+"nav": "10.0012",
+"as_of": "25 Nov 2026"
 }
 }
