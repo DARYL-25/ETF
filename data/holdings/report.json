@@ -58,8 +58,8 @@
  },
  "shanghai": {
   "funds": 948,
-  "ok": 0,
-  "failed": 15,
+  "ok": 920,
+  "failed": 28,
   "errors": []
  },
  "probe": {
@@ -122,6 +122,6 @@
    ]
   ]
  },
- "etfs": 590,
- "rows": 111914
+ "etfs": 1510,
+ "rows": 208503
 }
