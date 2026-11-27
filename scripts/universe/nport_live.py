@@ -5,8 +5,8 @@ Every US fund reports its full portfolio each month; the SEC makes the report fo
 public about 60 days later. The quarterly bulk data sets (nport.py) come out weeks after that, so this job reads
 EDGAR's daily index of new filings instead and picks up each fund's report the day it appears.
 
-  1. EDGAR daily form index for every day since the last run: the NPORT-P filings, by registrant CIK.
-  2. Only registrants that issue one of our US ETFs, from the SEC's fund ticker file (series -> tickers).
+  1. Registrants that issue one of our US ETFs, from the SEC's fund ticker file (series -> tickers).
+  2. Each registrant's filing history (data.sec.gov submissions API): NPORT-P filings since the last run.
   3. Each filing's primary_doc.xml, streamed: its series, report date, net assets and every position.
   4. Holdings replace the stored ones only when the report is newer. ETFs with issuer holdings files keep those.
 
@@ -49,7 +49,7 @@ def get(url, timeout=300, tries=3):
             raise
 
 
-# Which days to read. EDGAR publishes no index on weekends and holidays (404).
+# Since when to look.
 state = json.loads(STATE.read_text()) if STATE.exists() else {}
 today = dt.date.today()
 start = dt.date.fromisoformat(state["last_day"]) + dt.timedelta(days=1) if state.get("last_day") else today - dt.timedelta(days=LOOKBACK)
@@ -68,21 +68,22 @@ for row in tick["data"]:
 with_issuer = {r["etf_key"] for r in csv.DictReader(gzip.open(H / "summary.csv.gz", "rt", encoding="utf-8"))} if (H / "summary.csv.gz").exists() else set()
 report.update({"series": len(series_etfs), "registrants": len(ciks)})
 
-# 1-2. New NPORT-P filings by our registrants.
-filings, read_through = [], state.get("last_day")
-for day in days:
-    q = (day.month - 1) // 3 + 1
-    idx = get(f"https://www.sec.gov/Archives/edgar/daily-index/{day.year}/QTR{q}/form.{day:%Y%m%d}.idx")
-    if idx is None:
-        if day < today: read_through = day.isoformat()  # no index that day
-        continue
-    for line in idx.decode("latin-1").splitlines():
-        if not line.startswith("NPORT-P "): continue  # amendments (NPORT-P/A) are rare and left to the bulk sets
-        m = re.search(r"\s(\d+)\s+(\d{8})\s+(edgar/data/\S+\.txt)\s*$", line)
-        if m and int(m.group(1)) in ciks:
-            filings.append((day.isoformat(), int(m.group(1)), m.group(3)))
-    read_through = day.isoformat()
-report.update({"days": f"{days[0]}..{days[-1]}" if days else "", "filings_found": len(filings)})
+# 1-2. New NPORT-P filings by our registrants, from each registrant's filing history on data.sec.gov.
+filings, failed = [], []
+since = days[0].isoformat() if days else today.isoformat()
+for cik in sorted(ciks):
+    try:
+        sub = json.loads(get(f"https://data.sec.gov/submissions/CIK{cik:010d}.json") or b"{}")
+    except Exception as e:
+        failed.append(f"{cik}: {type(e).__name__}: {e}"[:120]); continue
+    recent = (sub.get("filings") or {}).get("recent") or {}
+    for form, filed, acc, doc in zip(recent.get("form", []), recent.get("filingDate", []), recent.get("accessionNumber", []), recent.get("primaryDocument", [])):
+        if form == "NPORT-P" and filed >= since:
+            filings.append((filed, cik, acc, doc or "primary_doc.xml"))
+filings.sort()
+read_through = (today - dt.timedelta(days=1)).isoformat() if len(failed) < max(5, len(ciks) // 10) else state.get("last_day")
+report["registrants_failed"] = failed[:20]
+report.update({"since": since, "filings_found": len(filings)})
 
 
 def local(tag): return tag.rsplit("}", 1)[-1]
@@ -125,11 +126,10 @@ aum = {}
 if (U / "sec_nport.csv.gz").exists():
     aum = {r["etf_key"]: r for r in csv.DictReader(gzip.open(U / "sec_nport.csv.gz", "rt", encoding="utf-8"))}
 updated, skipped, errors, other_series = 0, 0, [], 0
-for filed, cik, path in filings[:MAX_FILINGS]:
-    acc = path.rsplit("/", 1)[-1][:-4]
+for filed, cik, acc, primary in filings[:MAX_FILINGS]:
     folder = f"https://www.sec.gov/Archives/edgar/data/{cik}/{acc.replace('-', '')}"
     try:
-        doc = get(f"{folder}/primary_doc.xml")
+        doc = get(f"{folder}/{primary.rsplit('/', 1)[-1] if primary.endswith('.xml') else 'primary_doc.xml'}")
         if not doc: errors.append(f"{acc}: no primary_doc.xml"); continue
         rep = parse(doc)
     except Exception as e:
