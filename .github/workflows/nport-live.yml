@@ -1,0 +1,48 @@
+# Daily: US ETF holdings from each fund's Form N-PORT filing as soon as EDGAR publishes it (public domain).
+# Funds report every month; the SEC makes each quarter's last report public about 60 days later, mostly in
+# late February, May, August and November. Most days find nothing new and finish in a minute.
+# The live database is reloaded only when holdings changed.
+name: SEC holdings filings (daily)
+on:
+  schedule:
+    - cron: "43 7 * * *"
+  push:
+    branches: [main]
+    paths: ["scripts/universe/nport_live.py", "scripts/universe/nport_common.py", ".github/workflows/nport-live.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: data
+jobs:
+  nport-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: pip install pycountry
+      - run: python3 scripts/universe/nport_live.py
+        env:
+          SEC_CONTACT_EMAIL: ${{ secrets.SEC_CONTACT_EMAIL }}
+      - name: Commit results
+        id: commit
+        run: |
+          git config user.name "etf-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if git diff --quiet -- data/holdings/sec_holdings.csv.gz data/holdings/sec_summary.csv.gz; then echo "changed=false" >> "$GITHUB_OUTPUT"; else echo "changed=true" >> "$GITHUB_OUTPUT"; fi
+          git add data
+          git diff --cached --quiet || git commit -m "$MESSAGE"
+          git pull --rebase -X theirs origin "$GITHUB_REF_NAME"
+          git push
+        env:
+          MESSAGE: Update US holdings from new SEC N-PORT filings
+      - name: Load into the live database, when holdings changed
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          SYNC_DATABASE_URL: ${{ secrets.SYNC_DATABASE_URL }}
+        run: |
+          if [ -n "$SYNC_DATABASE_URL" ]; then npm ci --no-audit --no-fund && npx tsx scripts/sync-db.ts; else echo "No SYNC_DATABASE_URL secret, skipped."; fi

@@ -15,6 +15,8 @@ N-PORT has country and asset type for each position but no GICS sector, so secto
 SEC asks clients to state a contact, read from the SEC_CONTACT_EMAIL repository secret."""
 import csv, datetime as dt, gzip, io, json, os, re, shutil, sys, tempfile, time, urllib.request, zipfile
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from nport_common import ASSET, COUNTRY, SOURCE, fund_rows, read_sec_files, write_sec_files
 
 contact = os.environ.get("SEC_CONTACT_EMAIL")
 if not contact:
@@ -24,7 +26,6 @@ U, H, R = Path("data/universe"), Path("data/holdings"), Path("data/universe/deta
 H.mkdir(parents=True, exist_ok=True); R.mkdir(parents=True, exist_ok=True)
 PAGE = "https://www.sec.gov/data-research/sec-markets-data/form-n-port-data-sets"
 QUARTERS = int(os.environ.get("NPORT_QUARTERS", "2"))
-KEEP, MIN_WEIGHT = 150, 0.05  # holdings kept per fund, largest first, and the smallest weight kept
 csv.field_size_limit(10**9)
 report = {"on": dt.date.today().isoformat(), "page": PAGE}
 
@@ -75,17 +76,6 @@ report["series_matched"] = len(series_etfs)
 with_issuer = set()
 if (H / "summary.csv.gz").exists():
     with_issuer = {r["etf_key"] for r in csv.DictReader(gzip.open(H / "summary.csv.gz", "rt", encoding="utf-8"))}
-
-# Country names as the issuer files write them, which the site's map already reads.
-try:
-    import pycountry
-    COUNTRY = {c.alpha_2: getattr(c, "common_name", None) or c.name for c in pycountry.countries}
-except ImportError:
-    COUNTRY = {}
-COUNTRY.update({"US": "United States", "GB": "United Kingdom", "KR": "Korea", "TW": "Taiwan", "RU": "Russia", "VN": "Vietnam", "IR": "Iran", "CZ": "Czech Republic", "HK": "Hong Kong", "MO": "Macau", "TR": "Turkey", "BO": "Bolivia", "VE": "Venezuela", "TZ": "Tanzania", "MD": "Moldova", "SY": "Syria", "LA": "Laos", "KP": "North Korea", "PS": "Palestine", "XX": ""})
-ASSET = {"EC": "Equity", "EP": "Preferred equity", "DBT": "Fixed income", "ABS-MBS": "Fixed income", "ABS-ASBS": "Fixed income", "ABS-CBDO": "Fixed income", "ABS-O": "Fixed income",
-         "LON": "Loan", "STIV": "Cash", "RF": "Fund", "RE": "Real estate", "COMM": "Commodity", "SN": "Structured note",
-         "DCO": "Derivative", "DCR": "Derivative", "DE": "Derivative", "DFE": "Derivative", "DIR": "Derivative", "DO": "Derivative", "OTHER": "Other"}
 
 best = {}  # series -> (report_date, accession, net_assets, quarter)
 acc_month = {}  # accession -> report date, for every matched series
@@ -144,43 +134,43 @@ for quarter, _ in zips:
             w = num(r.get("PERCENTAGE"))
             if w is None: continue
             by_acc.setdefault(a, []).append({"name": (r.get("ISSUER_NAME") or r.get("ISSUER_TITLE") or "").strip(), "weight": w,
-                "country": COUNTRY.get((r.get("INVESTMENT_COUNTRY") or "").upper(), r.get("INVESTMENT_COUNTRY") or ""),
-                "asset_class": ASSET.get(r.get("ASSET_CAT") or "", r.get("ASSET_CAT") or ""), "id": r.get("HOLDING_ID")})
+                "country": r.get("INVESTMENT_COUNTRY") or "", "asset": r.get("ASSET_CAT") or "", "id": r.get("HOLDING_ID")})
     path.unlink()
 shutil.rmtree(tmp, ignore_errors=True)
 
-def holding_key(name):
-    clean = re.sub(r"\b(INC|INCORPORATED|CORP|CORPORATION|CO|COMPANY|PLC|LTD|LIMITED|SA|AG|NV|SE|ASA|AB|OYJ|SPA|HOLDINGS?|GROUP|CLASS|CL|ORD|REG|SHS|ADR|THE|AND|COM)\b", "", re.sub(r"[^A-Z0-9 ]", " ", name.upper().replace(".COM", "COM")))
-    return re.sub(r"[^A-Z0-9]", "", clean)[:22]
-
-hold_rows, sum_rows = [], []
+# A fund's own filing, read by nport_live.py as soon as EDGAR publishes it, can be newer than the bulk data set.
+# Those are kept; the bulk set only replaces what is older.
+summary, holdings = read_sec_files()
+replaced = kept_newer = 0
 for acc, (keys, date, quarter) in wanted.items():
-    merged = {}
-    for h in by_acc.get(acc, []):
-        k = holding_key(h["name"]) or f"|{h['id']}"
-        if k in merged: merged[k]["weight"] += h["weight"]
-        else: merged[k] = dict(h)
-    rows = sorted((h for h in merged.values() if h["weight"] > 0), key=lambda h: -h["weight"])
-    kept = [h for h in rows if h["weight"] >= MIN_WEIGHT][:KEEP]
-    if not kept: continue
     for key in keys:
-        for h in kept:
-            hold_rows.append([key, holding_key(h["name"]) or f"|{h['id']}", h["name"][:80], "", round(h["weight"], 4), "", h["country"][:40], h["asset_class"][:24]])
-        sum_rows.append([key, date, len(rows), len(kept), round(sum(h["weight"] for h in kept), 2), "SEC N-PORT", PAGE])
+        old = summary.get(key)
+        if old and old["as_of"] >= date and holdings.get(key):
+            kept_newer += old["as_of"] > date; continue
+        rows, n, covered = fund_rows(key, by_acc.get(acc, []))
+        if not rows: continue
+        holdings[key] = rows
+        summary[key] = {"etf_key": key, "as_of": date, "n_holdings": n, "kept": len(rows), "covered_pct": covered, "source": SOURCE, "source_url": PAGE}
+        replaced += 1
+for key in [k for k in summary if k in with_issuer]: summary.pop(key)  # issuer files win for these
+report.update({"bulk_replaced": replaced, "kept_newer_filings": kept_newer})
+hold_rows = [r for k in summary for r in holdings.get(k, [])]
 
+sizes = {}
+if (U / "sec_nport.csv.gz").exists():  # keep sizes from newer filings read by nport_live.py
+    sizes = {r["etf_key"]: [r["etf_key"], r["aum"], r["aum_currency"], r["aum_as_of"], r["accession"]] for r in csv.DictReader(gzip.open(U / "sec_nport.csv.gz", "rt", encoding="utf-8"))}
+for s, (date, acc, na, _) in best.items():
+    for key in series_etfs[s]:
+        if key not in sizes or sizes[key][3] <= date: sizes[key] = [key, round(na), "USD", date, acc]
 with gzip.open(U / "sec_nport.csv.gz", "wt", newline="") as fh:
     w = csv.writer(fh); w.writerow(["etf_key", "aum", "aum_currency", "aum_as_of", "accession"])
-    for s, (date, acc, na, _) in sorted(best.items()):
-        for key in sorted(series_etfs[s]): w.writerow([key, round(na), "USD", date, acc])
+    w.writerows(sizes[k] for k in sorted(sizes))
 with gzip.open(U / "sec_returns.csv.gz", "wt", newline="") as fh:
     w = csv.writer(fh); w.writerow(["etf_key", "month", "return_pct"])
     for (key, month), v in sorted(returns.items()): w.writerow([key, month, round(v, 4)])
 report["monthly_returns"] = len(returns)
-for name, header, rows in (("sec_holdings.csv.gz", ["etf_key", "holding_key", "name", "ticker", "weight", "sector", "country", "asset_class"], hold_rows),
-                           ("sec_summary.csv.gz", ["etf_key", "as_of", "n_holdings", "kept", "covered_pct", "source", "source_url"], sum_rows)):
-    with gzip.open(H / name, "wt", newline="") as fh:
-        w = csv.writer(fh); w.writerow(header); w.writerows(sorted(rows))
+write_sec_files(summary, holdings)
 report.update({"etfs_with_size": sum(len(series_etfs[s]) for s in best), "us_etfs_total": len(universe),
-               "etfs_with_sec_holdings": len(sum_rows), "holding_rows": len(hold_rows)})
+               "etfs_with_sec_holdings": len(summary), "holding_rows": len(hold_rows)})
 (R / "nport_report.json").write_text(json.dumps(report, indent=1))
 print(json.dumps(report)[:2000])
