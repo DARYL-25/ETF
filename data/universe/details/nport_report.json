@@ -1,5 +1,5 @@
 {
- "on": "2026-11-23",
+ "on": "2026-11-27",
  "page": "https://www.sec.gov/data-research/sec-markets-data/form-n-port-data-sets",
  "zips": [
   "https://www.sec.gov/files/dera/data/form-n-port-data-sets/2026q3_nport.zip",
@@ -73,6 +73,8 @@
   "OTHER_DERIV_NOTIONAL_AMOUNT.tsv"
  ],
  "series_with_report": 4238,
+ "bulk_replaced": 0,
+ "kept_newer_filings": 0,
  "monthly_returns": 25584,
  "etfs_with_size": 4238,
  "us_etfs_total": 5617,
