@@ -292,11 +292,16 @@ def betashares():
 
 def shanghai():
     """Shanghai Stock Exchange: each ETF's portfolio composition file for the trading day, published by the
-    exchange. Each holding carries its cash substitution amount, its value in one creation unit, so its weight
-    is that amount over the creation unit's NAV. Holdings that cannot be replaced by cash carry no amount and
-    are left out; store() refuses a fund whose weights then cover less than half of it."""
+    exchange. It lists the shares in one creation unit. Holdings listed elsewhere (Shenzhen, abroad) carry their
+    cash value; Shanghai-listed shares carry only a quantity, valued at the exchange's own close of the day the
+    file's NAV is struck (the previous trading day). Weight = value / NAV of the creation unit. store() refuses
+    a fund whose weights then cover less than half of it."""
     import xml.etree.ElementTree as ET
     ok = failed = 0; errors = []
+    quotes = json.loads(get("https://yunhq.sse.com.cn:32042/v1/sh1/list/exchange/equity?select=code,last,prev_close,date&begin=0&end=6000", referer="https://www.sse.com.cn/"))
+    price = {}
+    for code, last, prev, qday in quotes.get("list", []):
+        price[code] = (str(qday), last, prev)
     funds = [u for u in universe if u["source"] == "china_sh" and u["ticker"]]
     for u in funds[:LIMIT]:
         url = f"https://query.sse.com.cn/etfDownload/downloadETF2Bulletin.do?etfType=087&fundCode={u['ticker']}"
@@ -310,6 +315,11 @@ def shanghai():
             for c in root.iter("Component"):
                 amount = num(c.findtext("SubstitutionCashAmount") or "")
                 name = (c.findtext("InstrumentName") or "").strip()
+                code = (c.findtext("InstrumentID") or "").strip()
+                if not amount and code in price:
+                    qday, last, prev = price[code]
+                    close = prev if qday == day else last  # the close the NAV was struck at
+                    amount = (num(c.findtext("Quantity") or "") or 0) * (close or 0)
                 if not name or not amount: continue
                 rows.append({"name": name, "ticker": (c.findtext("InstrumentID") or "").strip(), "isin": "", "weight": 100 * amount / nav_cu, "sector": "", "country": "China", "asset_class": ""})
             as_of = f"{day[:4]}-{day[4:6]}-{day[6:8]}" if len(day) == 8 else ""
