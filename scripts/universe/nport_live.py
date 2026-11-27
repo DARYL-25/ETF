@@ -33,7 +33,7 @@ PAUSE = 0.15  # SEC allows 10 requests a second; stay well under
 report = {"on": dt.date.today().isoformat()}
 
 
-def get(url, timeout=300, tries=3):
+def get(url, timeout=300, tries=4):
     for attempt in range(tries):
         time.sleep(PAUSE)
         try:
@@ -42,7 +42,7 @@ def get(url, timeout=300, tries=3):
                 return gzip.decompress(b) if r.headers.get("Content-Encoding") == "gzip" or b[:2] == b"\x1f\x8b" else b
         except urllib.error.HTTPError as e:
             if e.code == 404: return None
-            if e.code in (403, 429, 503) and attempt < tries - 1: time.sleep(10 * (attempt + 1)); continue
+            if e.code in (403, 429, 500, 502, 503, 504) and attempt < tries - 1: time.sleep(10 * (attempt + 1)); continue
             raise
         except (urllib.error.URLError, TimeoutError):
             if attempt < tries - 1: time.sleep(5); continue
@@ -129,9 +129,11 @@ updated, skipped, errors, other_series = 0, 0, [], 0
 for filed, cik, acc, primary in filings[:MAX_FILINGS]:
     folder = f"https://www.sec.gov/Archives/edgar/data/{cik}/{acc.replace('-', '')}"
     try:
-        doc = get(f"{folder}/{primary.rsplit('/', 1)[-1] if primary.endswith('.xml') else 'primary_doc.xml'}")
+        url = f"{folder}/{primary.rsplit('/', 1)[-1] if primary.endswith('.xml') else 'primary_doc.xml'}"
+        doc = get(url)
         if not doc: errors.append(f"{acc}: no primary_doc.xml"); continue
-        rep = parse(doc)
+        try: rep = parse(doc)
+        except ET.ParseError: rep = parse(get(url, tries=4))  # a download cut short; read it again
     except Exception as e:
         if len(errors) < 20: errors.append(f"{acc}: {type(e).__name__}: {e}"[:160])
         continue
