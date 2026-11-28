@@ -19,6 +19,19 @@ ASSET = {"EC": "Equity", "EP": "Preferred equity", "DBT": "Fixed income", "ABS-M
          "DCO": "Derivative", "DCR": "Derivative", "DE": "Derivative", "DFE": "Derivative", "DIR": "Derivative", "DO": "Derivative", "OTHER": "Other"}
 
 
+# What a bond is, from the issuer type N-PORT reports for every position; used as its "sector".
+DEBT = {"DBT", "ABS-MBS", "ABS-ASBS", "ABS-CBDO", "ABS-O", "LON", "SN"}
+BOND_SECTOR = {"UST": "Government bonds", "USGA": "Government bonds", "USGSE": "Government bonds", "NUSS": "Government bonds",
+               "MUN": "Municipal bonds", "CORP": "Corporate bonds"}
+
+
+def bond_sector(asset, issuer):
+    if asset in ("STIV",): return "Cash"
+    if asset and asset.startswith("ABS"): return "Securitised"
+    if asset in DEBT: return BOND_SECTOR.get(issuer or "", "")
+    return ""
+
+
 def holding_key(name):
     clean = re.sub(r"\b(INC|INCORPORATED|CORP|CORPORATION|CO|COMPANY|PLC|LTD|LIMITED|SA|AG|NV|SE|ASA|AB|OYJ|SPA|HOLDINGS?|GROUP|CLASS|CL|ORD|REG|SHS|ADR|THE|AND|COM)\b", "", re.sub(r"[^A-Z0-9 ]", " ", name.upper().replace(".COM", "COM")))
     return re.sub(r"[^A-Z0-9]", "", clean)[:22]
@@ -34,7 +47,7 @@ def fund_rows(key, positions):
         else: merged[k] = dict(p, key=k)
     rows = sorted((h for h in merged.values() if h["weight"] > 0), key=lambda h: -h["weight"])
     kept = [h for h in rows if h["weight"] >= MIN_WEIGHT][:KEEP]
-    out = [[key, h["key"], h["name"][:80], "", round(h["weight"], 4), "",
+    out = [[key, h["key"], h["name"][:80], "", round(h["weight"], 4), bond_sector(h.get("asset"), h.get("issuer")),
             COUNTRY.get((h.get("country") or "").upper(), h.get("country") or "")[:40],
             ASSET.get(h.get("asset") or "", h.get("asset") or "")[:24]] for h in kept]
     return out, len(rows), round(sum(h["weight"] for h in kept), 2)

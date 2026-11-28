@@ -16,6 +16,10 @@ jobs:
       - uses: actions/checkout@v4
       - run: pip install openpyxl
       - run: python3 scripts/universe/holdings.py
+      - name: Give every holding a sector
+        run: python3 scripts/universe/classify.py
+        env:
+          SEC_CONTACT_EMAIL: ${{ secrets.SEC_CONTACT_EMAIL }}
       - name: Commit results
         run: |
           git config user.name "etf-data-bot"

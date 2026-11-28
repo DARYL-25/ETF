@@ -134,7 +134,7 @@ for quarter, _ in zips:
             w = num(r.get("PERCENTAGE"))
             if w is None: continue
             by_acc.setdefault(a, []).append({"name": (r.get("ISSUER_NAME") or r.get("ISSUER_TITLE") or "").strip(), "weight": w,
-                "country": r.get("INVESTMENT_COUNTRY") or "", "asset": r.get("ASSET_CAT") or "", "id": r.get("HOLDING_ID")})
+                "country": r.get("INVESTMENT_COUNTRY") or "", "asset": r.get("ASSET_CAT") or "", "issuer": r.get("ISSUER_TYPE") or "", "id": r.get("HOLDING_ID")})
     path.unlink()
 shutil.rmtree(tmp, ignore_errors=True)
 
