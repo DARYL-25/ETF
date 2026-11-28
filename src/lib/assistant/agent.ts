@@ -27,7 +27,7 @@ const TOOLS = [
   { name: "search_academy", description: "Find reviewed-status educational lessons and glossary entries on a topic.", input_schema: { type: "object", properties: { topic: { type: "string" } }, required: ["topic"] } },
 ];
 
-const compact = (r: Ranked["row"]) => ({
+export const compact = (r: Ranked["row"]) => ({
   key: r.etf_key ?? r.isin, name: r.name, isin: r.isin, ticker: r.ticker, issuer: r.issuer_name, index: r.index_name, fee_pct: r.headline_fee_pct, fee_type: r.headline_fee_type, fee_date: r.ter_as_of,
   size: r.fund_aum, size_currency: r.fund_aum_currency, size_level: r.aum_level ?? "fund", size_date: r.fund_aum_as_of, domicile_or_issuer_country: r.domicile, ucits: r.ucits, income: r.distribution_policy, replication: r.replication,
   nav: r.nav, nav_currency: r.nav_currency, nav_date: r.nav_as_of, nav_return_1y_pct: r.nav_return_1y, nav_return_3y_pct: r.nav_return_3y, nav_return_5y_pct: r.nav_return_5y, returns_date: r.nav_return_as_of, source: r.source_url, reviewed_by_person: r.verification === "reviewed",

@@ -3,17 +3,21 @@ import { z } from "zod";
 import { positionsSchema, watchSchema } from "@/lib/portfolio/schema";
 import { fullReview } from "@/lib/portfolio/review-server";
 import { fundExposures, recentMoves, watchChanges } from "@/lib/etfs/portfolio-data";
-import { answerLocally, COPILOT_SYSTEM, type CopilotContext } from "@/lib/assistant/copilot";
+import { answerLocally, type CopilotContext } from "@/lib/assistant/copilot";
+import { advise, DISCLAIMER, objectivesSchema } from "@/lib/assistant/advisor";
 import { getLens } from "@/lib/lens-server";
 import { makeT, pickLang } from "@/lib/i18n";
-import { aiChat, aiConfig } from "@/lib/ai/provider";
+import { aiConfig } from "@/lib/ai/provider";
 
-const body = z.object({ question: z.string().min(2).max(500), positions: positionsSchema, watch: watchSchema.optional() });
+const body = z.object({ question: z.string().min(2).max(500), positions: positionsSchema, watch: watchSchema.optional(), objectives: objectivesSchema.nullish() });
+
 
 /**
- * Answers a question about the reader's own portfolio from figures computed here. With an AI model configured (by default an open-weight model on Vercel AI Gateway),
- * the model rewrites the answer in plain language but receives only these figures; without it, the computed
- * answer is returned as it is.
+ * Answers a question about the reader's own portfolio. Figures are computed here first. With an AI model
+ * configured (by default the open-weight Kimi K3.1 Pro on Vercel AI Gateway, zero data retention), the model reads
+ * those figures and the reader's objectives, may search our ETF database, and writes observations and options;
+ * see lib/assistant/advisor.ts. Without a model, the computed answer is returned as it is. Every reply carries
+ * the not-advice notice.
  */
 export async function POST(request: NextRequest) {
   const parsed = body.safeParse(await request.json().catch(() => null));
@@ -28,20 +32,24 @@ export async function POST(request: NextRequest) {
   const local = answerLocally(parsed.data.question, ctx);
   const lines = local.lines.map((l) => t(l.text, l.vars));
   const config = aiConfig();
-  if (!config) return NextResponse.json({ topic: local.topic, lines, text: null, aiUsed: false });
+  const disclaimer = t(DISCLAIMER);
+  const plain = { topic: local.topic, lines, text: null, aiUsed: false, suggested: [], disclaimer };
+  if (!config) return NextResponse.json(plain);
   try {
     const summary = {
       value_eur: Math.round(full.insight.total_eur), blended_fee_pct: full.insight.fee_pct, seen_through_pct: full.insight.look.covered_pct,
-      funds: full.insight.funds.map((f) => ({ name: f.name, weight_pct: Number(f.weight_pct.toFixed(1)), fee_pct: f.headline_fee_pct, index: f.index_name })),
-      top_companies: full.insight.look.holdings.slice(0, 10).map((h) => ({ name: h.label, pct: Number(h.weight_pct.toFixed(2)) })),
+      funds: full.insight.funds.map((f) => ({ key: f.key, name: f.name, weight_pct: Number(f.weight_pct.toFixed(1)), fee_pct: f.headline_fee_pct, index: f.index_name })),
+      allocation: full.insight.allocation, top_companies: full.insight.look.holdings.slice(0, 10).map((h) => ({ name: h.label, pct: Number(h.weight_pct.toFixed(2)) })),
+      sectors: full.insight.look.sectors, countries: full.insight.look.countries,
       us_pct: full.insight.xray.us_pct, tech_pct: full.insight.xray.tech_pct, currencies: full.insight.xray.currencies.slice(0, 5),
-      weaknesses: full.review.weaknesses.map((w) => t(w.detail, w.vars)), exposures, moves, watch_changes: watch.map((c) => t(c.text, c.vars)),
+      overlaps: full.insight.overlaps, weaknesses: full.review.weaknesses.map((w) => t(w.detail, w.vars)), exposures, moves, watch_changes: watch.map((c) => t(c.text, c.vars)),
+      computed_answer: lines,
     };
-    const reply = await aiChat({ system: COPILOT_SYSTEM, config, maxTokens: 500, turns: [{ role: "user", text: `QUESTION: ${parsed.data.question}\n\nCONTEXT: ${JSON.stringify(summary)}\n\nDRAFT_ANSWER: ${lines.join(" ")}` }] });
-    if (!reply.ok) return NextResponse.json({ topic: local.topic, lines, text: null, aiUsed: false });
-    const text = reply.text;
-    return NextResponse.json({ topic: local.topic, lines, text: text || null, aiUsed: Boolean(text) });
+    const advice = await advise({ question: parsed.data.question, objectives: parsed.data.objectives ?? null, context: summary, home: lens?.name ?? null, lang, config });
+    if (!advice.aiUsed) return NextResponse.json(plain);
+    const suggested = advice.suggested.map((r) => ({ key: r.etf_key ?? r.isin, isin: r.isin, name: r.name, fee_pct: r.headline_fee_pct, size: r.fund_aum ?? r.class_aum, size_currency: r.fund_aum_currency ?? r.class_aum_currency, income: r.distribution_policy }));
+    return NextResponse.json({ ...plain, text: advice.text, aiUsed: true, suggested });
   } catch {
-    return NextResponse.json({ topic: local.topic, lines, text: null, aiUsed: false });
+    return NextResponse.json(plain);
   }
 }

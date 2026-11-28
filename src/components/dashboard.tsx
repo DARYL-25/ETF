@@ -14,21 +14,47 @@ import { frequencyLabel } from "@/lib/format";
 import type { Portfolio } from "./portfolio-tools";
 import { netPositions } from "@/lib/portfolio/performance";
 
-/** Questions about the reader's own portfolio, answered from its computed figures. */
+type Objectives = { goal?: "growth" | "income" | "preserve" | "retirement" | "other"; horizon_years?: number; risk?: "low" | "medium" | "high"; monthly_eur?: number; preferences?: string };
+type Suggested = { key: string; isin: string; name: string; fee_pct: number | null; size: number | null; size_currency: string | null; income: string | null };
+const GOALS: [NonNullable<Objectives["goal"]>, string][] = [["growth", "Grow my savings"], ["income", "Regular income (dividends)"], ["retirement", "Retirement"], ["preserve", "Protect what I have"], ["other", "Other"]];
+const RISKS: [NonNullable<Objectives["risk"]>, string][] = [["low", "Low"], ["medium", "Medium"], ["high", "High"]];
+const OBJECTIVE_EXAMPLES = ["Which ETFs could fit my objectives better?", "How could I turn this into a dividend income portfolio?", "Is my portfolio too risky for my horizon?"];
+
+/** What the reader wants from their money, kept in this browser and sent with each question to the copilot. */
+function ObjectivesForm({ value, onChange }: { value: Objectives; onChange: (o: Objectives) => void }) {
+  const t = useT();
+  const set = (patch: Partial<Objectives>) => onChange({ ...value, ...patch });
+  return (
+    <details className="mt-3 rounded-xl border border-line p-3" open={!value.goal}>
+      <summary className="cursor-pointer font-semibold">{t("Your objectives")}{value.goal ? <span className="ml-2 font-normal text-muted">{t(GOALS.find(([g]) => g === value.goal)?.[1] ?? "")}{value.horizon_years ? ` · ${t("{n} years", { n: value.horizon_years })}` : ""}{value.risk ? ` · ${t("risk")} ${t(RISKS.find(([r]) => r === value.risk)?.[1] ?? "").toLowerCase()}` : ""}</span> : null}</summary>
+      <p className="mt-1 text-[0.85rem] text-muted">{t("The copilot relates your portfolio to these. They stay in this browser.")}</p>
+      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+        <label className="text-[0.9rem]">{t("Goal")}<select className="field mt-1" value={value.goal ?? ""} onChange={(e) => set({ goal: (e.target.value || undefined) as Objectives["goal"] })}><option value="">—</option>{GOALS.map(([g, l]) => <option key={g} value={g}>{t(l)}</option>)}</select></label>
+        <label className="text-[0.9rem]">{t("Risk you accept")}<select className="field mt-1" value={value.risk ?? ""} onChange={(e) => set({ risk: (e.target.value || undefined) as Objectives["risk"] })}><option value="">—</option>{RISKS.map(([r, l]) => <option key={r} value={r}>{t(l)}</option>)}</select></label>
+        <label className="text-[0.9rem]">{t("Horizon in years")}<input type="number" min={1} max={60} className="field mt-1" value={value.horizon_years ?? ""} onChange={(e) => set({ horizon_years: e.target.value ? Math.min(60, Math.max(1, Math.round(Number(e.target.value)))) : undefined })} /></label>
+        <label className="text-[0.9rem]">{t("Monthly savings (EUR)")}<input type="number" min={0} className="field mt-1" value={value.monthly_eur ?? ""} onChange={(e) => set({ monthly_eur: e.target.value ? Math.max(0, Number(e.target.value)) : undefined })} /></label>
+      </div>
+      <label className="mt-2 block text-[0.9rem]">{t("Preferences (optional)")}<input className="field mt-1" maxLength={300} placeholder={t("e.g. ESG, halal, no US tech, PEA eligible")} value={value.preferences ?? ""} onChange={(e) => set({ preferences: e.target.value || undefined })} /></label>
+    </details>
+  );
+}
+
+/** Questions about the reader's own portfolio: figures computed here, explained by an open-weight AI against the reader's objectives. */
 export function Copilot({ portfolio, watch }: { portfolio: Portfolio; watch: Watchlist[] }) {
   const t = useT();
   const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState<{ q: string; lines: string[]; text: string | null; aiUsed: boolean } | null>(null);
+  const [objectives, setObjectives] = useLocal<Objectives>("copilot-objectives", {});
+  const [answer, setAnswer] = useState<{ q: string; lines: string[]; text: string | null; aiUsed: boolean; suggested: Suggested[]; disclaimer: string | null } | null>(null);
   const [busy, setBusy] = useState(false);
   const ask = async (q: string) => {
     if (q.trim().length < 2) return;
     setBusy(true);
     try {
-      const r = await fetch("/api/v1/portfolio/copilot", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question: q, positions: netPositions(portfolio.positions), watch: watch.flatMap((l) => l.items).filter((i) => i.seen).slice(0, 300) }) });
+      const r = await fetch("/api/v1/portfolio/copilot", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question: q, positions: netPositions(portfolio.positions), watch: watch.flatMap((l) => l.items).filter((i) => i.seen).slice(0, 300), objectives: Object.keys(objectives).length ? objectives : null }) });
       const b = await r.json();
-      setAnswer(r.ok ? { q, lines: b.lines, text: b.text, aiUsed: b.aiUsed } : { q, lines: [b.error ?? t("Something went wrong. Try again.")], text: null, aiUsed: false });
+      setAnswer(r.ok ? { q, lines: b.lines, text: b.text, aiUsed: b.aiUsed, suggested: b.suggested ?? [], disclaimer: b.disclaimer ?? null } : { q, lines: [b.error ?? t("Something went wrong. Try again.")], text: null, aiUsed: false, suggested: [], disclaimer: null });
     } catch {
-      setAnswer({ q, lines: [t("Something went wrong. Try again.")], text: null, aiUsed: false });
+      setAnswer({ q, lines: [t("Something went wrong. Try again.")], text: null, aiUsed: false, suggested: [], disclaimer: null });
     } finally { setBusy(false); }
   };
   return (
@@ -38,14 +64,24 @@ export function Copilot({ portfolio, watch }: { portfolio: Portfolio; watch: Wat
         <input aria-label={t("Your question")} className="field" placeholder={t("Am I overexposed to the United States?")} value={question} onChange={(e) => setQuestion(e.target.value)} maxLength={500} />
         <button type="submit" className="btn btn-primary" disabled={busy}><Send size={15} aria-hidden /><span className="sr-only">{t("Ask")}</span></button>
       </form>
-      <div className="mt-2 flex flex-wrap gap-1.5">{COPILOT_EXAMPLES.map((q) => <button key={q} type="button" className="chip h-auto max-w-full whitespace-normal py-1 text-left" onClick={() => { setQuestion(t(q)); ask(t(q)); }}>{t(q)}</button>)}</div>
+      <ObjectivesForm value={objectives} onChange={setObjectives} />
+      <div className="mt-2 flex flex-wrap gap-1.5">{[...OBJECTIVE_EXAMPLES, ...COPILOT_EXAMPLES].map((q) => <button key={q} type="button" className="chip h-auto max-w-full whitespace-normal py-1 text-left" onClick={() => { setQuestion(t(q)); ask(t(q)); }}>{t(q)}</button>)}</div>
       {busy ? <p className="mt-3 text-muted" role="status">{t("Working it out…")}</p> : null}
       {answer && !busy ? (
         <div className="mt-3 rounded-xl bg-sunken p-3.5" aria-live="polite">
           <p className="text-[0.85rem] text-muted">{answer.q}</p>
           {answer.text ? <p className="mt-1 whitespace-pre-wrap">{answer.text}</p> : <ul className="mt-1 space-y-1">{answer.lines.map((l) => <li key={l}>{l}</li>)}</ul>}
-          <p className="mt-2 text-[0.8rem] text-muted">{answer.aiUsed ? t("Written by AI from the figures below the answer, which we computed from your positions.") : t("Computed from your positions and the data we hold.")}</p>
+          <p className="mt-2 text-[0.8rem] text-muted">{answer.aiUsed ? t("Written by an open-weight AI from figures we computed from your positions and from our ETF database.") : t("Computed from your positions and the data we hold.")}</p>
+          {answer.suggested.length ? (
+            <div className="mt-3">
+              <p className="text-[0.85rem] font-semibold">{t("ETFs mentioned, from our database")}</p>
+              <ul className="mt-1 space-y-1">{answer.suggested.map((s) => (
+                <li key={s.key} className="text-[0.9rem]"><Link className="prose-link" href={`/etfs/${encodeURIComponent(s.isin ?? s.key)}`}>{s.name}</Link><span className="data ml-2 text-muted">{s.fee_pct !== null ? `${s.fee_pct.toFixed(2)}%` : "—"}{s.size ? ` · ${new Intl.NumberFormat(t.lang === "fr" ? "fr-FR" : "en-GB", { notation: "compact", maximumFractionDigits: 1 }).format(s.size)} ${s.size_currency ?? ""}` : ""}</span></li>
+              ))}</ul>
+            </div>
+          ) : null}
           {answer.text ? <details className="mt-1 text-[0.85rem]"><summary className="cursor-pointer text-muted">{t("The computed figures")}</summary><ul className="mt-1 space-y-0.5">{answer.lines.map((l) => <li key={l}>{l}</li>)}</ul></details> : null}
+          {answer.disclaimer ? <p className="mt-3 border-t border-line pt-2 text-[0.8rem] text-muted" role="note">{answer.disclaimer}</p> : null}
         </div>
       ) : null}
     </section>
