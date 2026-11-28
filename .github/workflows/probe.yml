@@ -1,0 +1,15 @@
+# Temporary probe. Deleted before anything merges.
+name: Probe data sources
+on:
+  push:
+    branches: [source-probe]
+    paths: ["scripts/probe/**", ".github/workflows/probe.yml"]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/probe/public_sources.py
