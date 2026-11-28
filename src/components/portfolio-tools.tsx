@@ -28,7 +28,7 @@ export function ImportPanel({ onImport }: { onImport: (positions: Position[]) =>
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ kind: string; rows: Imported[]; skipped: { line: number; text: string; reason: string }[] } | null>(null);
+  const [result, setResult] = useState<{ kind: string; ai?: boolean; rows: Imported[]; skipped: { line: number; text: string; reason: string }[] } | null>(null);
   const [picked, setPicked] = useState<Record<number, boolean>>({});
   const file = useRef<HTMLInputElement>(null);
 
@@ -55,6 +55,11 @@ export function ImportPanel({ onImport }: { onImport: (positions: Position[]) =>
     <details className="mt-3 rounded-xl border border-line bg-surface p-3">
       <summary className="cursor-pointer font-semibold"><FileUp size={16} className="mr-1 inline" aria-hidden />{t("Import positions")}</summary>
       <p className="mt-2 text-[0.9rem] text-muted">{t("Upload a CSV, Excel or PDF statement from your broker, or paste rows copied from a spreadsheet. We read the file in memory and do not keep it. You check every row before it is added.")}</p>
+      <p className="mt-1 text-[0.85rem] text-muted">{t("Exports from Degiro, Interactive Brokers, Boursorama, Scalable, Swissquote and Revolut are read as they come, and PDF statements such as Trade Republic's too. For any other layout, our AI finds which column is which; the figures are still read by our code.")}</p>
+      <p className="mt-2 flex flex-wrap items-center gap-2 text-[0.9rem]">
+        <span className="text-muted">{t("Or fill our template:")}</span>
+        <a className="btn btn-quiet" href={t.lang === "fr" ? "/templates/etf-intelligence-modele-portefeuille.xlsx" : "/templates/etf-intelligence-portfolio-template.xlsx"} download>{t("Download the Excel template")}</a>
+      </p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <input ref={file} type="file" accept=".csv,.tsv,.txt,.xlsx,.pdf" aria-label={t("Broker file")} className="text-[0.9rem]" />
         <button type="button" className="btn btn-quiet" disabled={busy} onClick={upload}>{t("Read file")}</button>
@@ -65,6 +70,7 @@ export function ImportPanel({ onImport }: { onImport: (positions: Position[]) =>
       {error ? <p className="mt-2 text-down" role="alert">{error}</p> : null}
       {result ? (
         <div className="mt-3">
+          {result.ai ? <p className="mb-2 rounded-lg bg-(--warn-bg) px-3 py-2 text-[0.9rem] text-(--warn-ink)" role="status">{t("We did not know this layout, so our AI read where the positions are. Check each row carefully before adding it.")}</p> : null}
           {result.rows.length ? (
             <div className="overflow-x-auto">
               <table className="table-data">
