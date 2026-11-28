@@ -7,8 +7,11 @@
  *   vLLM or LM Studio on your own machine, or hosted open models from Mistral, Groq or Together.
  *
  * - On Vercel with nothing else set: Vercel AI Gateway, authenticated with the deployment's own OIDC token, running
- *   the open-weight model in AI_GATEWAY_MODEL (default openai/gpt-oss-120b, Apache 2.0). AI_GATEWAY_API_KEY works
- *   outside Vercel. Set AI_PROVIDER=none to switch AI off.
+ *   the open-weight model in AI_GATEWAY_MODEL (default moonshotai/kimi-k3.1-pro, first among open-weight models on
+ *   independent rankings in November 2026), falling back to AI_GATEWAY_FALLBACK_MODEL (default
+ *   deepseek/deepseek-v4.1-flash-1017, MIT licence) when every provider of the first fails. Gateway requests go
+ *   only to providers with zero data retention (AI_GATEWAY_ZDR=off lifts this). AI_GATEWAY_API_KEY works outside
+ *   Vercel. Set AI_PROVIDER=none to switch AI off.
  *
  * AI_PROVIDER=openai or anthropic picks one when both are configured. The model never reaches the database
  * directly: it can only call the tools the caller defines, and every figure comes back from those tools.
@@ -16,7 +19,8 @@
 import { getVercelOidcToken } from "@vercel/oidc";
 
 export const GATEWAY_URL = "https://ai-gateway.vercel.sh/v1";
-export const DEFAULT_OPEN_MODEL = "openai/gpt-oss-120b";
+export const DEFAULT_OPEN_MODEL = "moonshotai/kimi-k3.1-pro";
+export const DEFAULT_FALLBACK_MODEL = "deepseek/deepseek-v4.1-flash-1017";
 const OIDC = "vercel-oidc";
 
 export type AiTool = { name: string; description: string; input_schema: Record<string, unknown> };
@@ -27,7 +31,7 @@ export type AiTurn =
   | { role: "tool"; results: { id: string; content: string }[] };
 export type AiReply = { ok: true; text: string; toolCalls: AiToolCall[] } | { ok: false; status: number };
 
-export type AiConfig = { provider: "anthropic" | "openai"; model: string; baseUrl: string; key: string | null };
+export type AiConfig = { provider: "anthropic" | "openai"; model: string; baseUrl: string; key: string | null; fallbacks?: string[]; zdr?: boolean };
 
 export function aiConfig(): AiConfig | null {
   const want = process.env.AI_PROVIDER;
@@ -40,7 +44,10 @@ export function aiConfig(): AiConfig | null {
   if (anthropicKey && want !== "gateway") return { provider: "anthropic", model: process.env.ASSISTANT_MODEL ?? "claude-haiku-5-5", baseUrl: "https://api.anthropic.com/v1", key: anthropicKey };
   // AI Gateway: an API key anywhere, or the deployment's OIDC token on Vercel.
   const gatewayKey = process.env.AI_GATEWAY_API_KEY || (process.env.VERCEL ? OIDC : null);
-  if (gatewayKey) return { provider: "openai", model: process.env.AI_GATEWAY_MODEL || DEFAULT_OPEN_MODEL, baseUrl: GATEWAY_URL, key: gatewayKey };
+  if (gatewayKey) {
+    const fallback = process.env.AI_GATEWAY_FALLBACK_MODEL ?? DEFAULT_FALLBACK_MODEL;
+    return { provider: "openai", model: process.env.AI_GATEWAY_MODEL || DEFAULT_OPEN_MODEL, baseUrl: GATEWAY_URL, key: gatewayKey, fallbacks: fallback ? [fallback] : [], zdr: process.env.AI_GATEWAY_ZDR !== "off" };
+  }
   return null;
 }
 
@@ -65,6 +72,18 @@ function toOpenAi(system: string, turns: AiTurn[]) {
   return out;
 }
 
+/**
+ * AI Gateway routing, sent in the request body: only providers that keep no data, the fallback model, and a light
+ * reasoning effort so answers come back in seconds. Other OpenAI-compatible servers receive none of this.
+ */
+export function gatewayOptions(config: AiConfig): Record<string, unknown> {
+  if (config.baseUrl !== GATEWAY_URL) return {};
+  const gateway: Record<string, unknown> = {};
+  if (config.zdr) gateway.zeroDataRetention = true;
+  if (config.fallbacks?.length) gateway.models = config.fallbacks;
+  return { reasoning: { effort: "low" }, ...(Object.keys(gateway).length ? { providerOptions: { gateway } } : {}) };
+}
+
 export async function aiChat({ system, turns, tools = [], maxTokens = 900, config = aiConfig(), fetchFn = fetch }: { system: string; turns: AiTurn[]; tools?: AiTool[]; maxTokens?: number; config?: AiConfig | null; fetchFn?: typeof fetch }): Promise<AiReply> {
   if (!config) return { ok: false, status: 0 };
   try {
@@ -82,7 +101,7 @@ export async function aiChat({ system, turns, tools = [], maxTokens = 900, confi
     const res = await fetchFn(`${config.baseUrl}/chat/completions`, {
       method: "POST",
       headers: { "content-type": "application/json", ...(key ? { authorization: `Bearer ${key}` } : {}) },
-      body: JSON.stringify({ model: config.model, max_tokens: maxTokens, temperature: 0.2, messages: toOpenAi(system, turns), ...(tools.length ? { tools: tools.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.input_schema } })), tool_choice: "auto" } : {}) }),
+      body: JSON.stringify({ model: config.model, max_tokens: maxTokens, temperature: 0.2, messages: toOpenAi(system, turns), ...gatewayOptions(config), ...(tools.length ? { tools: tools.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.input_schema } })), tool_choice: "auto" } : {}) }),
     });
     if (!res.ok) return { ok: false, status: res.status };
     const body = (await res.json()) as { choices: { message: { content: string | null; tool_calls?: { id: string; function: { name: string; arguments: string } }[] } }[] };
