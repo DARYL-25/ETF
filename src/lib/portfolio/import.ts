@@ -52,14 +52,49 @@ export function parseDate(raw: string | undefined | null): string | null {
   return null;
 }
 
-const HEADERS: Record<keyof Omit<ImportedRow, "line" | "note">, RegExp> = {
-  side: /^(side|type|sens|operation|opération|op[ée]ration type|action|buy\/sell|achat\/vente|transaction|transaktion|typ)$/i,
-  fee: /^(fee|fees|frais|commission|courtage|commissions|gebühr|gebühren|kosten|costs)$/i,
-  identifier: /^(isin|code isin|ticker|symbol|symbole|mnémo|mnemo|code|valeur|instrument|wkn|security|titre)$/i,
-  quantity: /^(quantity|qty|quantité|quantite|qté|qte|nombre|nb|shares|units|parts|anzahl|stück|stuck|position)$/i,
-  price: /^(price|prix|prix moyen|pru|cost|avg price|average price|purchase price|prix d'achat|prix de revient|kurs|einstandskurs)$/i,
-  date: /^(date|trade date|date d'achat|date d'opération|date operation|datum|purchase date)$/i,
-};
+/** A header cell as compared: lower case, accents and punctuation folded, so `Quantité`, `QTE.` and `quantite` agree. */
+export const foldHeader = (h: string) => h.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9/ ]+/g, " ").replace(/\s+/g, " ").trim();
+
+type Field = keyof ImportResult["columns"];
+/**
+ * What each column holds, from its header, as the main brokers write them (tested on Degiro, Interactive Brokers,
+ * Scalable, Boursorama, Swissquote and Revolut samples in tests/broker-import.test.ts) and our own
+ * template. Tried in this order, so `Price per share` is a price and not a quantity, and `Position value` is neither.
+ */
+const RULES: [Field, RegExp, RegExp?][] = [
+  ["side", /^(side|type|sens|operation|operation type|type d operation|action|buy\/sell|achat\/vente|transaction|transaction type|transaktion|typ|direction|order type|ordre)$/],
+  ["fee", /\b(fee|fees|frais|commission|commissions|courtage|gebuhr|gebuhren|kosten|costs|charges)\b/, /\b(fx|change|tax|taxe|steuer)\b/],
+  ["date", /\b(date|datum|trade date|execution date|date d operation|date d achat|date d execution|purchase date|settlement date|time|heure)\b/, /\b(heure|time)\b/],
+  ["price", /\b(price|prix|cours|kurs|pru|cost price|avg|average|einstand\w*|prix de revient|prix d achat|price per share|unit price|prix unitaire|purchase price|unit cost|cost|valeur unitaire|closing|close|cloture|last price|dernier cours)\b/, /\b(total|amount|montant|value|valeur totale|betrag|wert|basis)\b/],
+  ["identifier", /\b(isin|code isin|isin code|symbol\/isin|symbole\/isin|wkn|ticker|symbol|symbole|mnemo|mnemonique|code valeur)\b/],
+  ["quantity", /\b(quantity|qty|quantite|qte|nombre de parts|nombre de titres|nombre|nb|shares|units|parts|anzahl|stuck|stueck|stk|menge|nominal|position|holding|titres)\b/, /\b(value|valeur|wert|amount|montant|price|prix|cours)\b/],
+];
+/** Columns showing today's price rather than what was paid: used only when no cost column exists. */
+const CURRENT_PRICE = /\b(closing|cloture|close|last|dernier|current|actuel|market|marche|kurs aktuell|aktuell)\b/;
+const COST_PRICE = /\b(pru|prix de revient|cost|einstand|average|avg|purchase|achat|paid|moyen)\b/;
+
+export function fieldOf(header: string): Field | null {
+  const h = foldHeader(header);
+  if (!h) return null;
+  for (const [field, re, not] of RULES) if (re.test(h) && !(not && not.test(h) && !(field === "date" && /date|datum/.test(h)))) return field;
+  return null;
+}
+
+/** Which column holds what, from a header row. An ISIN column beats a ticker or symbol column; a cost price beats today's price. */
+export function columnsOf(header: string[]): ImportResult["columns"] {
+  const columns: ImportResult["columns"] = { identifier: null, quantity: null, price: null, date: null, side: null, fee: null };
+  const fields = header.map(fieldOf);
+  for (const field of Object.keys(columns) as Field[]) {
+    const hits = fields.map((f, i) => (f === field ? i : -1)).filter((i) => i >= 0);
+    if (!hits.length) continue;
+    const folded = (i: number) => foldHeader(header[i]);
+    if (field === "identifier") columns[field] = hits.find((i) => /isin/.test(folded(i))) ?? hits[0];
+    else if (field === "price") columns[field] = hits.find((i) => COST_PRICE.test(folded(i))) ?? hits.find((i) => !CURRENT_PRICE.test(folded(i))) ?? hits[0];
+    else if (field === "date") columns[field] = hits.find((i) => /date|datum/.test(folded(i))) ?? hits[0];
+    else columns[field] = hits[0];
+  }
+  return columns;
+}
 
 function splitLine(line: string, sep: string): string[] {
   const out: string[] = [];
@@ -85,21 +120,29 @@ function pickSeparator(lines: string[]): string | null {
   return best;
 }
 
-/** Table text: finds the header row by its names, or reads columns by what their cells look like. */
-export function parsePositions(text: string): ImportResult {
+export type Layout = { headerAt: number; columns: ImportResult["columns"] };
+
+/** Splits text into table rows, or null when it has no consistent separator. */
+export function tableOf(text: string): string[][] | null {
+  const lines = text.replace(/\r/g, "").split("\n").map((l) => l.trimEnd()).filter((l) => l.trim());
+  const sep = pickSeparator(lines);
+  return sep ? lines.map((l) => splitLine(l, sep)) : null;
+}
+
+/**
+ * Table text: finds the header row by its names, or reads columns by what their cells look like. `layout`, when
+ * given, says which row is the header and which column holds what (from the AI reading an unknown layout).
+ */
+export function parsePositions(text: string, layout?: Layout): ImportResult {
   const lines = text.replace(/\r/g, "").split("\n").map((l) => l.trimEnd()).filter((l) => l.trim());
   const sep = pickSeparator(lines);
   if (!sep) return parseLoose(lines);
   const table = lines.map((l) => splitLine(l, sep));
-  const headerAt = table.findIndex((cells) => cells.some((c) => HEADERS.identifier.test(c)) && cells.some((c) => HEADERS.quantity.test(c)));
-  const columns: ImportResult["columns"] = { identifier: null, quantity: null, price: null, date: null, side: null, fee: null };
-  if (headerAt >= 0) {
-    for (const [field, re] of Object.entries(HEADERS)) {
-      // An ISIN column beats a name or ticker column when both are present.
-      const hits = table[headerAt].map((c, i) => (re.test(c) ? i : -1)).filter((i) => i >= 0);
-      columns[field] = field === "identifier" ? hits.find((i) => /isin/i.test(table[headerAt][i])) ?? hits[0] ?? null : hits[0] ?? null;
-    }
-  }
+  const found = layout ?? (() => {
+    const at = table.findIndex((cells) => { const f = cells.map(fieldOf); return f.includes("identifier") && f.includes("quantity"); });
+    return { headerAt: at, columns: at >= 0 ? columnsOf(table[at]) : { identifier: null, quantity: null, price: null, date: null, side: null, fee: null } };
+  })();
+  const { headerAt, columns } = found;
   const rows: ImportedRow[] = [], skipped: ImportResult["skipped"] = [];
   table.forEach((cells, i) => {
     if (i <= headerAt) return;
