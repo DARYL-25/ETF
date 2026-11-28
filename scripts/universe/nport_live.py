@@ -97,7 +97,7 @@ def parse(xml_bytes):
         t = local(el.tag)
         if event == "start":
             path.append(t)
-            if t == "invstOrSec": pos = {"name": "", "title": "", "weight": None, "country": "", "asset": "", "id": len(out["positions"])}
+            if t == "invstOrSec": pos = {"name": "", "title": "", "weight": None, "country": "", "asset": "", "issuer": "", "id": len(out["positions"])}
             continue
         path.pop()
         text = (el.text or "").strip()
@@ -108,6 +108,8 @@ def parse(xml_bytes):
             elif t == "invCountry": pos["country"] = text
             elif t == "assetCat": pos["asset"] = text
             elif t == "assetConditional": pos["asset"] = pos["asset"] or el.get("assetCat", "")
+            elif t == "issuerCat": pos["issuer"] = text
+            elif t == "issuerConditional": pos["issuer"] = pos["issuer"] or el.get("issuerCat", "")
             elif t == "invstOrSec":
                 if pos["weight"] is not None:
                     pos["name"] = pos["name"] if pos["name"] and pos["name"].upper() != "N/A" else pos["title"]
