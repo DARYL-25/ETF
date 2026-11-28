@@ -1,16 +1,21 @@
 {
  "on": "2026-11-28",
- "issuer_companies": 7066,
+ "issuer_companies": 7023,
  "sec_map_entries": 7188,
  "share_of_weight_pct": {
   "holdings.csv.gz": {
-   "with_sector": 52.0
+   "filled_issuer": 15.7,
+   "with_sector": 20.2,
+   "filled_sec": 0.1,
+   "relabelled": 6.0
   },
   "sec_holdings.csv.gz": {
-   "with_sector": 60.3
+   "with_sector": 60.3,
+   "filled_issuer": 0.0
   },
   "factsheet_holdings.csv.gz": {
-   "with_sector": 57.1
+   "with_sector": 57.1,
+   "filled_issuer": 0.0
   }
  }
 }
