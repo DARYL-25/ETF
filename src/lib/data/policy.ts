@@ -57,7 +57,7 @@ export const DATASETS: Dataset[] = [
     ],
   },
   {
-    id: "holdings", name: "What each fund holds", what: "Every holding with its weight, for funds whose issuer publishes the full list as a file. Used for overlap, look-through and finding which ETFs hold a company.",
+    id: "holdings", name: "What each fund holds", what: "Every holding with its weight, for funds whose issuer, exchange or regulator publishes the full list. Used for overlap, look-through and finding which ETFs hold a company.",
     cadence: "Weekly", schedule: "Sundays, 06:37 UTC", job: "holdings.yml", report: "data/holdings/report.json",
     sources: [
       { name: "State Street holdings files", covers: "About 310 ETFs in the US and Europe", url: "https://www.ssga.com/us/en/intermediary/etfs", state: "automatic" },
@@ -65,6 +65,8 @@ export const DATASETS: Dataset[] = [
       { name: "Global X holdings files", covers: "About 115 Global X ETFs in the US, many of them thematic", url: "https://www.globalxetfs.com/", state: "automatic" },
       { name: "KraneShares holdings files", covers: "KraneShares ETFs, mostly Chinese shares", url: "https://kraneshares.com/", state: "automatic" },
       { name: "Direxion holdings files", covers: "Direxion funds that hold their securities directly", url: "https://www.direxion.com/", state: "automatic", note: "Leveraged funds built on swaps are left out, because their file does not show the real exposure." },
+      { name: "Betashares holdings files", covers: "About 100 Betashares ETFs in Australia", url: "https://www.betashares.com.au/", state: "automatic" },
+      { name: "Shanghai Stock Exchange composition files", covers: "About 920 ETFs listed in Shanghai", url: "https://www.sse.com.cn/", state: "automatic", note: "The exchange publishes each ETF's basket every trading day. Shanghai-listed shares are valued at the exchange's close; others carry their cash value in the file." },
       { name: "SEC Form N-PORT filings", covers: "About 3,900 US ETFs whose issuer publishes no holdings file", url: "https://www.sec.gov/data-research/sec-markets-data/form-n-port-data-sets", state: "automatic", note: "Each quarter's report becomes public about 60 days after it ends. A daily job reads new filings from EDGAR the day they appear." },
       { name: "iShares holdings files", covers: "iShares ETFs", url: "https://www.ishares.com/", state: "not working", note: "The file is only served after a visitor accepts the site's terms, which a job cannot do on anyone's behalf." },
     ],

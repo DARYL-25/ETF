@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Full holdings for ETFs whose issuer publishes them as a file to any plain request: State Street (US and Europe), ARK, Direxion, Global X and KraneShares.
+"""Full holdings for ETFs whose issuer or exchange publishes them as a file to any plain request: State Street (US and Europe), ARK, Direxion, Global X, KraneShares, Betashares (Australia) and the Shanghai Stock Exchange.
 Writes data/holdings/holdings.csv.gz (one row per ETF and holding) and summary.csv.gz (one row per ETF).
 Holdings under 0.02% of the fund are dropped and at most 800 are kept per fund, largest first; the summary
 records how many the fund has and what share of it the kept rows cover. One request at a time."""
@@ -272,7 +272,66 @@ def globalx():
 def kraneshares():
     dated_files("KraneShares", "KraneShares", lambda t, d: f"https://kraneshares.com/csv/{d:%m_%d_%Y}_{t.lower()}_holdings.csv", "Company Name", "% of Net Assets", "Ticker")
 
-for fn in (ssga_us, spdr_eu, ark, direxion, globalx, kraneshares):
+def betashares():
+    """Betashares (Australia) publishes each fund's daily holdings at a fixed address by ASX code."""
+    ok = failed = 0; errors = []
+    funds = [u for u in universe if u["source"] == "australia" and u["ticker"] and u["name"].lower().startswith("betashares")]
+    for u in funds[:LIMIT]:
+        url = f"https://www.betashares.com.au/files/csv/{u['ticker']}_Portfolio_Holdings.csv"
+        try:
+            time.sleep(1)
+            text = get(url).decode("utf-8-sig", "replace")
+            found = re.search(r"^Date,(\d{4}-\d{2}-\d{2})", text[:600], re.M)
+            if csv_fund(u["etf_key"], text, "Betashares", url, "Name", "Weight (%)", "Ticker", "", 1.0, found.group(1) if found else ""): ok += 1
+            else: failed += 1
+        except Exception as e:
+            failed += 1
+            if len(errors) < 4: errors.append(f"{u['ticker']}: {type(e).__name__}: {e}"[:120])
+        if failed >= 8 and ok == 0: break
+    report["betashares"] = {"funds": len(funds), "ok": ok, "failed": failed, "errors": errors}
+
+def shanghai():
+    """Shanghai Stock Exchange: each ETF's portfolio composition file for the trading day, published by the
+    exchange. It lists the shares in one creation unit. Holdings listed elsewhere (Shenzhen, abroad) carry their
+    cash value; Shanghai-listed shares carry only a quantity, valued at the exchange's own close of the day the
+    file's NAV is struck (the previous trading day). Weight = value / NAV of the creation unit. store() refuses
+    a fund whose weights then cover less than half of it."""
+    import xml.etree.ElementTree as ET
+    ok = failed = 0; errors = []
+    quotes = json.loads(get("https://yunhq.sse.com.cn:32042/v1/sh1/list/exchange/equity?select=code,last,prev_close,date&begin=0&end=6000", referer="https://www.sse.com.cn/"))
+    price = {}
+    for code, last, prev, qday in quotes.get("list", []):
+        price[code] = (str(qday), last, prev)
+    funds = [u for u in universe if u["source"] == "china_sh" and u["ticker"]]
+    for u in funds[:LIMIT]:
+        url = f"https://query.sse.com.cn/etfDownload/downloadETF2Bulletin.do?etfType=087&fundCode={u['ticker']}"
+        try:
+            time.sleep(0.8)
+            root = ET.fromstring(get(url, referer="https://www.sse.com.cn/"))
+            nav_cu = num(root.findtext("NAVperCU") or "")
+            day = root.findtext("TradingDay") or ""
+            if not nav_cu: raise ValueError("no NAV per creation unit")
+            rows = []
+            for c in root.iter("Component"):
+                amount = num(c.findtext("SubstitutionCashAmount") or "")
+                name = (c.findtext("InstrumentName") or "").strip()
+                code = (c.findtext("InstrumentID") or "").strip()
+                if not amount and code in price:
+                    qday, last, prev = price[code]
+                    close = prev if qday == day else last  # the close the NAV was struck at
+                    amount = (num(c.findtext("Quantity") or "") or 0) * (close or 0)
+                if not name or not amount: continue
+                rows.append({"name": name, "ticker": (c.findtext("InstrumentID") or "").strip(), "isin": "", "weight": 100 * amount / nav_cu, "sector": "", "country": "China", "asset_class": ""})
+            as_of = f"{day[:4]}-{day[4:6]}-{day[6:8]}" if len(day) == 8 else ""
+            if store(u["etf_key"], as_of, rows, "Shanghai Stock Exchange", url): ok += 1
+            else: failed += 1
+        except Exception as e:
+            failed += 1
+            if len(errors) < 4: errors.append(f"{u['ticker']}: {type(e).__name__}: {e}"[:120])
+        if failed >= 15 and ok == 0: break
+    report["shanghai"] = {"funds": len(funds), "ok": ok, "failed": failed, "errors": errors}
+
+for fn in (ssga_us, spdr_eu, ark, direxion, globalx, kraneshares, betashares, shanghai):
     try: fn()
     except Exception as e: report[fn.__name__] = f"{type(e).__name__}: {e}"[:200]
 

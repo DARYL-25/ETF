@@ -1,0 +1,17 @@
+{
+ "on": "2026-11-28",
+ "series": 4524,
+ "registrants": 256,
+ "registrants_failed": [],
+ "since": "2026-10-30",
+ "filings_found": 2688,
+ "filings_read": 2688,
+ "etfs_updated": 1375,
+ "already_newer": 81,
+ "other_series": 1039,
+ "errors": [],
+ "read_through": "2026-11-27",
+ "etfs_with_sec_holdings": 3995,
+ "newest_as_of": "2026-10-31",
+ "oldest_as_of": "2026-05-31"
+}

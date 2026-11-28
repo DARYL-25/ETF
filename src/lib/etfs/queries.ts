@@ -391,10 +391,23 @@ export const THEME_MARKETS = {
 } as const;
 export type ThemeMarket = keyof typeof THEME_MARKETS;
 
+/**
+ * How well a fund suits an income portfolio, out of 100, from figures we hold for nearly every fund. Our own
+ * weights, shown on the page: pays its income out (35; US-listed funds distribute by law as regulated investment
+ * companies), low yearly fee (25, full marks at 0%, none at 0.75% or more), size (25, full marks from EUR 5bn:
+ * large funds trade cheaply and are rarely closed) and track record (15, three years of returns on file).
+ */
+export const INCOME_SCORE = `(
+  35 * (case when distribution_policy ilike 'dist%' or ticker_exchange in ('ARCX','XNAS','XNYS','BATS','XASE','IEXG') then 1 else 0 end)
+  + 25 * greatest(0, 1 - coalesce(headline_fee_pct, 0.75) / 0.75)
+  + 25 * least(1, ln(1 + coalesce(size_eur, 0) / 1e6) / ln(1 + 5000))
+  + 15 * (case when return_3y is not null or nav_return_3y is not null then 1 else 0 end))`;
+
 const THEME_SORTS = {
   size: "size_eur desc nulls last, headline_fee_pct asc nulls last, name asc",
   fee: "headline_fee_pct asc nulls last, size_eur desc nulls last, name asc",
   return: "return_1y desc nulls last, size_eur desc nulls last, name asc",
+  income: `${INCOME_SCORE} desc, size_eur desc nulls last, name asc`,
 } as const;
 export type ThemeSort = keyof typeof THEME_SORTS;
 

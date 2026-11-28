@@ -1,5 +1,5 @@
 {
- "on": "2026-11-22",
+ "on": "2026-11-27",
  "ssga_errors": [
   "GLDM: HTTPError: HTTP Error 404: Not Found",
   "GLD: HTTPError: HTTP Error 404: Not Found"
@@ -9,7 +9,7 @@
   "failed": 2
  },
  "spdr_eu": {
-  "ok": 128,
+  "ok": 129,
   "failed": 52,
   "errors": [
    "semr-se: HTTPError: HTTP Error 404: Not Found",
@@ -24,8 +24,8 @@
   "errors": []
  },
  "direxion": {
-  "ok": 15,
-  "failed": 119,
+  "ok": 20,
+  "failed": 114,
   "errors": []
  },
  "global_x": {
@@ -36,75 +36,92 @@
    "COMD: RuntimeError: no file: no weights column",
    "BITS: RuntimeError: no file: no weights column"
   ],
-  "sample": "Global X Gold Miners ETF\nFund Holdings Data as of 11/20/2026\n% of Net Assets,Ticker,Name,SEDOL,Market Price ($),Shares Held,Market Value ($)\n0.04,SIND,SINDA LTD,BXD1L30,9.09,229.00,\"2,081.61\"\n0.04,NFGC,NEW FOUND GOLD CORP,BL98380,1.18,\"1,760.00\",\"2,076.80\"\n0.04,THM,INTL TOWER HILL MINES LTD,B5ZYX57,1.15,\"1,665.00\",\"1,914.75\"\n0.04,VMET,VERSAMET ROYALTIES CORP,BMVFC78,6.49,277.00,\"1,797.73\"\n0.02,APM"
+  "sample": "Global X Gold Miners ETF\nFund Holdings Data as of 11/25/2026\n% of Net Assets,Ticker,Name,SEDOL,Market Price ($),Shares Held,Market Value ($)\n0.17,SGD CN,SNOWLINE GOLD CORP,BN7R1R8,8.077259475218659,\"1,029.00\",\"8,311.50\"\n0.16,BGL AU,BELLEVUE GOLD LTD,BFZ31P0,0.8784979002907289,\"9,287.00\",\"8,158.61\"\n0.16,RSG AU,RESOLUTE MINING LTD,6410636,0.6810819892473119,\"11,904.00\",\"8,107.60\"\n0.14,3330 HK,LINGBA"
  },
  "kraneshares": {
   "funds": 28,
   "ok": 28,
   "failed": 0,
   "errors": [],
-  "sample": "\"BUYO Holdings\",\"As of 2026-11-20\",\"Holdings Are Subject To Change\"\nRank,\"Company Name\",\"% of Net Assets\",Ticker,Identifier,\"Shares Held\",\"Market Value($)\"\n1,\"NEWS CORP - CLASS A\",1.55,NWSA,US65249B1098,\"9,483\",\"237,549\"\n2,\"ENCOMPASS HEALTH CORP\",1.43,EHC,US29261A1007,\"1,642\",\"219,453\"\n3,\"AFFILIATED MANAGERS GROUP\",1.20,AMG,US0082521081,503,\"185,179\"\n4,\"MORNINGSTAR INC\",1.13,MORN,US6177001095,747,"
+  "sample": "\"BUYO Holdings\",\"As of 2026-11-25\",\"Holdings Are Subject To Change\"\nRank,\"Company Name\",\"% of Net Assets\",Ticker,Identifier,\"Shares Held\",\"Market Value($)\"\n1,\"NEWS CORP - CLASS A\",1.55,NWSA,US65249B1098,\"9,483\",\"247,317\"\n2,\"ENCOMPASS HEALTH CORP\",1.41,EHC,US29261A1007,\"1,642\",\"226,054\"\n3,\"AFFILIATED MANAGERS GROUP\",1.16,AMG,US0082521081,503,\"184,903\"\n4,\"LIFESTANCE HEALTH GROUP INC\",1.13,LFST,US532"
+ },
+ "betashares": {
+  "funds": 110,
+  "ok": 101,
+  "failed": 9,
+  "errors": [
+   "HCRD: HTTPError: HTTP Error 404: Not Found",
+   "MMKT: StopIteration: ",
+   "OOO: HTTPError: HTTP Error 404: Not Found",
+   "WBND: StopIteration: "
+  ]
+ },
+ "shanghai": {
+  "funds": 948,
+  "ok": 920,
+  "failed": 28,
+  "errors": []
  },
  "probe": {
   "spdr_eu_sample": [
    [
     "Fund Name:",
-    "comdirect S&P All World State Street UCITS ETF (Acc)"
+    "comdirect Euro Zins State Street UCITS ETF (Acc)"
    ],
    [
     "ISIN:",
-    "IE00020O1MD6"
+    "IE000VAPFMZ3"
    ],
    [
     "Ticker Symbol:",
-    "CD1 GY"
+    "GELD GY"
    ],
    [
     "Holdings As Of:",
-    "19-Nov-2026"
+    "26-Nov-2026"
    ],
    [],
    [
     "ISIN",
     "SEDOL",
     "Security Name",
-    "Currency",
-    "Number of Shares",
+    "Currency Local",
+    "PAR Value Local",
     "Percent of Fund",
-    "Trade Country Name",
     "Local Price",
-    "Sector Classification",
-    "Industry Classification",
-    "Base Market Value"
+    "Base Market Value",
+    "Maturity Date",
+    "Interest Rate",
+    "Country of Issue"
    ],
    [
-    "US0378331005",
-    "2046251",
-    "Apple Inc.",
-    "USD",
-    "8215.0",
-    "2.712097",
-    "United States",
-    "349.21",
-    "Information Technology",
-    "Technology Hardware Storage & Peripherals",
-    "2868760.3"
+    "ES0L02707096",
+    "BT6M4C2",
+    "SPAIN LETRAS DEL TESORO 0 07/09/2027",
+    "EUR",
+    "678000.0",
+    "13.317081",
+    "98.219",
+    "665924.82",
+    "09-Jul-2027",
+    "0.0",
+    "Spain"
    ],
    [
-    "US5949181045",
-    "2588173",
-    "Microsoft Corporation",
-    "USD",
-    "5301.0",
-    "2.497236",
-    "United States",
-    "498.3",
-    "Information Technology",
-    "Software",
-    "2641488.3"
+    "EU000A4EW8B9",
+    "BQGFC82",
+    "EUROPEAN UNION BILL 0 07/09/2027",
+    "EUR",
+    "634000.0",
+    "12.448915",
+    "98.188",
+    "622511.92",
+    "09-Jul-2027",
+    "0.0",
+    "SUPRA-NATIONAL"
    ]
   ]
  },
- "etfs": 485,
- "rows": 99198
+ "etfs": 1510,
+ "rows": 208503
 }

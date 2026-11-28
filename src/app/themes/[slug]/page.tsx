@@ -27,14 +27,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 const SORTS: [ThemeSort, string][] = [["size", "Largest first"], ["fee", "Lowest fee first"], ["return", "Best 1-year return first"]];
+/** Themes about income get one more way to sort, and open on it. */
+const INCOME_THEMES = new Set(["dividend"]);
 const FIRST = 40;
+const US_VENUES = new Set(["ARCX", "XNAS", "XNYS", "BATS", "XASE", "IEXG"]);
+/** Pays its income out: a distributing share class, or a US-listed fund (they distribute by law). Same rule as the income score. */
+const paysOut = (row: { distribution_policy: string | null; ticker_exchange: string | null }) =>
+  /^dist/i.test(row.distribution_policy ?? "") || US_VENUES.has(row.ticker_exchange ?? "");
 
 export default async function ThemePage({ params, searchParams }: Props) {
   const theme = themeBySlug((await params).slug);
   if (!theme) notFound();
   const sp = await searchParams;
   const market = sp.market && sp.market in THEME_MARKETS ? (sp.market as ThemeMarket) : null;
-  const sort = SORTS.some(([s]) => s === sp.sort) ? (sp.sort as ThemeSort) : "size";
+  const income = INCOME_THEMES.has(theme.slug);
+  const sorts: [ThemeSort, string][] = income ? [["income", "Best for an income portfolio"], ...SORTS] : SORTS;
+  const sort = sorts.some(([s]) => s === sp.sort) ? (sp.sort as ThemeSort) : income ? "income" : "size";
   const all = sp.all === "1";
   const t = await getT();
   const locale = t.lang === "fr" ? "fr-FR" : "en-GB";
@@ -45,7 +53,7 @@ export default async function ThemePage({ params, searchParams }: Props) {
     const m = next.market === undefined ? market : next.market, s = next.sort ?? sort;
     const q = new URLSearchParams();
     if (m) q.set("market", m);
-    if (s !== "size") q.set("sort", s);
+    if (s !== (income ? "income" : "size")) q.set("sort", s);
     if (next.all) q.set("all", "1");
     const text = q.toString();
     return `/themes/${theme.slug}${text ? `?${text}` : ""}`;
@@ -74,14 +82,15 @@ export default async function ThemePage({ params, searchParams }: Props) {
       </div>
       <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.95rem]">
         <span className="text-muted">{t("Order")}</span>
-        {SORTS.map(([s, label]) => (
+        {sorts.map(([s, label]) => (
           <Link key={s} href={href({ sort: s })} scroll={false} aria-current={sort === s ? "true" : undefined} className={sort === s ? "font-semibold text-ink no-underline" : "prose-link"}>{t(label)}</Link>
         ))}
       </div>
+      {income && sort === "income" ? <p className="mb-4 max-w-[74ch] text-[0.9rem] text-muted">{t("Ranked by our income score out of 100: pays its income out (35 points), low yearly fee (25), fund size (25) and three years of track record (15). Dividend yield is shown where the issuer publishes it. A way to sort, not a recommendation.")}</p> : null}
 
       <div className="overflow-x-auto">
         <table className="table-data">
-          <thead><tr><th aria-label={t("Compare")} /><th>ETF</th><th className="hidden md:table-cell">{t("Listed on")}</th><th className="num">{t("Yearly fee")}</th><th className="num">{t("Size")}</th><th className="num hidden md:table-cell">{t("1 year")}</th></tr></thead>
+          <thead><tr><th aria-label={t("Compare")} /><th>ETF</th><th className="hidden md:table-cell">{t("Listed on")}</th><th className="num">{t("Yearly fee")}</th><th className="num">{t("Size")}</th><th className="num hidden md:table-cell">{t("1 year")}</th>{income ? <><th className="hidden md:table-cell">{t("Income")}</th><th className="num hidden md:table-cell">{t("Yield")}</th></> : null}</tr></thead>
           <tbody key={`${market}-${sort}-${all}`} className="rows-in">
             {rows.map((row, i) => (
               <tr key={row.etf_key} style={{ "--i": i } as React.CSSProperties}>
@@ -91,6 +100,7 @@ export default async function ThemePage({ params, searchParams }: Props) {
                 <td className="num"><Fee row={row} />{row.headline_fee_pct !== null ? <span className="fee-meter" aria-hidden style={{ "--p": Math.min(1, row.headline_fee_pct / 0.75) } as React.CSSProperties} /> : null}</td>
                 <td className="num whitespace-nowrap">{formatMoney(row.fund_aum ?? row.class_aum, row.fund_aum_currency ?? row.class_aum_currency, t.lang)}</td>
                 <td className="num hidden md:table-cell"><Change value={row.return_1y} /></td>
+                {income ? <><td className="hidden md:table-cell">{paysOut(row) ? t("Paid out") : row.distribution_policy ? t("Reinvested") : "—"}</td><td className="num hidden md:table-cell">{row.trailing_yield_pct !== null && row.trailing_yield_pct !== undefined ? `${Number(row.trailing_yield_pct).toFixed(2)}%` : "—"}</td></> : null}
               </tr>
             ))}
           </tbody>

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { parseLoose, parsePositions, type ImportResult } from "@/lib/portfolio/import";
+import { parseLoose, parsePositions, tableOf, type ImportResult } from "@/lib/portfolio/import";
+import { aiLayout, aiRows } from "@/lib/portfolio/import-ai";
 import { resolveIdentifiers } from "@/lib/etfs/portfolio-data";
 
 export const runtime = "nodejs";
@@ -35,11 +36,14 @@ async function excelText(data: Buffer): Promise<string> {
 
 /**
  * Reads positions from a CSV, TSV, Excel or PDF file, or from pasted text, and matches each identifier to an ETF.
+ * Known broker layouts are read by their column names; an unknown one is laid out by the AI (see import-ai.ts).
  * The file is read in memory and never stored. The reader reviews every row before anything is added.
  */
 export async function POST(request: NextRequest) {
   let result: ImportResult;
   let kind = "text";
+  let text = "";
+  let pdf: string[] | null = null;
   try {
     const type = request.headers.get("content-type") ?? "";
     if (type.startsWith("multipart/form-data")) {
@@ -49,17 +53,30 @@ export async function POST(request: NextRequest) {
       if (file.size > MAX_BYTES) return NextResponse.json({ error: "The file is larger than 5 MB." }, { status: 413 });
       const name = (file as File).name?.toLowerCase() ?? "";
       const bytes = Buffer.from(await file.arrayBuffer());
-      if (name.endsWith(".pdf") || bytes.subarray(0, 4).toString() === "%PDF") { kind = "pdf"; result = parseLoose(await pdfLines(new Uint8Array(bytes))); }
-      else if (name.endsWith(".xlsx") || bytes.subarray(0, 2).toString() === "PK") { kind = "excel"; result = parsePositions(await excelText(bytes)); }
-      else { kind = "csv"; result = parsePositions(bytes.toString("utf8")); }
+      if (name.endsWith(".pdf") || bytes.subarray(0, 4).toString() === "%PDF") { kind = "pdf"; pdf = await pdfLines(new Uint8Array(bytes)); result = parseLoose(pdf); }
+      else if (name.endsWith(".xlsx") || bytes.subarray(0, 2).toString() === "PK") { kind = "excel"; text = await excelText(bytes); result = parsePositions(text); }
+      else { kind = "csv"; text = bytes.toString("utf8"); result = parsePositions(text); }
     } else {
       const json = (await request.json().catch(() => null)) as { text?: unknown } | null;
       if (!json || typeof json.text !== "string" || json.text.length > 500_000) return NextResponse.json({ error: "Paste the rows as text." }, { status: 400 });
-      result = parsePositions(json.text);
+      text = json.text;
+      result = parsePositions(text);
     }
   } catch {
     return NextResponse.json({ error: "We could not read this file. Export it as CSV, or paste the rows." }, { status: 422 });
   }
+  // A layout we do not know: the AI says where the columns are, our code reads the figures.
+  let ai = false;
+  if (!result.rows.length) {
+    try {
+      if (pdf) { const got = await aiRows(pdf); if (got?.rows.length) { result = got; ai = true; } }
+      else if (text) {
+        const table = tableOf(text);
+        const layout = table ? await aiLayout(table) : null;
+        if (layout) { const again = parsePositions(text, layout); if (again.rows.length) { result = again; ai = true; } }
+      }
+    } catch { /* keep what the rules found */ }
+  }
   const matches = await resolveIdentifiers(result.rows.map((r) => r.identifier));
-  return NextResponse.json({ kind, ...result, rows: result.rows.slice(0, 200).map((r) => ({ ...r, match: matches[r.identifier] ?? null })) });
+  return NextResponse.json({ kind, ai, ...result, rows: result.rows.slice(0, 200).map((r) => ({ ...r, match: matches[r.identifier] ?? null })) });
 }
