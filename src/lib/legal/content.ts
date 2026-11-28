@@ -4,7 +4,7 @@
  */
 export type LegalPage = { slug: string; title: string; summary: string; sections: { heading: string; paragraphs: string[] }[] };
 
-export const LEGAL_UPDATED = "2026-11-16";
+export const LEGAL_UPDATED = "2026-11-28";
 
 export const LEGAL_PAGES: LegalPage[] = [
   {
@@ -59,10 +59,10 @@ export const LEGAL_PAGES: LegalPage[] = [
         "Stripe handles payments. We never see or store your card number. We store which plan you have, its status, and the identifiers Stripe gives us for your customer record and subscription.",
       ] },
       { heading: "The assistant", paragraphs: [
-        "When you ask the assistant a question, the text of your question, and the country you selected if any, are sent to Anthropic, the company whose AI model writes the answer. Do not put personal information in a question.",
+        "When you ask the assistant a question, the text of your question, and the country you selected if any, are sent through Vercel's AI Gateway to a provider that runs the open-source AI model writing the answer. That provider may keep the text for a limited time under its own terms. Do not put personal information in a question.",
       ] },
       { heading: "Who else handles data", paragraphs: [
-        "We rely on a few providers to run the service: a hosting provider for the site, Supabase for accounts and the database, Stripe for payments and Anthropic for the assistant. Each handles data only to provide that service.",
+        "We rely on a few providers to run the service: Vercel to host the site and route assistant questions, Supabase for accounts and the database, Stripe for payments, and the AI provider that runs the assistant's model. Each handles data only to provide that service.",
       ] },
       { heading: "Your rights", paragraphs: [
         "You can ask for a copy of the data we hold about you, ask us to correct or delete it, and object to how we use it. Write to the contact address in the legal notice. You can also complain to the data protection authority of your country.",
