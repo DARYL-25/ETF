@@ -73,6 +73,7 @@ Until then the site says plainly that prices are end of day.
 | Global X holdings files | About 115 Global X ETFs in the US, many of them thematic | Automatic, weekly |
 | KraneShares holdings files | KraneShares ETFs, mostly Chinese shares | Automatic, weekly |
 | Direxion holdings files | Direxion funds that hold their securities directly. Leveraged funds built on swaps are left out | Automatic, weekly |
+| Sector of each holding | Every holdings file | Automatic, after each holdings job. `classify.py` keeps the issuer's sector, normalised to the 11 GICS sectors; otherwise it uses the GICS sector issuers give the same company, then the company's SEC industry code (SIC, from the SEC financial statement data sets, our own mapping to GICS sectors, rebuilt monthly). Bonds take their issuer type from N-PORT (government, corporate, municipal, securitised). Chinese A-shares have no sector yet |
 | SEC Form N-PORT filings | About 3,900 US ETFs whose issuer publishes no file | Automatic, daily. Each quarter's report is public about 60 days after it ends; `nport-live.yml` reads EDGAR's daily index and adds each fund's filing the day it appears. `nport.yml` loads the SEC's quarterly bulk data sets as a backstop and never replaces a newer filing. Each fund shows its report date and links to its filing |
 | iShares, Xtrackers, Amundi, Vanguard, Invesco | Not collected | Their files are served only after a visitor accepts site terms. Needs permission or a licensed source |
 

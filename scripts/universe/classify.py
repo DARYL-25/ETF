@@ -193,7 +193,8 @@ for p, rows in tables.items():
         r[si] = normalise(r[si]) or ""
         if not r[si] or r[si] in ("-", "Unassigned", "Other"):
             asset = r[ai] if ai is not None else ""
-            if asset in ("", "Equity", "Preferred equity", "Real estate"):
+            if asset == "Cash": r[si] = "Cash"
+            elif asset in ("", "Equity", "Preferred equity", "Real estate"):
                 found = issuer_map.get(r[ki]) or sec_map.get(r[ki])
                 if found: r[si] = found; w["filled_issuer" if r[ki] in issuer_map else "filled_sec"] += wt
         if r[si] and r[si] not in ("-", "Unassigned", "Other"): w["with_sector"] += wt

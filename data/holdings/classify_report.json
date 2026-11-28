@@ -1,31 +1,16 @@
 {
  "on": "2026-11-28",
- "sec_quarters": [
-  "2026q3",
-  "2026q2",
-  "2026q1",
-  "2025q4"
- ],
- "sec_companies": 7097,
- "sec_name_keys": 7188,
- "issuer_companies": 5222,
+ "issuer_companies": 7066,
  "sec_map_entries": 7188,
  "share_of_weight_pct": {
   "holdings.csv.gz": {
-   "filled_issuer": 35.2,
-   "with_sector": 52.0,
-   "filled_sec": 3.0,
-   "relabelled": 18.7
+   "with_sector": 52.0
   },
   "sec_holdings.csv.gz": {
-   "with_sector": 55.2,
-   "filled_issuer": 38.6,
-   "filled_sec": 6.8
+   "with_sector": 60.3
   },
   "factsheet_holdings.csv.gz": {
-   "filled_issuer": 54.0,
-   "with_sector": 57.1,
-   "filled_sec": 3.1
+   "with_sector": 57.1
   }
  }
 }
