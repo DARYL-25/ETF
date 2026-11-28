@@ -44,7 +44,7 @@ const FOOTER: { title: string; links: [string, string][] }[] = [
   { title: "Explore", links: [["Screener", "/screener"], ["Quadrants", "/quadrants"], ["Themes", "/themes"], ["Compare", "/compare"], ["Indices", "/indices"], ["New ETFs", "/launches"]] },
   { title: "Portfolio", links: [["Portfolio X-Ray", "/portfolio"], ["Portfolio review", "/portfolio/doctor"], ["True cost", "/tools/true-cost"], ["Simulator", "/tools/simulator"]] },
   { title: "Learn", links: [["Lessons", "/academy"], ["Glossary", "/academy/glossary"], ["Tax", "/tax"], ["Methodology", "/methodology"]] },
-  { title: "Company", links: [["Pricing", "/pricing"], ["Data and updates", "/data"], ["Terms of use", "/legal/terms"], ["Privacy", "/legal/privacy"], ["Legal notice", "/legal/notice"]] },
+  { title: "Company", links: [["Pricing", "/pricing"], ["List your ETFs", "/list-your-etf"],["Data and updates", "/data"], ["Terms of use", "/legal/terms"], ["Privacy", "/legal/privacy"], ["Legal notice", "/legal/notice"]] },
 ];
 
 export async function Shell({ children }: { children: React.ReactNode }) {
@@ -82,6 +82,7 @@ export async function Shell({ children }: { children: React.ReactNode }) {
           <div className="flex max-w-[26rem] flex-col gap-3">
             <Link href="/" className="no-underline" aria-label={t("ETF Intelligence, home")}><Brand size={30} text="text-[1.15rem]" /></Link>
             <p className="leading-relaxed">{t("General information, not investment or tax advice. Prices are end-of-day values, never real time. Figures come from issuers and official lists and can contain errors, so check the issuer's documents before you act.")}</p>
+            <p className="leading-relaxed"><b className="text-ink">{t("ETF issuer?")}</b> {t("If your funds are not listed yet, whatever your size,")} <Link href="/list-your-etf" className="prose-link">{t("ask us to add them")}</Link>.</p>
             <div className="md:hidden"><LangSwitch /></div>
           </div>
           <div className="grid grid-cols-2 gap-x-12 gap-y-8 sm:grid-cols-4">

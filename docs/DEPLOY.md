@@ -52,6 +52,23 @@ Check: open `/api/v1/health`, then the home page, a fund page, `/themes` and `/f
 6. Remove the Vercel login requirement.
 7. Submit `<your address>/sitemap.xml` in Google Search Console. It lists every page in English and French.
 
+## Google sign-in
+
+1. In Google Cloud, create an OAuth client of type "Web application" with the authorized redirect URI
+   `https://<project ref>.supabase.co/auth/v1/callback`, and publish the consent screen.
+2. In Supabase, Authentication, Sign In / Providers, Google: switch it on and paste the client ID and secret.
+3. In Vercel, set `NEXT_PUBLIC_GOOGLE_AUTH=1` and redeploy. The sign-in page then offers Google first.
+
+## Listing requests from issuers
+
+The form at `/list-your-etf` (linked in the footer) saves requests to `public.listing_requests`. Nobody can
+read them through the API: open the table in the Supabase table editor, and set `status` as you handle each.
+
+## The website's database role
+
+The site reads as the read-only role `etf_web`. Migration 0013 grants it every public data table; when a new
+migration adds a public data table, add the table to that list in a new migration as well.
+
 ## After launch
 
 - `/data` shows when each data job last ran and which sources failed.
